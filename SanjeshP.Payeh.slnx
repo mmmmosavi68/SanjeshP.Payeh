@@ -1,0 +1,8 @@
+<Solution>
+  <Project Path="SanjeshP.Payeh.Api/SanjeshP.Payeh.Api.csproj" />
+  <Project Path="SanjeshP.Payeh.Common/SanjeshP.Payeh.Common.csproj" />
+  <Project Path="SanjeshP.Payeh.Data/SanjeshP.Payeh.Data.csproj" />
+  <Project Path="SanjeshP.Payeh.Entities/SanjeshP.Payeh.Entities.csproj" />
+  <Project Path="SanjeshP.Payeh.Services/SanjeshP.Payeh.Services.csproj" />
+  <Project Path="SanjeshP.Payeh.WebFramework/SanjeshP.Payeh.WebFramework.csproj" />
+</Solution>
