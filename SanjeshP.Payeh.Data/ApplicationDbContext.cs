@@ -1,28 +1,24 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Microsoft.EntityFrameworkCore;
 using SanjeshP.Payeh.Common.Utilities;
 using SanjeshP.Payeh.Entities.Common;
 using SanjeshP.Payeh.Entities.Menu;
-using System;
-using System.Collections.Generic;
+using System.Linq.Expressions;
 using System.Reflection;
-using System.Text;
 
 namespace SanjeshP.Payeh.Data
 {
+    /// <summary>
+    /// کانتکست اصلی EF Core.
+    /// تغییر این نسخه: افزودن Global Query Filter برای حذف نرم (IsDeleted)
+    /// تا هیچ کوئری‌ای به‌صورت پیش‌فرض رکوردهای حذف‌شده را برنگرداند.
+    /// برای دسترسی به رکوردهای حذف‌شده از IgnoreQueryFilters() استفاده کنید.
+    /// </summary>
     public class ApplicationDbContext : DbContext
     {
         public ApplicationDbContext(DbContextOptions options)
             : base(options)
         {
-
         }
-
-        //protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        //{
-        //    optionsBuilder.UseSqlServer("Data Source=.;Initial Catalog=MyApiDb;Integrated Security=true");
-        //    base.OnConfiguring(optionsBuilder);
-        //}
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -30,7 +26,7 @@ namespace SanjeshP.Payeh.Data
 
             var entitiesAssembly = typeof(IEntity).Assembly;
 
-            //Ignore or exclude from migrations
+            // این View در دیتابیس ساخته می‌شود و نباید Migration تولید کند.
             modelBuilder.Entity<View_UserMenubar>().ToTable(nameof(View_UserMenubar), t => t.ExcludeFromMigrations());
 
             modelBuilder.RegisterAllEntities<IEntity>(entitiesAssembly);
@@ -38,56 +34,75 @@ namespace SanjeshP.Payeh.Data
             modelBuilder.AddRestrictDeleteBehaviorConvention();
             modelBuilder.AddSequentialGuidForIdConvention();
             modelBuilder.AddPluralizingTableNameConvention();
+
+            ApplySoftDeleteQueryFilter(modelBuilder);
         }
 
+        /// <summary>اعمال فیلتر سراسری IsDeleted روی همه‌ی موجودیت‌های ارث‌برده از BaseEntity.</summary>
+        private static void ApplySoftDeleteQueryFilter(ModelBuilder modelBuilder)
+        {
+            foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+            {
+                var clrType = entityType.ClrType;
+                if (clrType.GetProperty("IsDeleted", BindingFlags.Public | BindingFlags.Instance) is null)
+                    continue;
+
+                // معادل: entity => !entity.IsDeleted
+                var parameter = Expression.Parameter(clrType, "entity");
+                var property = Expression.Property(parameter, "IsDeleted");
+                var body = Expression.Not(property);
+                var lambda = Expression.Lambda(body, parameter);
+
+                modelBuilder.Entity(clrType).HasQueryFilter(lambda);
+            }
+        }
 
         public override int SaveChanges()
         {
-            _cleanString();
+            CleanPersianStrings();
             return base.SaveChanges();
         }
 
         public override int SaveChanges(bool acceptAllChangesOnSuccess)
         {
-            _cleanString();
+            CleanPersianStrings();
             return base.SaveChanges(acceptAllChangesOnSuccess);
         }
 
         public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
         {
-            _cleanString();
+            CleanPersianStrings();
             return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
         }
 
         public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
-            _cleanString();
+            CleanPersianStrings();
             return base.SaveChangesAsync(cancellationToken);
         }
 
-        private void _cleanString()
+        /// <summary>
+        /// یکسان‌سازی ارقام فارسی و حروف ي/ك عربی در همه‌ی رشته‌های ورودی قبل از ذخیره.
+        /// (تغییر نام از _cleanString به CleanPersianStrings طبق استاندارد نام‌گذاری)
+        /// </summary>
+        private void CleanPersianStrings()
         {
             var changedEntities = ChangeTracker.Entries()
-                .Where(x => x.State == EntityState.Added || x.State == EntityState.Modified);
+                .Where(x => x.State is EntityState.Added or EntityState.Modified);
+
             foreach (var item in changedEntities)
             {
-                if (item.Entity == null)
-                    continue;
-
                 var properties = item.Entity.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance)
                     .Where(p => p.CanRead && p.CanWrite && p.PropertyType == typeof(string));
 
                 foreach (var property in properties)
                 {
-                    var propName = property.Name;
-                    var val = (string)property.GetValue(item.Entity, null);
-
-                    if (val.HasValue())
+                    var value = (string?)property.GetValue(item.Entity);
+                    if (value.HasValue())
                     {
-                        var newVal = val.Fa2En().FixPersianChars();
-                        if (newVal == val)
-                            continue;
-                        property.SetValue(item.Entity, newVal, null);
+                        var newValue = value!.Fa2En().FixPersianChars();
+                        if (newValue != value)
+                            property.SetValue(item.Entity, newValue);
                     }
                 }
             }

@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace SanjeshP.Payeh.Data.Migrations
 {
     /// <inheritdoc />
-    public partial class init : Migration
+    public partial class initi : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -118,14 +118,14 @@ namespace SanjeshP.Payeh.Data.Migrations
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     UserName = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    NormalizedUserName = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    EmailAddress = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    NormalizedEmailAddress = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    NormalizedUserName = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    EmailAddress = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    NormalizedEmailAddress = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
                     EmailAddressConfirmed = table.Column<bool>(type: "bit", nullable: true),
-                    PasswordHash = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    PasswordHash = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     SecurityStamp = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     ConcurrencyStamp = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    PhoneNumber = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    PhoneNumber = table.Column<string>(type: "nvarchar(15)", maxLength: 15, nullable: true),
                     PhoneNumberConfirmed = table.Column<bool>(type: "bit", nullable: true),
                     TwoFactorEnabled = table.Column<bool>(type: "bit", nullable: true),
                     LockoutEnd = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
@@ -208,10 +208,12 @@ namespace SanjeshP.Payeh.Data.Migrations
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Code = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: false),
+                    CodeHash = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
                     ExpireAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    FailedAttempts = table.Column<int>(type: "int", nullable: false),
                     IsUsed = table.Column<bool>(type: "bit", nullable: false),
-                    SentTo = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    ConsumedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    SentTo = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
                     Purpose = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
@@ -291,6 +293,40 @@ namespace SanjeshP.Payeh.Data.Migrations
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_UserRole_User_UserId",
+                        column: x => x.UserId,
+                        principalTable: "User",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "UserSession",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Jti = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: false),
+                    RefreshTokenHash = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
+                    PreviousRefreshTokenHash = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: true),
+                    DeviceName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    UserAgent = table.Column<string>(type: "nvarchar(512)", maxLength: 512, nullable: true),
+                    IpAddress = table.Column<string>(type: "nvarchar(45)", maxLength: 45, nullable: false),
+                    TokenExpireDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    RefreshTokenExpireDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    LastUsedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    RevocationDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    HostIp = table.Column<string>(type: "nvarchar(45)", maxLength: 45, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_UserSession", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_UserSession_User_UserId",
                         column: x => x.UserId,
                         principalTable: "User",
                         principalColumn: "Id",
@@ -495,6 +531,11 @@ namespace SanjeshP.Payeh.Data.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_UserSession_UserId",
+                table: "UserSession",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_UserToken_UserId",
                 table: "UserToken",
                 column: "UserId");
@@ -528,6 +569,9 @@ namespace SanjeshP.Payeh.Data.Migrations
 
             migrationBuilder.DropTable(
                 name: "UserRole");
+
+            migrationBuilder.DropTable(
+                name: "UserSession");
 
             migrationBuilder.DropTable(
                 name: "UserVerificationCode");

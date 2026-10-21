@@ -1,40 +1,35 @@
-﻿using AutoMapper;
+using AutoMapper;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
 
 namespace SanjeshP.Payeh.WebFramework.CustomMapping
 {
+    /// <summary>
+    /// راه‌اندازی AutoMapper.
+    /// ⚠️ نکته‌ی لایسنس: از نسخه‌ی 15 به بعد AutoMapper تجاری شده و به LicenseKey نیاز دارد
+    /// (نسخه‌ی فعلی پروژه: 16.2.0). سه گزینه دارید — تصمیم نهایی با شماست:
+    /// ۱) ادامه با 16.x و دریافت کلید (تجاری یا Community رایگان برای پروژه‌های واجد شرایط) از automapper.io
+    ///    و قرار دادن آن در تنظیمات AutoMapper:LicenseKey (پیشنهاد: از User-Secrets/متغیر محیطی).
+    /// ۲) تنزل به آخرین نسخه‌ی MIT یعنی 14.0.0 (بدون کلید؛ کد فعلی با آن هم سازگار است).
+    /// ۳) جایگزینی با Mapster (MIT، سریع‌تر، پشتیبانی از ProjectTo) — نمونه‌ی رجیستر آن در گزارش آمده است.
+    /// این پیاده‌سازی گزینه‌ی ۱ را مطابق درخواست شما فعال می‌کند و برای گزینه‌ی ۲ هم آماده است.
+    /// </summary>
     public static class AutoMapperConfiguration
     {
-        public static void InitializeAutoMapper(this IServiceCollection services, params Assembly[] assemblies)
+        public static void InitializeAutoMapper(this IServiceCollection services, IConfiguration configuration, params Assembly[] assemblies)
         {
-            //With AutoMapper Instance, you need to call AddAutoMapper services and pass assemblies that contains automapper Profile class
-            //services.AddAutoMapper(assembly1, assembly2, assembly3);
-            //See http://docs.automapper.org/en/stable/Configuration.html
-            //And https://code-maze.com/automapper-net-core/
+            // اگر خالی باشد و نسخه‌ی 14 استفاده شود مشکلی نیست؛ در 16 باید مقدار داشته باشد.
+            var licenseKey = configuration["AutoMapper:LicenseKey"];
 
-            services.AddAutoMapper(config =>
+            services.AddAutoMapper(cfg =>
             {
-                config.AddCustomMappingProfile();
+                if (!string.IsNullOrWhiteSpace(licenseKey))
+                    cfg.LicenseKey = licenseKey;
+
+                // ثبت خودکار همه‌ی Profileهای اسمبلی‌های معرفی‌شده (WebFramework و Api)
+                cfg.AddMaps(assemblies);
             }, assemblies);
-        }
-
-        public static void AddCustomMappingProfile(this IMapperConfigurationExpression config)
-        {
-            config.AddCustomMappingProfile(Assembly.GetEntryAssembly());
-        }
-
-        public static void AddCustomMappingProfile(this IMapperConfigurationExpression config, params Assembly[] assemblies)
-        {
-            var allTypes = assemblies.SelectMany(a => a.ExportedTypes);
-
-            var list = allTypes.Where(type => type.IsClass && !type.IsAbstract &&
-                type.GetInterfaces().Contains(typeof(IHaveCustomMapping)))
-                .Select(type => (IHaveCustomMapping)Activator.CreateInstance(type));
-
-            var profile = new CustomMappingProfile(list);
-
-            config.AddProfile(profile);
         }
     }
 }

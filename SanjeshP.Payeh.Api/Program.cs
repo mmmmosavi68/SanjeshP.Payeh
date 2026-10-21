@@ -1,30 +1,34 @@
 using SanjeshP.Payeh.WebFramework.Configuration;
 using SanjeshP.Payeh.WebFramework.Middlewares;
-using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// اضافه کردن سرویس‌ها از WebFramework
+// ثبت همه‌ی سرویس‌ها: DI، EF، JWT، نسخه‌بندی، AutoMapper، OpenAPI، OTP/پیامک/کپچا و Rate Limiting
 builder.Services.AddMinimalServices(builder.Configuration);
+
+// مدیریت مرکزی خطا با IExceptionHandler — همه‌ی خطاها در قالب ApiResult برمی‌گردند.
 builder.Services.AddExceptionHandler<CustomExceptionHandler>();
 builder.Services.AddProblemDetails();
 
 var app = builder.Build();
 
+// اولین میان‌افزار زنجیره تا هر خطایی (حتی خارج از MVC) گرفته شود.
 app.UseExceptionHandler();
 
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
-    // استفاده از Scalar برای مستندسازی در .NET 10 به دلیل سادگی، سرعت و سازگاری کامل با OpenAPI داخلی
-    app.MapScalarApiReference();
-}
+// مستندات Scalar: در Development همیشه، در بقیه‌ی محیط‌ها با ApiDocsSettings:Enabled
+app.MapApiDocuments();
 
 app.UseHttpsRedirection();
+
+// محدودیت نرخ درخواست (سیاست otp برای درخواست کد پیامکی)
+app.UseRateLimiter();
 
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+// اعمال Migrationهای معوق و داده‌های اولیه (نقش‌ها و کاربر ادمین)
+app.InitializeDatabase();
 
 app.Run();

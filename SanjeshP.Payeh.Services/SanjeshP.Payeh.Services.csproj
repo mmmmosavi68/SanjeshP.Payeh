@@ -14,6 +14,12 @@
     <ProjectReference Include="..\SanjeshP.Payeh.Data\SanjeshP.Payeh.Data.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Contracts\" />
+    <Folder Include="Infrastructure\" />
+    <Folder Include="Properties\" />
+  </ItemGroup>
+
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>

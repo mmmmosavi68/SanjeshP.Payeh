@@ -1,71 +1,127 @@
-﻿using SanjeshP.Payeh.Common;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
+using SanjeshP.Payeh.Common;
 using SanjeshP.Payeh.WebFramework.Api;
 
-namespace WebFramework.Filters
+// اصلاح Namespace: WebFramework.Filters → SanjeshP.Payeh.WebFramework.Filters
+namespace SanjeshP.Payeh.WebFramework.Filters
 {
+    /// <summary>
+    /// همه‌ی خروجی اکشن‌ها را به قالب ApiResult می‌پوشاند.
+    /// بازنویسی کامل نسبت به نسخه‌ی قبل:
+    /// - همه‌ی کدهای وضعیت (201/204/401/403/409/422/429/...) پوشش داده می‌شوند، نه فقط 200/400/404.
+    /// - اگر خروجی از قبل ApiResult باشد، دوباره پوشانده نمی‌شود (رفع Double-Wrap).
+    /// - خطاهای اعتبارسنجی ([ApiController] → ValidationProblemDetails) به پیام فارسی تجمیع می‌شوند.
+    /// - پاسخ‌های فایلی/جریانی دست‌نخورده باقی می‌مانند.
+    /// </summary>
     public class ApiResultFilterAttribute : ActionFilterAttribute
     {
-
         public override void OnResultExecuting(ResultExecutingContext context)
         {
-            var ddsad = context.Result;
-            if (context.Result is OkObjectResult okObjectResult)
+            // پاسخ‌های فایلی و جریانی نباید JSON شوند.
+            if (context.Result is FileResult)
             {
-                var apiResult = new ApiResult<object>(true, ApiResultStatusCode.Success, okObjectResult.Value);
-                context.Result = new JsonResult(apiResult) { StatusCode = okObjectResult.StatusCode };
+                base.OnResultExecuting(context);
+                return;
             }
-            else if (context.Result is OkResult okResult)
-            {
-                var apiResult = new ApiResult(true, ApiResultStatusCode.Success);
-                context.Result = new JsonResult(apiResult) { StatusCode = okResult.StatusCode };
-            }
-            //return BadRequest() method create an ObjectResult with StatusCode 400 in recent versions, So the following code has changed a bit.
-            else if (context.Result is ObjectResult badRequestObjectResult && badRequestObjectResult.StatusCode == 400)
-            {
-                string message = null;
-                switch (badRequestObjectResult.Value)
-                {
-                    case ValidationProblemDetails validationProblemDetails:
-                        var errorMessages = validationProblemDetails.Errors.SelectMany(p => p.Value).Distinct();
-                        message = string.Join(" | ", errorMessages);
-                        break;
-                    case SerializableError errors:
-                        var errorMessages2 = errors.SelectMany(p => (string[])p.Value).Distinct();
-                        message = string.Join(" | ", errorMessages2);
-                        break;
-                    case var value when value != null && !(value is ProblemDetails):
-                        message = badRequestObjectResult.Value.ToString();
-                        break;
-                }
 
-                var apiResult = new ApiResult(false, ApiResultStatusCode.BadRequest, message);
-                context.Result = new JsonResult(apiResult) { StatusCode = badRequestObjectResult.StatusCode };
-            }
-            else if (context.Result is ObjectResult notFoundObjectResult && notFoundObjectResult.StatusCode == 404)
+            switch (context.Result)
             {
-                string message = null;
-                if (notFoundObjectResult.Value != null && !(notFoundObjectResult.Value is ProblemDetails))
-                    message = notFoundObjectResult.Value.ToString();
+                case ObjectResult objectResult:
+                    if (objectResult.Value is ApiResult)
+                        break;
 
-                //var apiResult = new ApiResult<object>(false, ApiResultStatusCode.NotFound, notFoundObjectResult.Value);
-                var apiResult = new ApiResult(false, ApiResultStatusCode.NotFound, message);
-                context.Result = new JsonResult(apiResult) { StatusCode = notFoundObjectResult.StatusCode };
-            }
-            else if (context.Result is ContentResult contentResult)
-            {
-                var apiResult = new ApiResult(true, ApiResultStatusCode.Success, contentResult.Content);
-                context.Result = new JsonResult(apiResult) { StatusCode = contentResult.StatusCode };
-            }
-            else if (context.Result is ObjectResult objectResult && objectResult.StatusCode == null
-                && !(objectResult.Value is ApiResult))
-            {
-                var apiResult = new ApiResult<object>(true, ApiResultStatusCode.Success, objectResult.Value);
-                context.Result = new JsonResult(apiResult) { StatusCode = objectResult.StatusCode };
+                    var statusCode = objectResult.StatusCode
+                        ?? (objectResult.Value is not null
+                            ? StatusCodes.Status200OK
+                            : StatusCodes.Status204NoContent);
+
+                    var message = ExtractErrorMessage(
+                        objectResult.Value, statusCode);
+
+                    var data = statusCode is >= 200 and < 300
+                        ? objectResult.Value
+                        : null;
+
+                    context.Result = Wrap(statusCode, data, message);
+                    break;
+
+                case EmptyResult:
+                    context.Result = Wrap(
+                        StatusCodes.Status204NoContent, null, null);
+                    break;
+
+                case UnauthorizedResult:
+                    context.Result = Wrap(
+                        StatusCodes.Status401Unauthorized, null, null);
+                    break;
+
+                case ForbidResult:
+                    context.Result = Wrap(
+                        StatusCodes.Status403Forbidden, null, null);
+                    break;
+
+                case StatusCodeResult statusCodeResult:
+                    context.Result = Wrap(
+                        statusCodeResult.StatusCode, null, null);
+                    break;
+
+                case ContentResult contentResult:
+                    context.Result = Wrap(
+                        contentResult.StatusCode ?? StatusCodes.Status200OK,
+                        null,
+                        contentResult.Content);
+                    break;
             }
 
             base.OnResultExecuting(context);
+        }
+
+        /// <summary>ساخت JsonResult با قالب ApiResult و کد HTTP اصلی.</summary>
+        private static JsonResult Wrap(int httpStatusCode, object? data, string? message)
+        {
+            var apiStatusCode = MapStatusCode(httpStatusCode);
+            var isSuccess = httpStatusCode is >= 200 and < 300;
+
+            ApiResult apiResult = data is null
+                ? new ApiResult(isSuccess, apiStatusCode, message)
+                : new ApiResult<object>(isSuccess, apiStatusCode, data, message);
+
+            return new JsonResult(apiResult) { StatusCode = httpStatusCode };
+        }
+
+        /// <summary>نگاشت کد HTTP به کد معنایی ApiResult.</summary>
+        private static ApiResultStatusCode MapStatusCode(int httpStatusCode) => httpStatusCode switch
+        {
+            StatusCodes.Status204NoContent => ApiResultStatusCode.NoContent,
+            >= 200 and < 300 => ApiResultStatusCode.Success,
+            StatusCodes.Status400BadRequest => ApiResultStatusCode.BadRequest,
+            StatusCodes.Status401Unauthorized => ApiResultStatusCode.UnAuthorized,
+            StatusCodes.Status403Forbidden => ApiResultStatusCode.Forbidden,
+            StatusCodes.Status404NotFound => ApiResultStatusCode.NotFound,
+            StatusCodes.Status409Conflict => ApiResultStatusCode.Conflict,
+            StatusCodes.Status422UnprocessableEntity => ApiResultStatusCode.UnprocessableEntity,
+            StatusCodes.Status429TooManyRequests => ApiResultStatusCode.TooManyRequests,
+            _ => ApiResultStatusCode.ServerError
+        };
+
+        /// <summary>استخراج پیام خطای اعتبارسنجی از ValidationProblemDetails / SerializableError.</summary>
+        private static string? ExtractErrorMessage(object? value, int statusCode)
+        {
+            if (statusCode is >= 200 and < 300 || value is null or ProblemDetails and not ValidationProblemDetails)
+                return null;
+
+            return value switch
+            {
+                ValidationProblemDetails validationProblemDetails =>
+                    string.Join(" | ", validationProblemDetails.Errors.SelectMany(p => p.Value).Distinct()),
+                SerializableError errors =>
+                    string.Join(" | ", errors.SelectMany(p => (string[])p.Value!).Distinct()),
+                ProblemDetails problemDetails => problemDetails.Title,
+                string s => s,
+                _ => null
+            };
         }
     }
 }

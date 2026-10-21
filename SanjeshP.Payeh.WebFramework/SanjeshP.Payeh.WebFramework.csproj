@@ -1,9 +1,14 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <!-- پوشه‌ی Swagger قدیمی (Swashbuckle) حذف شده است؛ مستندات حالا OpenAPI داخلی + Scalar است. -->
     <Compile Remove="Swagger\**" />
     <EmbeddedResource Remove="Swagger\**" />
     <None Remove="Swagger\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="Middlewares\CustomExceptionHandlerMiddleware.cs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -11,11 +16,18 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Autofac استفاده نمی‌شد و از Program هم Wire نشده بود؛ حذف شد.
+         اگر بعداً لازم شد، بسته‌های Autofac + Autofac.Extensions.DependencyInjection اضافه شوند. -->
     <PackageReference Include="Autofac" Version="9.3.4" />
     <PackageReference Include="AutoMapper" Version="16.2.0" />
+    <!-- گزینه‌ی بدون لایسنس: به‌جای خط بالا از <PackageReference Include="AutoMapper" Version="14.0.0" /> استفاده کنید. -->
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.13" />
-    <PackageReference Include="Microsoft.AspNetCore.Mvc.Versioning" Version="5.1.0" />
+    <!-- جایگزین پکیج قدیمی Microsoft.AspNetCore.Mvc.Versioning (حذف شد) -->
+    <PackageReference Include="Asp.Versioning.Mvc" Version="8.1.0" />
+    <PackageReference Include="Asp.Versioning.Mvc.ApiExplorer" Version="8.1.0" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.13" />
+    <PackageReference Include="Microsoft.OpenApi" Version="2.12.2" />
+
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
     <PackageReference Include="Scalar.AspNetCore" Version="2.18.0" />
     <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.13" />
@@ -29,6 +41,9 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <!-- تولید فایل XML Documentation برای نمایش توضیحات فارسی در OpenAPI -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn>
   </PropertyGroup>
 
 </Project>
