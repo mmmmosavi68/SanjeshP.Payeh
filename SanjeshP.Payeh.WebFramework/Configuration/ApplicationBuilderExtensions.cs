@@ -19,7 +19,7 @@ namespace SanjeshP.Payeh.WebFramework.Configuration
             if (env.IsDevelopment())
             {
                 //app.UseDeveloperExceptionPage();
-                app.UseSwagger();
+                //app.UseSwagger();
             }
             else
             {

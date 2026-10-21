@@ -1,39 +1,62 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using Microsoft.AspNetCore.Identity;
-using SanjeshP.Payeh.Entities.User;
-using SanjeshP.Payeh.Data;
+﻿using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.IdentityModel.Tokens;
 using SanjeshP.Payeh.Common;
-
+using SanjeshP.Payeh.Services.JwtService;
 
 namespace SanjeshP.Payeh.WebFramework.Configuration
 {
     public static class IdentityConfigurationExtensions
     {
-        public static void AddCustomIdentity(this IServiceCollection services, IdentitySettings settings)
+        public static void AddJwtAuthentication(this IServiceCollection services, JwtSettings jwtSettings)
         {
-            services.AddIdentity<User, Role>(identityOptions =>
+            services.AddAuthentication(options =>
             {
-                //Password Settings
-                identityOptions.Password.RequireDigit = settings.PasswordRequireDigit;
-                identityOptions.Password.RequiredLength = settings.PasswordRequiredLength;
-                ////identityOptions.Password.RequireNonAlphanumeric = settings.PasswordRequireNonAlphanumic; //#@!
-                identityOptions.Password.RequireUppercase = settings.PasswordRequireUppercase;
-                identityOptions.Password.RequireLowercase = settings.PasswordRequireLowercase;
-
-                //UserName Settings
-                ////identityOptions.User.RequireUniqueEmail = settings.RequireUniqueEmail;
-
-                //Singin Settings
-                //identityOptions.SignIn.RequireConfirmedEmail = false;
-                //identityOptions.SignIn.RequireConfirmedPhoneNumber = false;
-
-                //Lockout Settings
-                //identityOptions.Lockout.MaxFailedAccessAttempts = 5;
-                //identityOptions.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
-                //identityOptions.Lockout.AllowedForNewUsers = false;
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
             })
-            .AddEntityFrameworkStores<ApplicationDbContext>()
-            .AddDefaultTokenProviders();
+            .AddJwtBearer(options =>
+            {
+                var secretKey = Encoding.UTF8.GetBytes(jwtSettings.SecretKey);
+                var issuerSigningKey = new SymmetricSecurityKey(secretKey);
+
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidIssuer = jwtSettings.Issuer,
+                    ValidateAudience = true,
+                    ValidAudience = jwtSettings.Audience,
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = issuerSigningKey,
+                    ValidateLifetime = true,
+                    ClockSkew = TimeSpan.Zero
+                };
+
+                options.Events = new JwtBearerEvents
+                {
+                    OnTokenValidated = async context =>
+                    {
+                        var jwtService = context.HttpContext.RequestServices.GetRequiredService<IJwtService>();
+                        var jti = context.Principal?.Claims.FirstOrDefault(x => x.Type == System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Jti)?.Value;
+                        var userIdStr = context.Principal?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+                        if (string.IsNullOrEmpty(jti) || !Guid.TryParse(userIdStr, out var userId))
+                        {
+                            context.Fail("Unauthorized");
+                            return;
+                        }
+
+                        var isValid = await jwtService.ValidateTokenAsync(jti, userId, context.HttpContext.RequestAborted);
+                        if (!isValid)
+                        {
+                            context.Fail("Token is revoked or expired.");
+                        }
+                    }
+                };
+            });
         }
     }
 }

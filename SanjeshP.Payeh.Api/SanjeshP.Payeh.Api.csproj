@@ -9,10 +9,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Controllers\" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\SanjeshP.Payeh.WebFramework\SanjeshP.Payeh.WebFramework.csproj" />
   </ItemGroup>
 

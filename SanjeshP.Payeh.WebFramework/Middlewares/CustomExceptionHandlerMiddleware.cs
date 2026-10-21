@@ -1,138 +1,45 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.IdentityModel.Tokens;
-using Newtonsoft.Json;
-using SanjeshP.Payeh.Common;
-using System.Net;
-using SanjeshP.Payeh.Common.Exceptions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Builder;
+﻿using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using SanjeshP.Payeh.Common;
+using SanjeshP.Payeh.Common.Exceptions;
 using SanjeshP.Payeh.WebFramework.Api;
-using Microsoft.Extensions.Hosting;
+using System.Net;
+using System.Text.Json;
 
 namespace SanjeshP.Payeh.WebFramework.Middlewares
 {
-    public static class CustomExceptionHandlerMiddlewareExtensions
+    public class CustomExceptionHandler : IExceptionHandler
     {
-        public static IApplicationBuilder UseCustomExceptionHandler(this IApplicationBuilder builder)
-        {
-            return builder.UseMiddleware<CustomExceptionHandlerMiddleware>();
-        }
-    }
+        private readonly ILogger<CustomExceptionHandler> _logger;
 
-    public class CustomExceptionHandlerMiddleware
-    {
-        private readonly RequestDelegate _next;
-        private readonly IWebHostEnvironment _env;
-        private readonly ILogger<CustomExceptionHandlerMiddleware> _logger;
-
-        public CustomExceptionHandlerMiddleware(RequestDelegate next,
-            IWebHostEnvironment env,
-            ILogger<CustomExceptionHandlerMiddleware> logger)
+        public CustomExceptionHandler(ILogger<CustomExceptionHandler> logger)
         {
-            _next = next;
-            _env = env;
             _logger = logger;
         }
 
-        public async Task Invoke(HttpContext context)
+        public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
         {
-            string message = null;
-            HttpStatusCode httpStatusCode = HttpStatusCode.InternalServerError;
-            ApiResultStatusCode apiStatusCode = ApiResultStatusCode.ServerError;
+            _logger.LogError(exception, exception.Message);
 
-            try
-            {
-                await _next(context);
-            }
-            catch (AppException exception)
-            {
-                _logger.LogError(exception, exception.Message);
-                httpStatusCode = exception.HttpStatusCode;
-                apiStatusCode = exception.ApiStatusCode;
+            var statusCode = HttpStatusCode.InternalServerError;
+            var message = "خطای سرور رخ داده است.";
 
-                if (_env.IsDevelopment())
-                {
-                    var dic = new Dictionary<string, string>
-                    {
-                        ["Exception"] = exception.Message,
-                        ["StackTrace"] = exception.StackTrace,
-                    };
-                    if (exception.InnerException != null)
-                    {
-                        dic.Add("InnerException.Exception", exception.InnerException.Message);
-                        dic.Add("InnerException.StackTrace", exception.InnerException.StackTrace);
-                    }
-                    if (exception.AdditionalData != null)
-                        dic.Add("AdditionalData", JsonConvert.SerializeObject(exception.AdditionalData));
-
-                    message = JsonConvert.SerializeObject(dic);
-                }
-                else
-                {
-                    message = exception.Message;
-                }
-                await WriteToResponseAsync();
-            }
-            catch (SecurityTokenExpiredException exception)
+            if (exception is AppException appException)
             {
-                _logger.LogError(exception, exception.Message);
-                SetUnAuthorizeResponse(exception);
-                await WriteToResponseAsync();
-            }
-            catch (UnauthorizedAccessException exception)
-            {
-                _logger.LogError(exception, exception.Message);
-                SetUnAuthorizeResponse(exception);
-                await WriteToResponseAsync();
-            }
-            catch (Exception exception)
-            {
-                _logger.LogError(exception, exception.Message);
-
-                if (_env.IsDevelopment())
-                {
-                    var dic = new Dictionary<string, string>
-                    {
-                        ["Exception"] = exception.Message,
-                        ["StackTrace"] = exception.StackTrace,
-                    };
-                    message = JsonConvert.SerializeObject(dic);
-                }
-                await WriteToResponseAsync();
+                // استفاده از HttpStatusCode یا StatusCode بسته به تعریف کلاس AppException شما
+                statusCode = appException.HttpStatusCode;
+                message = appException.Message;
             }
 
-            async Task WriteToResponseAsync()
-            {
-                if (context.Response.HasStarted)
-                    throw new InvalidOperationException("The response has already started, the http status code middleware will not be executed.");
+            httpContext.Response.StatusCode = (int)statusCode;
+            httpContext.Response.ContentType = "application/json";
 
-                var result = new ApiResult(false, apiStatusCode, message);
-                var json = JsonConvert.SerializeObject(result);
+            var result = new ApiResult(false, ApiResultStatusCode.ServerError, message);
+            var json = JsonSerializer.Serialize(result);
 
-                context.Response.StatusCode = (int)httpStatusCode;
-                context.Response.ContentType = "application/json";
-                await context.Response.WriteAsync(json);
-            }
-
-            void SetUnAuthorizeResponse(Exception exception)
-            {
-                httpStatusCode = HttpStatusCode.Unauthorized;
-                apiStatusCode = ApiResultStatusCode.UnAuthorized;
-
-                if (_env.IsDevelopment())
-                {
-                    var dic = new Dictionary<string, string>
-                    {
-                        ["Exception"] = exception.Message,
-                        ["StackTrace"] = exception.StackTrace
-                    };
-                    if (exception is SecurityTokenExpiredException tokenException)
-                        dic.Add("Expires", tokenException.Expires.ToString());
-                     
-                    message = JsonConvert.SerializeObject(dic);
-                }
-            }
+            await httpContext.Response.WriteAsync(json, cancellationToken);
+            return true;
         }
     }
 }

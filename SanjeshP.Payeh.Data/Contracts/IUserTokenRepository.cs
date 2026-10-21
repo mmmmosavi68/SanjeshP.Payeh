@@ -4,6 +4,7 @@ namespace SanjeshP.Payeh.Data.Contracts
 {
     public interface IUserTokenRepository : IEFRepository<UserToken>
     {
-        Task<UserToken> CreateToken(User user, bool allowMultipleSessions, CancellationToken cancellationToken);
+        Task<UserToken?> GetByJtiAsync(string jti, CancellationToken cancellationToken);
+        Task<List<UserToken>> GetActiveTokensByUserIdAsync(Guid userId, CancellationToken cancellationToken);
     }
 }

@@ -2,127 +2,100 @@
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using SanjeshP.Payeh.Common;
+using SanjeshP.Payeh.Data;
+using SanjeshP.Payeh.Data.Contracts;
+using SanjeshP.Payeh.Entities.User;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using SanjeshP.Payeh.Entities.User;
 
 namespace SanjeshP.Payeh.Services.JwtService
 {
     public class JwtService : IJwtService, IScopedDependency
     {
-        private readonly SiteSettings _siteSetting;
-        public JwtService(IOptionsSnapshot<SiteSettings> settings)
+        private readonly SiteSettings _siteSettings;
+        private readonly IUserTokenRepository _userTokenRepository;
+        private readonly ApplicationDbContext _dbContext;
+
+        public JwtService(IOptions<SiteSettings> siteSettings, IUserTokenRepository userTokenRepository, ApplicationDbContext dbContext)
         {
-            _siteSetting = settings.Value;
-        }
-        #region When use user data
-        public async Task<AccessToken> GenerateAsync(User user)
-        {
-            var secretKey = Encoding.UTF8.GetBytes(_siteSetting.JwtSettings.SecretKey); // longer that 48 character
-            var signingCredentials = new SigningCredentials(new SymmetricSecurityKey(secretKey), SecurityAlgorithms.HmacSha256Signature);
-
-            var encryption_key = Encoding.UTF8.GetBytes(_siteSetting.JwtSettings.EncryptKey); //must be 48 character
-            var encryptingCredentials = new EncryptingCredentials(new SymmetricSecurityKey(encryption_key), SecurityAlgorithms.Aes128KW, SecurityAlgorithms.Aes128CbcHmacSha256);
-
-            var claims = _getClaims(user);
-
-            var descriptor = new SecurityTokenDescriptor
-            {
-                Issuer = _siteSetting.JwtSettings.Issuer,
-                Audience = _siteSetting.JwtSettings.Audience,
-                IssuedAt = DateTime.Now,
-                NotBefore = DateTime.Now.AddMinutes(_siteSetting.JwtSettings.NotBeforeMinutes),
-                Expires = DateTime.Now.AddMinutes(_siteSetting.JwtSettings.ExpirationMinutes),
-                SigningCredentials = signingCredentials,
-                EncryptingCredentials = encryptingCredentials,
-                Subject = new ClaimsIdentity(await claims)
-            };
-
-            // Don't convert claim DotNet to jwt  ---Don't required
-            //JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
-            //JwtSecurityTokenHandler.DefaultMapInboundClaims = false;
-            //JwtSecurityTokenHandler.DefaultOutboundClaimTypeMap.Clear();
-
-            var tokenHandler = new JwtSecurityTokenHandler();
-
-            var securityToken = tokenHandler.CreateJwtSecurityToken(descriptor);
-
-            //var jwt = tokenHandler.WriteToken(securityToken);
-
-            return new AccessToken(securityToken);
+            _siteSettings = siteSettings.Value;
+            _userTokenRepository = userTokenRepository;
+            _dbContext = dbContext;
         }
 
-        private async Task<IEnumerable<Claim>> _getClaims(User user)
+        public async Task<AccessToken> GenerateAsync(User user, string deviceName, string ipAddress, CancellationToken cancellationToken)
         {
-            //JwtRegisteredClaimNames.Sub
-            var securityStampClaimType = new ClaimsIdentityOptions().SecurityStampClaimType;
+            var jti = Guid.NewGuid().ToString();
+            var expires = DateTime.UtcNow.AddMinutes(_siteSettings.JwtSettings.ExpirationMinutes);
 
-            var list = new List<Claim>
+            var claims = new List<Claim>
             {
-                new Claim(ClaimTypes.Name, user.UserName),
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                new Claim(ClaimTypes.MobilePhone,user.PhoneNumber),
-                new Claim(securityStampClaimType, user.SecurityStamp.ToString()),
+                new Claim(ClaimTypes.Name, user.UserName ?? string.Empty),
+                new Claim(JwtRegisteredClaimNames.Jti, jti)
             };
 
-            var roles = new Role[] { new Role { RoleNameEn = "Admin" } };
-            foreach (var role in roles)
-                list.Add(new Claim(ClaimTypes.Role, role.RoleNameEn));
-
-            return list;
-        }
-        #endregion
-
-
-        #region  When use user token
-        public async Task<AccessToken> GenerateAsync(UserToken userToken)
-        {
-            var secretKey = Encoding.UTF8.GetBytes(_siteSetting.JwtSettings.SecretKey); // longer that 48 character
+            var secretKey = Encoding.UTF8.GetBytes(_siteSettings.JwtSettings.SecretKey);
             var signingCredentials = new SigningCredentials(new SymmetricSecurityKey(secretKey), SecurityAlgorithms.HmacSha256Signature);
-
-            var encryption_key = Encoding.UTF8.GetBytes(_siteSetting.JwtSettings.EncryptKey); //must be 48 character
-            var encryptingCredentials = new EncryptingCredentials(new SymmetricSecurityKey(encryption_key), SecurityAlgorithms.Aes128KW, SecurityAlgorithms.Aes128CbcHmacSha256);
-
-            var claims = _getClaims(userToken);
 
             var descriptor = new SecurityTokenDescriptor
             {
-                Issuer = _siteSetting.JwtSettings.Issuer,
-                Audience = _siteSetting.JwtSettings.Audience,
-                IssuedAt = DateTime.Now,
-                NotBefore = DateTime.Now.AddMinutes(_siteSetting.JwtSettings.NotBeforeMinutes),
-                Expires = DateTime.Now.AddMinutes(_siteSetting.JwtSettings.ExpirationMinutes),
+                Subject = new ClaimsIdentity(claims),
+                Expires = expires,
                 SigningCredentials = signingCredentials,
-                EncryptingCredentials = encryptingCredentials,
-                Subject = new ClaimsIdentity(await claims)
+                Issuer = _siteSettings.JwtSettings.Issuer,
+                Audience = _siteSettings.JwtSettings.Audience
             };
-
-            // Don't convert claim DotNet to jwt  ---Don't required
-            //JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
-            //JwtSecurityTokenHandler.DefaultMapInboundClaims = false;
-            //JwtSecurityTokenHandler.DefaultOutboundClaimTypeMap.Clear();
 
             var tokenHandler = new JwtSecurityTokenHandler();
 
+            // استفاده از CreateJwtSecurityToken برای تولید خروجی از نوع JwtSecurityToken سازگار با کلاس AccessToken
             var securityToken = tokenHandler.CreateJwtSecurityToken(descriptor);
 
-            //var jwt = tokenHandler.WriteToken(securityToken);
+            var userToken = new UserToken
+            {
+                UserId = user.Id,
+                Jti = jti,
+                DeviceName = deviceName,
+                IpAddress = ipAddress,
+                TokenExpireDate = expires,
+                RefreshTokenExpireDate = expires.AddDays(7)
+            };
 
+            await _userTokenRepository.AddAsync(userToken, cancellationToken);
+            await _dbContext.SaveChangesAsync(cancellationToken);
+
+            // ساخت شیء AccessToken با استفاده از سازنده‌ای که در فایل AccessToken.cs خودتان تعریف کرده‌اید
             return new AccessToken(securityToken);
         }
 
-        private async Task<IEnumerable<Claim>> _getClaims(UserToken userToken)
+        public async Task RevokeAsync(string jti, CancellationToken cancellationToken)
         {
-            var securityStampClaimType = new ClaimsIdentityOptions().SecurityStampClaimType;
-            var list = new List<Claim>
+            var userToken = await _userTokenRepository.GetByJtiAsync(jti, cancellationToken);
+            if (userToken != null)
             {
-                new Claim(ClaimTypes.NameIdentifier,userToken.Id.ToString()),
-            };
-            return list;
+                userToken.RevocationDate = DateTime.UtcNow;
+                _userTokenRepository.Update(userToken);
+                await _dbContext.SaveChangesAsync(cancellationToken);
+            }
         }
-        #endregion
 
+        public async Task RevokeAllAsync(Guid userId, CancellationToken cancellationToken)
+        {
+            var tokens = await _userTokenRepository.GetActiveTokensByUserIdAsync(userId, cancellationToken);
+            foreach (var token in tokens)
+            {
+                token.RevocationDate = DateTime.UtcNow;
+                _userTokenRepository.Update(token);
+            }
+            await _dbContext.SaveChangesAsync(cancellationToken);
+        }
 
+        public async Task<bool> ValidateTokenAsync(string jti, Guid userId, CancellationToken cancellationToken)
+        {
+            var userToken = await _userTokenRepository.GetByJtiAsync(jti, cancellationToken);
+            return userToken != null && userToken.UserId == userId && userToken.RevocationDate == null && userToken.TokenExpireDate > DateTime.UtcNow;
+        }
     }
 }
