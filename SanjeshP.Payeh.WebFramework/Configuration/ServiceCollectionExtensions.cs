@@ -13,6 +13,7 @@ using SanjeshP.Payeh.Data.Contracts;
 using SanjeshP.Payeh.Data.Repositories;
 using SanjeshP.Payeh.Entities.User;
 using SanjeshP.Payeh.Services.Captcha;
+using SanjeshP.Payeh.Services.Permissions;
 using SanjeshP.Payeh.Services.Sms;
 using SanjeshP.Payeh.WebFramework.CustomMapping;
 using System.Reflection;
@@ -35,7 +36,7 @@ namespace SanjeshP.Payeh.WebFramework.Configuration
 
             services.AddHttpContextAccessor();
             services.AddHttpClient();
-
+            services.AddMemoryCache();
             services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseSqlServer(configuration.GetConnectionString("SqlServer")));
 
@@ -128,6 +129,7 @@ namespace SanjeshP.Payeh.WebFramework.Configuration
         {
             // مخزن عمومی ژنریک
             services.AddScoped(typeof(IEFRepository<>), typeof(EFRepository<>));
+            //services.AddScoped<IPermissionService, PermissionService>();
 
             // اسکن اسمبلی‌های Data و Services و ثبت هر کلاسی که IScopedDependency دارد.
             // (در نسخه‌ی قبل هیچ‌کدام از این سرویس‌ها ثبت نمی‌شدند و احراز هویت در عمل کار نمی‌کرد!)

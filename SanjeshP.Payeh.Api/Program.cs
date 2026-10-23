@@ -1,3 +1,5 @@
+using Autofac.Core;
+using SanjeshP.Payeh.Services.Permissions;
 using SanjeshP.Payeh.WebFramework.Configuration;
 using SanjeshP.Payeh.WebFramework.Middlewares;
 
@@ -9,7 +11,6 @@ builder.Services.AddMinimalServices(builder.Configuration);
 // مدیریت مرکزی خطا با IExceptionHandler — همه‌ی خطاها در قالب ApiResult برمی‌گردند.
 builder.Services.AddExceptionHandler<CustomExceptionHandler>();
 builder.Services.AddProblemDetails();
-
 var app = builder.Build();
 
 // اولین میان‌افزار زنجیره تا هر خطایی (حتی خارج از MVC) گرفته شود.
@@ -25,7 +26,7 @@ app.UseRateLimiter();
 
 app.UseAuthentication();
 app.UseAuthorization();
-
+app.UseMenuAuthorization();
 app.MapControllers();
 
 // اعمال Migrationهای معوق و داده‌های اولیه (نقش‌ها و کاربر ادمین)
