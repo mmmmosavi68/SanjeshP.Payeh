@@ -10,9 +10,6 @@ namespace SanjeshP.Payeh.Entities.Group
         [Display(Name = "عنوان گروه")]
         public string GroupName { get; set; }
 
-        [Display(Name = "کاربر")]
-        public virtual User.User Creator { get; set; }
-
         public virtual ICollection<GroupUsers> GroupUsers { get; set; } = new List<GroupUsers>();
 
     }

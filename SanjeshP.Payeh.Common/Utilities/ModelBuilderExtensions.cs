@@ -1,11 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Pluralize.NET;
-using System;
-using System.Collections.Generic;
 using System.Reflection;
-using System.Reflection.Emit;
-using System.Text;
 
 namespace SanjeshP.Payeh.Common.Utilities
 {
@@ -20,8 +16,8 @@ namespace SanjeshP.Payeh.Common.Utilities
             Pluralizer pluralizer = new Pluralizer();
             foreach (IMutableEntityType entityType in modelBuilder.Model.GetEntityTypes())
             {
-                //string tableName = entityType.GetTableName();
-                //entityType.SetTableName(pluralizer.Singularize(tableName));
+                string tableName = entityType.GetTableName();
+                entityType.SetTableName(pluralizer.Singularize(tableName));
             }
         }
 
@@ -34,8 +30,8 @@ namespace SanjeshP.Payeh.Common.Utilities
             Pluralizer pluralizer = new Pluralizer();
             foreach (IMutableEntityType entityType in modelBuilder.Model.GetEntityTypes())
             {
-                //string tableName = entityType.GetTableName();
-                //entityType.SetTableName(pluralizer.Pluralize(tableName));
+                string tableName = entityType.GetTableName();
+                entityType.SetTableName(pluralizer.Pluralize(tableName));
             }
         }
 
@@ -60,9 +56,9 @@ namespace SanjeshP.Payeh.Common.Utilities
         {
             foreach (IMutableEntityType entityType in modelBuilder.Model.GetEntityTypes())
             {
-                //IMutableProperty property = entityType.GetProperties().SingleOrDefault(p => p.Name.Equals(propertyName, StringComparison.OrdinalIgnoreCase));
-                //if (property != null && property.ClrType == propertyType)
-                //    property.SetDefaultValueSql(defaultValueSql);
+                IMutableProperty property = entityType.GetProperties().SingleOrDefault(p => p.Name.Equals(propertyName, StringComparison.OrdinalIgnoreCase));
+                if (property != null && property.ClrType == propertyType)
+                    property.SetDefaultValueSql(defaultValueSql);
             }
         }
 
@@ -117,6 +113,28 @@ namespace SanjeshP.Payeh.Common.Utilities
 
             foreach (Type type in types)
                 modelBuilder.Entity(type);
+        }
+
+        public static void AddGetDateForCreateDateConvention(this ModelBuilder modelBuilder)
+        {
+            modelBuilder.AddDefaultValueSqlConventionGetDate("CreateDate", typeof(DateTime), "GETDATE()");
+        }
+
+        /// <summary>
+        /// Set DefaultValueSql for sepecific property name and type
+        /// </summary>
+        /// <param name="modelBuilder"></param>
+        /// <param name="propertyName">Name of property wants to set DefaultValueSql for</param>
+        /// <param name="propertyType">Type of property wants to set DefaultValueSql for </param>
+        /// <param name="defaultValueSql">DefaultValueSql like "NEWSEQUENTIALID()"</param>
+        public static void AddDefaultValueSqlConventionGetDate(this ModelBuilder modelBuilder, string propertyName, Type propertyType, string defaultValueSql)
+        {
+            foreach (IMutableEntityType entityType in modelBuilder.Model.GetEntityTypes())
+            {
+                IMutableProperty property = entityType.GetProperties().SingleOrDefault(p => p.Name.Equals(propertyName, StringComparison.OrdinalIgnoreCase));
+                if (property != null && property.ClrType == propertyType)
+                    property.SetDefaultValueSql(defaultValueSql);
+            }
         }
     }
 }

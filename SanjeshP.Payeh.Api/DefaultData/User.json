@@ -1,0 +1,15 @@
+[
+  {
+    "Id": "29f48a89-338f-4a3e-b971-eb15f525f920",
+    "UserName": "Administrator",
+    "NormalizedUserName": "ADMINISTRATOR",
+    "EmailAddress": "mmmosavi68@gmail.com",
+    "NormalizedEmailAddress": "MMMOSAVI68@GMAIL.COM",
+    "EmailAddressConfirmed": true,
+    "PasswordHash": "$2a$11$ys6/LSATgKsCv7ZjMzgzpu0FiKtpmAO/tj4HRtOUPYYHU6.iP7ZvG",
+    "SecurityStamp": "8de20ba5-a48e-4676-b40b-d72049e715e4",
+    "PhoneNumber": "09373221160",
+    "PhoneNumberConfirmed": true,
+    "TwoFactorEnabled": false
+  }
+]

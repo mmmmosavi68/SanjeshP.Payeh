@@ -15,6 +15,7 @@ using SanjeshP.Payeh.Entities.User;
 using SanjeshP.Payeh.Services.Captcha;
 using SanjeshP.Payeh.Services.Sms;
 using SanjeshP.Payeh.WebFramework.CustomMapping;
+using System.Reflection;
 using System.Text.Encodings.Web;
 using System.Threading.RateLimiting;
 
@@ -49,7 +50,12 @@ namespace SanjeshP.Payeh.WebFramework.Configuration
             // AutoMapper — نکته‌ی لایسنس در AutoMapperConfiguration توضیح داده شده است.
             // اسمبلی Api از طریق نقطه‌ی ورود برنامه پیدا می‌شود تا Profileهای DTO آنجا هم ثبت شوند.
             var entryAssembly = System.Reflection.Assembly.GetEntryAssembly() ?? typeof(ServiceCollectionExtensions).Assembly;
-            services.InitializeAutoMapper(configuration, typeof(ServiceCollectionExtensions).Assembly, entryAssembly);
+            //services.InitializeAutoMapper(configuration, typeof(ServiceCollectionExtensions).Assembly, entryAssembly);
+
+            services.InitializeAutoMapper(
+                configuration,
+                typeof(ServiceCollectionExtensions).Assembly,
+                entryAssembly);
 
             // OpenAPI داخلی .NET برای هر نسخه‌ی API یک سند مستقل می‌سازد.
             services.AddOpenApiDocuments();

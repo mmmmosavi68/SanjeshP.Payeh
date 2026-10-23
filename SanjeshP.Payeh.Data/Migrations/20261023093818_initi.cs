@@ -12,7 +12,7 @@ namespace SanjeshP.Payeh.Data.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
-                name: "Code",
+                name: "Codes",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
@@ -32,16 +32,16 @@ namespace SanjeshP.Payeh.Data.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Code", x => x.Id);
+                    table.PrimaryKey("PK_Codes", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Code_Code_ParentId",
+                        name: "FK_Codes_Codes_ParentId",
                         column: x => x.ParentId,
-                        principalTable: "Code",
+                        principalTable: "Codes",
                         principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
-                name: "IntBaseEntity",
+                name: "IntBaseEntities",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
@@ -55,14 +55,14 @@ namespace SanjeshP.Payeh.Data.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_IntBaseEntity", x => x.Id);
+                    table.PrimaryKey("PK_IntBaseEntities", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
-                name: "Menu",
+                name: "Menus",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "NEWSEQUENTIALID()"),
                     MenuTitle = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     ParentId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     PageCode = table.Column<int>(type: "int", nullable: true),
@@ -83,16 +83,16 @@ namespace SanjeshP.Payeh.Data.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Menu", x => x.Id);
+                    table.PrimaryKey("PK_Menus", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Menu_Menu_ParentId",
+                        name: "FK_Menus_Menus_ParentId",
                         column: x => x.ParentId,
-                        principalTable: "Menu",
+                        principalTable: "Menus",
                         principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
-                name: "Role",
+                name: "Roles",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
@@ -109,14 +109,14 @@ namespace SanjeshP.Payeh.Data.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Role", x => x.Id);
+                    table.PrimaryKey("PK_Roles", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
-                name: "User",
+                name: "Users",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "NEWSEQUENTIALID()"),
                     UserName = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     NormalizedUserName = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     EmailAddress = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
@@ -142,14 +142,14 @@ namespace SanjeshP.Payeh.Data.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_User", x => x.Id);
+                    table.PrimaryKey("PK_Users", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
-                name: "Group",
+                name: "Groups",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "NEWSEQUENTIALID()"),
                     GroupName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     CreatorId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
@@ -161,11 +161,11 @@ namespace SanjeshP.Payeh.Data.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Group", x => x.Id);
+                    table.PrimaryKey("PK_Groups", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Group_User_CreatorId",
+                        name: "FK_Groups_Users_CreatorId",
                         column: x => x.CreatorId,
-                        principalTable: "User",
+                        principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
@@ -189,24 +189,24 @@ namespace SanjeshP.Payeh.Data.Migrations
                 {
                     table.PrimaryKey("PK_UserAccessMenus", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_UserAccessMenus_Menu_MenuId",
+                        name: "FK_UserAccessMenus_Menus_MenuId",
                         column: x => x.MenuId,
-                        principalTable: "Menu",
+                        principalTable: "Menus",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "FK_UserAccessMenus_User_UserId",
+                        name: "FK_UserAccessMenus_Users_UserId",
                         column: x => x.UserId,
-                        principalTable: "User",
+                        principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
-                name: "UserOtp",
+                name: "UserOtps",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "NEWSEQUENTIALID()"),
                     UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     CodeHash = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
                     ExpireAt = table.Column<DateTime>(type: "datetime2", nullable: false),
@@ -224,17 +224,17 @@ namespace SanjeshP.Payeh.Data.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_UserOtp", x => x.Id);
+                    table.PrimaryKey("PK_UserOtps", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_UserOtp_User_UserId",
+                        name: "FK_UserOtps_Users_UserId",
                         column: x => x.UserId,
-                        principalTable: "User",
+                        principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
-                name: "UserProfile",
+                name: "UserProfiles",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
@@ -258,17 +258,17 @@ namespace SanjeshP.Payeh.Data.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_UserProfile", x => x.Id);
+                    table.PrimaryKey("PK_UserProfiles", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_UserProfile_User_UserId",
+                        name: "FK_UserProfiles_Users_UserId",
                         column: x => x.UserId,
-                        principalTable: "User",
+                        principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
-                name: "UserRole",
+                name: "UserRoles",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
@@ -284,26 +284,26 @@ namespace SanjeshP.Payeh.Data.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_UserRole", x => x.Id);
+                    table.PrimaryKey("PK_UserRoles", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_UserRole_Role_RoleId",
+                        name: "FK_UserRoles_Roles_RoleId",
                         column: x => x.RoleId,
-                        principalTable: "Role",
+                        principalTable: "Roles",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "FK_UserRole_User_UserId",
+                        name: "FK_UserRoles_Users_UserId",
                         column: x => x.UserId,
-                        principalTable: "User",
+                        principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
-                name: "UserSession",
+                name: "UserSessions",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "NEWSEQUENTIALID()"),
                     UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Jti = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: false),
                     RefreshTokenHash = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
@@ -324,20 +324,20 @@ namespace SanjeshP.Payeh.Data.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_UserSession", x => x.Id);
+                    table.PrimaryKey("PK_UserSessions", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_UserSession_User_UserId",
+                        name: "FK_UserSessions_Users_UserId",
                         column: x => x.UserId,
-                        principalTable: "User",
+                        principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
-                name: "UserToken",
+                name: "UserTokens",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "NEWSEQUENTIALID()"),
                     UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Jti = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     DeviceName = table.Column<string>(type: "nvarchar(max)", nullable: false),
@@ -354,11 +354,11 @@ namespace SanjeshP.Payeh.Data.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_UserToken", x => x.Id);
+                    table.PrimaryKey("PK_UserTokens", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_UserToken_User_UserId",
+                        name: "FK_UserTokens_Users_UserId",
                         column: x => x.UserId,
-                        principalTable: "User",
+                        principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
@@ -367,7 +367,7 @@ namespace SanjeshP.Payeh.Data.Migrations
                 name: "GroupUsers",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "NEWSEQUENTIALID()"),
                     UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     GroupId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
@@ -381,24 +381,24 @@ namespace SanjeshP.Payeh.Data.Migrations
                 {
                     table.PrimaryKey("PK_GroupUsers", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_GroupUsers_Group_GroupId",
+                        name: "FK_GroupUsers_Groups_GroupId",
                         column: x => x.GroupId,
-                        principalTable: "Group",
+                        principalTable: "Groups",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "FK_GroupUsers_User_UserId",
+                        name: "FK_GroupUsers_Users_UserId",
                         column: x => x.UserId,
-                        principalTable: "User",
+                        principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
-                name: "UserVerificationCode",
+                name: "UserVerificationCodes",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "NEWSEQUENTIALID()"),
                     TokenId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     VerificationCode = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: false),
                     VerificationType = table.Column<int>(type: "int", nullable: false),
@@ -413,11 +413,11 @@ namespace SanjeshP.Payeh.Data.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_UserVerificationCode", x => x.Id);
+                    table.PrimaryKey("PK_UserVerificationCodes", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_UserVerificationCode_UserToken_TokenId",
+                        name: "FK_UserVerificationCodes_UserTokens_TokenId",
                         column: x => x.TokenId,
-                        principalTable: "UserToken",
+                        principalTable: "UserTokens",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
@@ -447,28 +447,23 @@ namespace SanjeshP.Payeh.Data.Migrations
                         principalTable: "GroupUsers",
                         principalColumn: "Id");
                     table.ForeignKey(
-                        name: "FK_GroupAccessMenus_Group_GroupId",
+                        name: "FK_GroupAccessMenus_Groups_GroupId",
                         column: x => x.GroupId,
-                        principalTable: "Group",
+                        principalTable: "Groups",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "FK_GroupAccessMenus_Menu_MenuId",
+                        name: "FK_GroupAccessMenus_Menus_MenuId",
                         column: x => x.MenuId,
-                        principalTable: "Menu",
+                        principalTable: "Menus",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_Code_ParentId",
-                table: "Code",
+                name: "IX_Codes_ParentId",
+                table: "Codes",
                 column: "ParentId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Group_CreatorId",
-                table: "Group",
-                column: "CreatorId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_GroupAccessMenus_GroupId",
@@ -486,6 +481,11 @@ namespace SanjeshP.Payeh.Data.Migrations
                 column: "MenuId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Groups_CreatorId",
+                table: "Groups",
+                column: "CreatorId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_GroupUsers_GroupId",
                 table: "GroupUsers",
                 column: "GroupId");
@@ -496,8 +496,8 @@ namespace SanjeshP.Payeh.Data.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Menu_ParentId",
-                table: "Menu",
+                name: "IX_Menus_ParentId",
+                table: "Menus",
                 column: "ParentId");
 
             migrationBuilder.CreateIndex(
@@ -511,38 +511,38 @@ namespace SanjeshP.Payeh.Data.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_UserOtp_UserId",
-                table: "UserOtp",
+                name: "IX_UserOtps_UserId",
+                table: "UserOtps",
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_UserProfile_UserId",
-                table: "UserProfile",
+                name: "IX_UserProfiles_UserId",
+                table: "UserProfiles",
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_UserRole_RoleId",
-                table: "UserRole",
+                name: "IX_UserRoles_RoleId",
+                table: "UserRoles",
                 column: "RoleId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_UserRole_UserId",
-                table: "UserRole",
+                name: "IX_UserRoles_UserId",
+                table: "UserRoles",
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_UserSession_UserId",
-                table: "UserSession",
+                name: "IX_UserSessions_UserId",
+                table: "UserSessions",
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_UserToken_UserId",
-                table: "UserToken",
+                name: "IX_UserTokens_UserId",
+                table: "UserTokens",
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_UserVerificationCode_TokenId",
-                table: "UserVerificationCode",
+                name: "IX_UserVerificationCodes_TokenId",
+                table: "UserVerificationCodes",
                 column: "TokenId");
         }
 
@@ -550,49 +550,49 @@ namespace SanjeshP.Payeh.Data.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "Code");
+                name: "Codes");
 
             migrationBuilder.DropTable(
                 name: "GroupAccessMenus");
 
             migrationBuilder.DropTable(
-                name: "IntBaseEntity");
+                name: "IntBaseEntities");
 
             migrationBuilder.DropTable(
                 name: "UserAccessMenus");
 
             migrationBuilder.DropTable(
-                name: "UserOtp");
+                name: "UserOtps");
 
             migrationBuilder.DropTable(
-                name: "UserProfile");
+                name: "UserProfiles");
 
             migrationBuilder.DropTable(
-                name: "UserRole");
+                name: "UserRoles");
 
             migrationBuilder.DropTable(
-                name: "UserSession");
+                name: "UserSessions");
 
             migrationBuilder.DropTable(
-                name: "UserVerificationCode");
+                name: "UserVerificationCodes");
 
             migrationBuilder.DropTable(
                 name: "GroupUsers");
 
             migrationBuilder.DropTable(
-                name: "Menu");
+                name: "Menus");
 
             migrationBuilder.DropTable(
-                name: "Role");
+                name: "Roles");
 
             migrationBuilder.DropTable(
-                name: "UserToken");
+                name: "UserTokens");
 
             migrationBuilder.DropTable(
-                name: "Group");
+                name: "Groups");
 
             migrationBuilder.DropTable(
-                name: "User");
+                name: "Users");
         }
     }
 }

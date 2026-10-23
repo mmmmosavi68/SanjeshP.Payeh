@@ -15,7 +15,7 @@ namespace SanjeshP.Payeh.Api.Controllers.V1
     /// همه‌ی خروجی‌ها در قالب ApiResult هستند.
     /// </summary>
     [ApiVersion("1")]
-    [Authorize(Policy = "UserManagement")]
+    [Authorize]
     public class UsersController : BaseController
     {
         private readonly IUserService _userService;
@@ -37,7 +37,6 @@ namespace SanjeshP.Payeh.Api.Controllers.V1
             var result = await _userService.GetPagedAsync(
                 new UserQuery(query.PageNumber, query.PageSize, query.Search, query.IsActive, query.RoleId, query.SortBy, query.SortDirection),
                 cancellationToken);
-
             var items = _mapper.Map<IReadOnlyList<UserSelectDto>>(result.Items);
             return new PagedResult<UserSelectDto>(items, result.TotalCount, result.PageNumber, result.PageSize);
         }

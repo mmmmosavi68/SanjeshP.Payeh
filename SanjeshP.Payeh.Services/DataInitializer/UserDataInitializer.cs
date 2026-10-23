@@ -1,170 +1,342 @@
-﻿using System;
+﻿using Microsoft.EntityFrameworkCore;
+using SanjeshP.Payeh.Data.Contracts;
+using SanjeshP.Payeh.Entities.Common;
+using SanjeshP.Payeh.Entities.Group;
+using SanjeshP.Payeh.Entities.Menu;
+using SanjeshP.Payeh.Entities.User;
+using System;
 using System.Collections.Generic;
-using System.Data;
-using System.Text;
-using System.Text.RegularExpressions;
+using System.IO;
+using System.Linq;
+using System.Text.Json;
+using GroupEntity = SanjeshP.Payeh.Entities.Group.Group;
+using MenuEntity = SanjeshP.Payeh.Entities.Menu.Menu;
+// namespace مربوط به IEFRepository<T> را از لایه Data خودتان اضافه کنید، مثلاً:
+// using SanjeshP.Payeh.Data.Contracts;
+
+// نام کلاس‌های User / Menu / Group با نام namespace هایشان یکی است؛ برای جلوگیری از ابهام alias می‌گیریم.
+using UserEntity = SanjeshP.Payeh.Entities.User.User;
 
 namespace SanjeshP.Payeh.Services.DataInitializer
 {
+    /// <summary>
+    /// ساخت داده‌های پیش‌فرض (کاربر مدیر، نقش، منوها، گروه و سطح دسترسی‌ها) از فایل‌های DefaultData.
+    /// ساختار همان نسخه قبلی است (IEFRepository + فایل JSON + بررسی وجود قبل از درج)، با این تغییرها:
+    /// - نام فیلدها مطابق BaseEntity جدید: CreatedDate / IsDeleted / CreatedBy (به‌جای CreateDate / IsDelete / Creator).
+    /// - UserGroup → GroupUsers، AccessMenusGroup → GroupAccessMenus، AccessMenus → UserAccessMenus.
+    /// - Role: RoleNameEn / NormalizedRoleNameEn / RoleNameFa (به‌جای RoleTitleEn / RoleTitleFa).
+    /// - تاریخ‌ها UTC هستند (هم‌راستا با BaseEntity).
+    /// - منوها به ترتیب درخت (والد قبل از فرزند) درج می‌شوند، نه بر اساس PageCode.
+    /// - برای هر جدول فقط یک‌بار کلیدهای موجود خوانده می‌شود، نه یک کوئری به‌ازای هر ردیف.
+    /// فرض: متد Add مخزن همان لحظه SaveChanges می‌کند (مثل نسخه قبلی که بعد از Add دوباره نقش را کوئری می‌کرد).
+    /// </summary>
     public class UserDataInitializer : IDataInitializer
     {
-        //private readonly IEFRepository<Role> eFRoleRepository;
-        //private readonly IEFRepository<User> eFUserRepository;
-        //private readonly IEFRepository<UserProfile> eFUserProfileRepository;
-        //private readonly IEFRepository<Menu> eFMenuRepository;
-        //private readonly IEFRepository<Group> eFGroupRepository;
-        //private readonly IEFRepository<UserGroup> eFUserGroupRepository;
-        //private readonly IEFRepository<AccessMenusGroup> eFAccessMenusGroupRepository;
-        //private readonly IEFRepository<AccessMenus> eFAccessMenusRepository;
-        //private readonly IEFRepository<UserRole> eFUserRoleRepository;
+        private const string AdminNormalizedUserName = "ADMINISTRATOR";
+        private const string AdminNormalizedRoleName = "ADMIN";
+        private const string DefaultHostIp = "::1";
+        private const string DataFolderName = "DefaultData";
 
-        //public UserDataInitializer(IEFRepository<Role> eFRoleRepository
-        //    , IEFRepository<User> eFUserRepository
-        //    , IEFRepository<UserProfile> eFUserProfileRepository
-        //    , IEFRepository<Menu> eFMenuRepository
-        //    , IEFRepository<Group> eFGroupRepository
-        //    , IEFRepository<UserGroup> eFUserGroupRepository
-        //    , IEFRepository<AccessMenusGroup> eFAccessMenusGroupRepository
-        //    , IEFRepository<AccessMenus> eFAccessMenusRepository
-        //    , IEFRepository<UserRole> eFUserRoleRepository)
-        //{
-        //    this.eFRoleRepository = eFRoleRepository;
-        //    this.eFUserRepository = eFUserRepository;
-        //    this.eFUserProfileRepository = eFUserProfileRepository;
-        //    this.eFMenuRepository = eFMenuRepository;
-        //    this.eFGroupRepository = eFGroupRepository;
-        //    this.eFUserGroupRepository = eFUserGroupRepository;
-        //    this.eFAccessMenusGroupRepository = eFAccessMenusGroupRepository;
-        //    this.eFAccessMenusRepository = eFAccessMenusRepository;
-        //    this.eFUserRoleRepository = eFUserRoleRepository;
-        //}
+        private static readonly JsonSerializerOptions JsonOptions = new()
+        {
+            PropertyNameCaseInsensitive = true,
+            AllowTrailingCommas = true,
+            ReadCommentHandling = JsonCommentHandling.Skip
+        };
+
+        private readonly IEFRepository<Role> eFRoleRepository;
+        private readonly IEFRepository<UserEntity> eFUserRepository;
+        private readonly IEFRepository<UserProfile> eFUserProfileRepository;
+        private readonly IEFRepository<MenuEntity> eFMenuRepository;
+        private readonly IEFRepository<GroupEntity> eFGroupRepository;
+        private readonly IEFRepository<GroupUsers> eFGroupUsersRepository;
+        private readonly IEFRepository<GroupAccessMenus> eFGroupAccessMenusRepository;
+        private readonly IEFRepository<UserAccessMenus> eFUserAccessMenusRepository;
+        private readonly IEFRepository<UserRole> eFUserRoleRepository;
+
+        public UserDataInitializer(
+              IEFRepository<Role> eFRoleRepository
+            , IEFRepository<UserEntity> eFUserRepository
+            , IEFRepository<UserProfile> eFUserProfileRepository
+            , IEFRepository<MenuEntity> eFMenuRepository
+            , IEFRepository<GroupEntity> eFGroupRepository
+            , IEFRepository<GroupUsers> eFGroupUsersRepository
+            , IEFRepository<GroupAccessMenus> eFGroupAccessMenusRepository
+            , IEFRepository<UserAccessMenus> eFUserAccessMenusRepository
+            , IEFRepository<UserRole> eFUserRoleRepository)
+        {
+            this.eFRoleRepository = eFRoleRepository;
+            this.eFUserRepository = eFUserRepository;
+            this.eFUserProfileRepository = eFUserProfileRepository;
+            this.eFMenuRepository = eFMenuRepository;
+            this.eFGroupRepository = eFGroupRepository;
+            this.eFGroupUsersRepository = eFGroupUsersRepository;
+            this.eFGroupAccessMenusRepository = eFGroupAccessMenusRepository;
+            this.eFUserAccessMenusRepository = eFUserAccessMenusRepository;
+            this.eFUserRoleRepository = eFUserRoleRepository;
+        }
 
         public void InitializeData()
         {
-            //    string path = Path.Combine(Environment.CurrentDirectory, @"DefaultData\");
+            var path = ResolveDataFolder();
 
-            //    var jsonUser = File.ReadAllText(path + "User.json");
-            //    var jUser = JsonConvert.DeserializeObject<List<User>>(jsonUser);
-            //    foreach (var menu in jUser)
-            //    {
-            //        var existMenu = eFUserRepository.TableNoTracking.Any(p => p.NormalizedUserName == menu.NormalizedUserName);
-            //        if (!existMenu)
-            //        {
-            //            menu.CreateDate = DateTime.Now;
-            //            menu.ExpireDate = DateTime.Now.AddYears(20);
-            //            eFUserRepository.Add(menu);
-            //        }
-            //    }
+            SeedUsers(path);
 
-            //    var user = eFUserRepository.TableNoTracking.Where(p => p.NormalizedUserName == "ADMINISTRATOR").SingleOrDefault();
+            // مدیر سیستم سازنده‌ی بقیه رکوردهاست (مثل نسخه قبلی)
+            var admin = eFUserRepository.TableNoTracking.IgnoreQueryFilters()
+                            .FirstOrDefault(p => p.NormalizedUserName == AdminNormalizedUserName)
+                        ?? throw new InvalidOperationException(
+                            $"کاربر {AdminNormalizedUserName} در User.json پیدا نشد.");
 
-            //    var jsonUserProfile = File.ReadAllText(path + "UserProfile.json");
-            //    var jUserProfile = JsonConvert.DeserializeObject<List<UserProfile>>(jsonUserProfile);
-            //    foreach (var menu in jUserProfile)
-            //    {
-            //        var existMenu = eFUserProfileRepository.TableNoTracking.Any(p => p.UserId == menu.UserId);
-            //        if (!existMenu)
-            //        {
-            //            menu.Creator = user.Id;
-            //            menu.CreateDate = DateTime.Now;
-            //            eFUserProfileRepository.Add(menu);
-            //        }
-            //    }
+            SeedUserProfiles(path, admin.Id);
+            SeedMenus(path, admin.Id);
+            SeedGroups(path, admin.Id);
+            SeedGroupUsers(path, admin.Id);
+            SeedGroupAccessMenus(path, admin.Id);
+            SeedUserAccessMenus(path, admin.Id);
+            SeedRolesAndAdminRole(path, admin.Id);
+        }
 
-            //var jsonMenu = File.ReadAllText(path + "Menu.json");
-            //var jMenu = JsonConvert.DeserializeObject<List<Menu>>(jsonMenu).OrderBy(u => u.PageCode);
-            //foreach (var menu in jMenu)
-            //{
-            //    var existMenu = eFMenuRepository.TableNoTracking.Any(p => p.Id == menu.Id);
-            //    if (!existMenu)
-            //    {
-            //        menu.Creator = user.Id;
-            //        menu.CreateDate = DateTime.Now;
-            //        eFMenuRepository.Add(menu);
-            //    }
-            //}
+        // ───────────────────────────── User ─────────────────────────────
 
-            //var jsonGroup = File.ReadAllText(path + "Group.json");
-            //var jGroup = JsonConvert.DeserializeObject<List<Group>>(jsonGroup);
-            //foreach (var menu in jGroup)
-            //{
-            //    var existMenu = eFGroupRepository.TableNoTracking.Any(p => p.UserGroupText == menu.UserGroupText);
-            //    if (!existMenu)
-            //    {
-            //        menu.Creator = user.Id;
-            //        menu.CreateDate = DateTime.Now;
-            //        eFGroupRepository.Add(menu);
-            //    }
-            //}
+        private void SeedUsers(string path)
+        {
+            var existing = eFUserRepository.TableNoTracking.IgnoreQueryFilters()
+                .Select(p => p.NormalizedUserName).ToList().ToHashSet();
 
-            //var jsonUserGroup = File.ReadAllText(path + "UserGroup.json");
-            //var jUserGroup = JsonConvert.DeserializeObject<List<UserGroup>>(jsonUserGroup);
-            //foreach (var menu in jUserGroup)
-            //{
-            //    var existMenu = eFUserGroupRepository.TableNoTracking.Any(p => p.Id == menu.Id);
-            //    if (!existMenu)
-            //    {
-            //        menu.Creator = user.Id;
-            //        menu.CreateDate = DateTime.Now;
-            //        eFUserGroupRepository.Add(menu);
-            //    }
-            //}
+            foreach (var user in ReadJson<UserEntity>(path, "User.json"))
+            {
+                user.NormalizedUserName ??= user.UserName.ToUpperInvariant();
+                user.NormalizedEmailAddress ??= user.EmailAddress?.ToUpperInvariant();
 
-            //var jsonAccessMenusGroup = File.ReadAllText(path + "AccessMenusGroup.json");
-            //var jAccessMenusGroup = JsonConvert.DeserializeObject<List<AccessMenusGroup>>(jsonAccessMenusGroup);
-            //foreach (var menu in jAccessMenusGroup)
-            //{
-            //    var existMenu = eFAccessMenusGroupRepository.TableNoTracking.Any(p => p.GroupId == menu.GroupId && p.ListMenuId == menu.ListMenuId);
-            //    if (!existMenu)
-            //    {
-            //        menu.Creator = user.Id;
-            //        menu.CreateDate = DateTime.Now;
-            //        eFAccessMenusGroupRepository.Add(menu);
-            //    }
-            //}
+                if (existing.Contains(user.NormalizedUserName))
+                    continue;
 
-            //var jsonAccessMenu = File.ReadAllText(path + "AccessMenus.json");
-            //var jAccessMenu = JsonConvert.DeserializeObject<List<AccessMenus>>(jsonAccessMenu);
-            //foreach (var menu in jAccessMenu)
-            //{
-            //    var existMenu = eFAccessMenusRepository.TableNoTracking.Any(p => p.UserId == menu.UserId && p.ListMenuId == menu.ListMenuId);
-            //    if (!existMenu)
-            //    {
-            //        menu.Creator = user.Id;
-            //        menu.CreateDate = DateTime.Now;
-            //        eFAccessMenusRepository.Add(menu);
-            //    }
-            //}
+                Stamp(user, user.Id);                       // کاربر مدیر خودش سازنده‌ی خودش است
+                user.ExpireDate = DateTime.UtcNow.AddYears(20);
+                eFUserRepository.Add(user);
+            }
+        }
 
-            //    var jsonRole = File.ReadAllText(path + "Role.json");
-            //    var jRole = JsonConvert.DeserializeObject<List<Role>>(jsonRole);
-            //    foreach (var menu in jRole)
-            //    {
-            //        var existMenu = eFRoleRepository.TableNoTracking.Any(p => p.RoleTitleEn == menu.RoleTitleEn && p.RoleTitleFa == menu.RoleTitleFa);
-            //        if (!existMenu)
-            //        {
-            //            menu.Creator = user.Id;
-            //            menu.CreateDate = DateTime.Now;
-            //            eFRoleRepository.Add(menu);
-            //        }
-            //    }
+        // ──────────────────────────── UserProfile ────────────────────────────
 
-            //    var role = eFRoleRepository.TableNoTracking.Where(p => p.NormalizedRoleTitleEn == "ADMIN").SingleOrDefault();
-            //    var existuserRole = eFUserRoleRepository.TableNoTracking.Any(p => p.UserId == user.Id && p.RoleId == role.Id);
-            //    if (!existuserRole)
-            //    {
-            //        UserRole userRole = new UserRole
-            //        {
-            //            UserId = user.Id,
-            //            RoleId = role.Id,
-            //            IsActive = true,
-            //            IsDelete = false,
-            //            CreateDate = DateTime.Now,
-            //            Creator = user.Id,
-            //            HostIp = "::1"
-            //        };
-            //        eFUserRoleRepository.Add(userRole);
-            //    }
+        private void SeedUserProfiles(string path, Guid adminId)
+        {
+            var existing = eFUserProfileRepository.TableNoTracking.IgnoreQueryFilters()
+                .Select(p => p.UserId).ToList().ToHashSet();
+
+            foreach (var profile in ReadJson<UserProfile>(path, "UserProfile.json"))
+            {
+                if (existing.Contains(profile.UserId))
+                    continue;
+
+                Stamp(profile, adminId);
+                eFUserProfileRepository.Add(profile);
+            }
+        }
+
+        // ─────────────────────────────── Menu ───────────────────────────────
+
+        private void SeedMenus(string path, Guid adminId)
+        {
+            var existing = eFMenuRepository.TableNoTracking.IgnoreQueryFilters()
+                .Select(p => p.Id).ToList().ToHashSet();
+
+            var menus = ReadJson<MenuEntity>(path, "Menu.json");
+
+            foreach (var menu in OrderParentsFirst(menus))
+            {
+                if (existing.Contains(menu.Id))
+                    continue;
+
+                // ستون‌های رشته‌ای Menu در Entity غیرقابل‌null هستند (NOT NULL در دیتابیس)،
+                // ولی منوهای والد Controller/Action ندارند و Path در همه null است.
+                menu.Path ??= string.Empty;
+                menu.Area ??= string.Empty;
+                menu.ControllerName ??= string.Empty;
+                menu.ActionName ??= string.Empty;
+                menu.CssClass ??= string.Empty;
+                menu.Icon ??= string.Empty;
+                menu.Link ??= string.Empty;
+
+                // IsActive / IsDeleted از خود JSON می‌آید (منوهای حذف‌شده‌ی قدیمی همان‌طور حذف‌شده می‌مانند)
+                Stamp(menu, adminId);
+                eFMenuRepository.Add(menu);
+            }
+        }
+
+        /// <summary>
+        /// والد قبل از فرزند (برای کلید خارجی ParentId). به‌جای مرتب‌سازی بر اساس PageCode،
+        /// چون در داده‌ها PageCode تکراری وجود دارد و ترتیب را تضمین نمی‌کند.
+        /// </summary>
+        private static List<MenuEntity> OrderParentsFirst(List<MenuEntity> menus)
+        {
+            var byId = menus.ToDictionary(m => m.Id);
+            var visited = new HashSet<Guid>();
+            var result = new List<MenuEntity>(menus.Count);
+
+            void Visit(MenuEntity menu)
+            {
+                if (!visited.Add(menu.Id))
+                    return;
+
+                if (menu.ParentId is Guid parentId && byId.TryGetValue(parentId, out var parent))
+                    Visit(parent);
+
+                result.Add(menu);
+            }
+
+            foreach (var menu in menus.OrderBy(m => m.PageCode))
+                Visit(menu);
+
+            return result;
+        }
+
+        // ─────────────────────────────── Group ───────────────────────────────
+
+        private void SeedGroups(string path, Guid adminId)
+        {
+            var existing = eFGroupRepository.TableNoTracking.IgnoreQueryFilters()
+                .Select(p => p.GroupName).ToList().ToHashSet();
+
+            foreach (var group in ReadJson<GroupEntity>(path, "Group.json"))
+            {
+                if (existing.Contains(group.GroupName))
+                    continue;
+
+                Stamp(group, adminId);
+                eFGroupRepository.Add(group);
+            }
+        }
+
+        // ───────────────────────────── GroupUsers ─────────────────────────────
+
+        private void SeedGroupUsers(string path, Guid adminId)
+        {
+            var existing = eFGroupUsersRepository.TableNoTracking.IgnoreQueryFilters()
+                .Select(p => new { p.UserId, p.GroupId }).ToList()
+                .Select(p => (p.UserId, p.GroupId)).ToHashSet();
+
+            foreach (var item in ReadJson<GroupUsers>(path, "GroupUsers.json"))
+            {
+                if (existing.Contains((item.UserId, item.GroupId)))
+                    continue;
+
+                Stamp(item, adminId);
+                eFGroupUsersRepository.Add(item);
+            }
+        }
+
+        // ─────────────────────────── GroupAccessMenus ───────────────────────────
+
+        private void SeedGroupAccessMenus(string path, Guid adminId)
+        {
+            var existing = eFGroupAccessMenusRepository.TableNoTracking.IgnoreQueryFilters()
+                .Select(p => new { p.GroupId, p.MenuId }).ToList()
+                .Select(p => (p.GroupId, p.MenuId)).ToHashSet();
+
+            foreach (var item in ReadJson<GroupAccessMenus>(path, "GroupAccessMenus.json"))
+            {
+                if (existing.Contains((item.GroupId, item.MenuId)))
+                    continue;
+
+                Stamp(item, adminId);
+                eFGroupAccessMenusRepository.Add(item);
+            }
+        }
+
+        // ──────────────────────────── UserAccessMenus ────────────────────────────
+
+        private void SeedUserAccessMenus(string path, Guid adminId)
+        {
+            var existing = eFUserAccessMenusRepository.TableNoTracking.IgnoreQueryFilters()
+                .Select(p => new { p.UserId, p.MenuId }).ToList()
+                .Select(p => (p.UserId, p.MenuId)).ToHashSet();
+
+            foreach (var item in ReadJson<UserAccessMenus>(path, "UserAccessMenus.json"))
+            {
+                if (existing.Contains((item.UserId, item.MenuId)))
+                    continue;
+
+                Stamp(item, adminId);
+                eFUserAccessMenusRepository.Add(item);
+            }
+        }
+
+        // ──────────────────────────── Role / UserRole ────────────────────────────
+
+        private void SeedRolesAndAdminRole(string path, Guid adminId)
+        {
+            var existing = eFRoleRepository.TableNoTracking.IgnoreQueryFilters()
+                .Select(p => p.NormalizedRoleNameEn).ToList().ToHashSet();
+
+            foreach (var role in ReadJson<Role>(path, "Role.json"))
+            {
+                role.NormalizedRoleNameEn ??= role.RoleNameEn.ToUpperInvariant();
+
+                if (existing.Contains(role.NormalizedRoleNameEn))
+                    continue;
+
+                Stamp(role, adminId);
+                eFRoleRepository.Add(role);
+            }
+
+            var adminRole = eFRoleRepository.TableNoTracking.IgnoreQueryFilters()
+                                .FirstOrDefault(p => p.NormalizedRoleNameEn == AdminNormalizedRoleName)
+                            ?? throw new InvalidOperationException(
+                                $"نقش {AdminNormalizedRoleName} در Role.json پیدا نشد.");
+
+            var hasRole = eFUserRoleRepository.TableNoTracking.IgnoreQueryFilters()
+                .Any(p => p.UserId == adminId && p.RoleId == adminRole.Id);
+
+            if (!hasRole)
+            {
+                var userRole = new UserRole
+                {
+                    UserId = adminId,
+                    RoleId = adminRole.Id
+                };
+                Stamp(userRole, adminId);
+                eFUserRoleRepository.Add(userRole);
+            }
+        }
+
+        // ─────────────────────────────── کمکی ───────────────────────────────
+
+        /// <summary>فیلدهای ممیزی BaseEntity (به‌جای CreateDate / Creator / HostIp قبلی).</summary>
+        private static void Stamp<TKey>(BaseEntity<TKey> entity, Guid createdBy)
+        {
+            entity.CreatedBy = createdBy;
+            entity.CreatedDate = DateTime.UtcNow;
+            entity.HostIp = DefaultHostIp;
+        }
+
+        private static List<T> ReadJson<T>(string folder, string fileName)
+        {
+            var fullPath = Path.Combine(folder, fileName);
+
+            if (!File.Exists(fullPath))
+                throw new FileNotFoundException($"فایل داده پیش‌فرض پیدا نشد: {fileName}", fullPath);
+
+            return JsonSerializer.Deserialize<List<T>>(File.ReadAllText(fullPath), JsonOptions)
+                   ?? new List<T>();
+        }
+
+        /// <summary>
+        /// اول کنار فایل‌های خروجی (BaseDirectory)، بعد پوشه‌ی جاری برنامه (مثل نسخه قبلی).
+        /// فایل‌ها باید در خروجی کپی شوند (CopyToOutputDirectory).
+        /// </summary>
+        private static string ResolveDataFolder()
+        {
+            var candidates = new[]
+            {
+                Path.Combine(AppContext.BaseDirectory, DataFolderName),
+                Path.Combine(Environment.CurrentDirectory, DataFolderName)
+            };
+
+            return candidates.FirstOrDefault(Directory.Exists)
+                   ?? throw new DirectoryNotFoundException(
+                       $"پوشه {DataFolderName} پیدا نشد. مسیرهای بررسی‌شده: {string.Join(" | ", candidates)}");
         }
     }
 }

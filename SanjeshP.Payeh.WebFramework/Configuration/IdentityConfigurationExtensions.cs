@@ -20,7 +20,7 @@ namespace SanjeshP.Payeh.WebFramework.Configuration
         public static void AddJwtAuthentication(this IServiceCollection services, JwtSettings jwtSettings)
         {
             // نام claimها بدون بازنویسی مایکروسافتی نگه داشته شود.
-            JwtSecurityTokenHandler.DefaultMapInboundClaims = false;
+            //JwtSecurityTokenHandler.DefaultMapInboundClaims = false;
 
             services.AddAuthentication(options =>
             {
@@ -30,6 +30,7 @@ namespace SanjeshP.Payeh.WebFramework.Configuration
             })
             .AddJwtBearer(options =>
             {
+                options.MapInboundClaims = true;
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
                     ValidateIssuer = true,

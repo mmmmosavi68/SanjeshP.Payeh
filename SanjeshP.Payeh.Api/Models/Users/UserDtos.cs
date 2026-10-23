@@ -1,11 +1,14 @@
+using AutoMapper;
+using SanjeshP.Payeh.Entities.User;
+using SanjeshP.Payeh.WebFramework.Api;
+using SanjeshP.Payeh.WebFramework.CustomMapping;
 using System.ComponentModel.DataAnnotations;
 
 namespace SanjeshP.Payeh.Api.Models.Users
 {
     /// <summary>خروجی نمایش کاربر (فهرست و جزئیات).</summary>
-    public class UserSelectDto
+    public class UserSelectDto : BaseDto<UserSelectDto, User, Guid>
     {
-        public Guid Id { get; set; }
         public string UserName { get; set; } = null!;
         public string? EmailAddress { get; set; }
         public string? PhoneNumber { get; set; }
@@ -19,7 +22,20 @@ namespace SanjeshP.Payeh.Api.Models.Users
         public string? NationalCode { get; set; }
         public List<string> Roles { get; set; } = new();
     }
+    //public sealed class UserMapping : IHaveCustomMapping
+    //{
+    //    public void CreateMappings(Profile profile)
+    //    {
+    //        profile.CreateMap<User, UserSelectDto>();
 
+    //        profile.CreateMap<CreateUserDto, User>()
+    //            .ForMember(
+    //                dest => dest.Id,
+    //                opt => opt.Ignore());
+
+    //        profile.CreateMap<UpdateUserDto, User>();
+    //    }
+    //}
     /// <summary>ورودی ایجاد کاربر. اعتبارسنجی با DataAnnotations و پیام فارسی.</summary>
     public class CreateUserDto
     {

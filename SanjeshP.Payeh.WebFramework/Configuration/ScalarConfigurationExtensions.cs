@@ -20,11 +20,11 @@ public static class ScalarConfigurationExtensions
 
             services.AddOpenApi(documentName, options =>
             {
- //               options.ShouldInclude = description =>
- //string.Equals(
- //    description.GroupName,
- //    documentName,
- //    StringComparison.OrdinalIgnoreCase);
+                options.ShouldInclude = description =>
+ string.Equals(
+     description.GroupName,
+     documentName,
+     StringComparison.OrdinalIgnoreCase);
 
                 options.AddDocumentTransformer((document, _, _) =>
                 {
