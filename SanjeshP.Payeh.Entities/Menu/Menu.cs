@@ -24,6 +24,10 @@ namespace SanjeshP.Payeh.Entities.Menu
         [Display(Name = "مسیر")]
         public string Path { get; set; }
 
+        [MaxLength(100, ErrorMessage = "ورژن نباید بیش از 100 کاراکتر باشد")]
+        [Display(Name = "ورژن")]
+        public string version { get; set; }
+
         [MaxLength(100, ErrorMessage = "منطقه نباید بیش از 100 کاراکتر باشد")]
         [Display(Name = "منطقه")]
         public string Area { get; set; }

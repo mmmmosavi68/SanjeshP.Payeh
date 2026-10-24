@@ -89,7 +89,14 @@ public static class ScalarConfigurationExtensions
         {
             options.WithTitle("SanjeshP.Payeh — مستندات API");
             options.WithOpenApiRoutePattern("/openapi/{documentName}.json");
-
+            options.WithCustomCss("""
+        .markdown,
+        .markdown p,
+        .markdown li {
+            unicode-bidi: plaintext;
+            text-align: start;
+        }
+    """);
             foreach (var version in DocumentVersions)
                 options.AddDocument(version, $"نسخه‌ی {version}");
 
