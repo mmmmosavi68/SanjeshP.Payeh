@@ -73,10 +73,10 @@ namespace SanjeshP.Payeh.WebFramework.Middlewares
 
             descriptor.RouteValues.TryGetValue("area", out var area);
             var requestedVersion = context.GetRequestedApiVersion();
-            var version = requestedVersion?.ToString();
+            var version = context.GetRequestedApiVersion()?.MajorVersion?.ToString();
 
             var hasAccess = await permissionService.HasAccessAsync(
-                userId, version, area, descriptor.ControllerName, descriptor.ActionName, context.RequestAborted);
+                userId, version, descriptor.ControllerName, descriptor.ActionName, context.RequestAborted);
 
             if (!hasAccess)
             {

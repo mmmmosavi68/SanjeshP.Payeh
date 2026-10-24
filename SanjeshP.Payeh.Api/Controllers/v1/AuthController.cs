@@ -10,6 +10,8 @@ using SanjeshP.Payeh.Services.Captcha;
 using SanjeshP.Payeh.Services.JwtService;
 using SanjeshP.Payeh.Services.Otp;
 using SanjeshP.Payeh.WebFramework.Api;
+using SanjeshP.Payeh.WebFramework.Middlewares;
+using Serilog;
 
 namespace SanjeshP.Payeh.Api.Controllers.V1
 {
@@ -68,6 +70,7 @@ namespace SanjeshP.Payeh.Api.Controllers.V1
         /// <response code="400">کد اشتباه/منقضی یا عبور از سقف تلاش.</response>
         [HttpPost("otp/verify")]
         [AllowAnonymous]
+        [EnableRateLimiting("otp-verify")]
         [ProducesResponseType(typeof(ApiResult<AuthResponseDto>), StatusCodes.Status200OK)]
         public async Task<ApiResult<AuthResponseDto>> VerifyOtp([FromBody] VerifyOtpDto dto, CancellationToken cancellationToken)
         {
@@ -81,6 +84,7 @@ namespace SanjeshP.Payeh.Api.Controllers.V1
                 cancellationToken);
 
             var sessionId = Guid.Parse(ReadSessionIdFromToken(token));
+            Log.ForContext("Audit", true).Information("{Action} کاربر {UserId} از {Ip}", "Login", user.Id, HttpContext.Connection.RemoteIpAddress?.ToString());
             return ToAuthResponse(token, sessionId);
         }
 
@@ -88,6 +92,7 @@ namespace SanjeshP.Payeh.Api.Controllers.V1
         /// <response code="401">توکن نامعتبر/منقضی یا استفاده‌ی مجدد از توکن چرخش‌یافته.</response>
         [HttpPost("refresh")]
         [AllowAnonymous]
+        [EnableRateLimiting("refresh")]
         [ProducesResponseType(typeof(ApiResult<AuthResponseDto>), StatusCodes.Status200OK)]
         public async Task<ApiResult<AuthResponseDto>> Refresh([FromBody] RefreshTokenRequestDto dto, CancellationToken cancellationToken)
         {
@@ -98,6 +103,7 @@ namespace SanjeshP.Payeh.Api.Controllers.V1
 
         /// <summary>خروج از دستگاه فعلی؛ فقط نشستِ همین توکن باطل می‌شود.</summary>
         [HttpPost("logout")]
+        [SkipMenuPermission]
         public async Task<ApiResult> Logout(CancellationToken cancellationToken)
         {
             await _jwtService.RevokeSessionAsync(CurrentSessionId, CurrentUserId, cancellationToken);
@@ -106,6 +112,7 @@ namespace SanjeshP.Payeh.Api.Controllers.V1
 
         /// <summary>خروج از همه‌ی دستگاه‌ها؛ همه‌ی نشست‌های کاربر باطل می‌شوند.</summary>
         [HttpPost("logout-all")]
+        [SkipMenuPermission]
         public async Task<ApiResult> LogoutAll(CancellationToken cancellationToken)
         {
             await _jwtService.RevokeAllAsync(CurrentUserId, cancellationToken);
@@ -114,6 +121,7 @@ namespace SanjeshP.Payeh.Api.Controllers.V1
 
         /// <summary>ابطال یک نشست مشخص با شناسه (مثلاً از صفحه‌ی دستگاه‌های من).</summary>
         [HttpDelete("sessions/{id:guid}")]
+        [SkipMenuPermission]
         public async Task<ApiResult> RevokeSession([FromRoute] Guid id, CancellationToken cancellationToken)
         {
             await _jwtService.RevokeSessionAsync(id, CurrentUserId, cancellationToken);
@@ -122,6 +130,7 @@ namespace SanjeshP.Payeh.Api.Controllers.V1
 
         /// <summary>فهرست نشست‌های فعال من (دستگاه‌های واردشده).</summary>
         [HttpGet("sessions")]
+        [SkipMenuPermission]
         [ProducesResponseType(typeof(ApiResult<List<SessionDto>>), StatusCodes.Status200OK)]
         public async Task<ApiResult<List<SessionDto>>> GetSessions(CancellationToken cancellationToken)
         {

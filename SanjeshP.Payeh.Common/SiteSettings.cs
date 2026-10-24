@@ -50,7 +50,7 @@ namespace SanjeshP.Payeh.Common
     public class OtpSettings
     {
         /// <summary>تعداد ارقام کد.</summary>
-        public int CodeLength { get; set; } = 5;
+        public int CodeLength { get; set; } = 6;
         /// <summary>مدت اعتبار کد به ثانیه.</summary>
         public int ExpirationSeconds { get; set; } = 120;
         /// <summary>حداقل فاصله‌ی بین دو ارسال متوالی به ثانیه (ضد اسپم).</summary>

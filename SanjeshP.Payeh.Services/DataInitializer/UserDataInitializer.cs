@@ -152,7 +152,6 @@ namespace SanjeshP.Payeh.Services.DataInitializer
                 // ستون‌های رشته‌ای Menu در Entity غیرقابل‌null هستند (NOT NULL در دیتابیس)،
                 // ولی منوهای والد Controller/Action ندارند و Path در همه null است.
                 menu.Path ??= string.Empty;
-                menu.Area ??= string.Empty;
                 menu.ControllerName ??= string.Empty;
                 menu.ActionName ??= string.Empty;
                 menu.CssClass ??= string.Empty;

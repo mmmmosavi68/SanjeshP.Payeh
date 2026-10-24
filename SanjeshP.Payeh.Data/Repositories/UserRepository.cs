@@ -14,23 +14,23 @@ namespace SanjeshP.Payeh.Data.Repositories
         {
         }
 
-        public Task<User> GetByUserAndPass(string username, string password, CancellationToken cancellationToken)
-        {
-            var passwordHash = SecurityHelper.GetSha256Hash(password);
-            return Table.Where(p => p.UserName == username && p.PasswordHash == passwordHash).SingleOrDefaultAsync(cancellationToken);
-        }
+        //public Task<User> GetByUserAndPass(string username, string password, CancellationToken cancellationToken)
+        //{
+        //    var passwordHash = SecurityHelper.GetSha256Hash(password);
+        //    return Table.Where(p => p.UserName == username && p.PasswordHash == passwordHash).SingleOrDefaultAsync(cancellationToken);
+        //}
 
-        public async Task AddAsync(User user, string password, CancellationToken cancellationToken)
-        {
-            // بهتره تو لایه سرویس بررسی شود
-            var exist = await TableNoTracking.AnyAsync(p => p.UserName == user.UserName);
-            if (exist)
-                throw new BadRequestException("نام کاربری تکراری است");
+        //public async Task AddAsync(User user, string password, CancellationToken cancellationToken)
+        //{
+        //    // بهتره تو لایه سرویس بررسی شود
+        //    var exist = await TableNoTracking.AnyAsync(p => p.UserName == user.UserName);
+        //    if (exist)
+        //        throw new BadRequestException("نام کاربری تکراری است");
 
-            var passwordHash = SecurityHelper.GetSha256Hash(password) ?? string.Empty;
-            user.PasswordHash = passwordHash;
-            await base.AddAsync(user, cancellationToken);
-        }
+        //    var passwordHash = SecurityHelper.GetSha256Hash(password) ?? string.Empty;
+        //    user.PasswordHash = passwordHash;
+        //    await base.AddAsync(user, cancellationToken);
+        //}
 
         public Task UpdateLastLoginDateAsync(User user, CancellationToken cancellationToken)
         {

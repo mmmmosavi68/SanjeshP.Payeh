@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace SanjeshP.Payeh.Data.Migrations
 {
     /// <inheritdoc />
-    public partial class initi : Migration
+    public partial class initiDB : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -67,7 +67,7 @@ namespace SanjeshP.Payeh.Data.Migrations
                     ParentId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     PageCode = table.Column<int>(type: "int", nullable: true),
                     Path = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                    Area = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    version = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     ControllerName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     ActionName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     ShowMenu = table.Column<bool>(type: "bit", nullable: true),
@@ -151,7 +151,7 @@ namespace SanjeshP.Payeh.Data.Migrations
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "NEWSEQUENTIALID()"),
                     GroupName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    CreatorId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
@@ -163,11 +163,10 @@ namespace SanjeshP.Payeh.Data.Migrations
                 {
                     table.PrimaryKey("PK_Groups", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Groups_Users_CreatorId",
-                        column: x => x.CreatorId,
+                        name: "FK_Groups_Users_UserId",
+                        column: x => x.UserId,
                         principalTable: "Users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -481,9 +480,9 @@ namespace SanjeshP.Payeh.Data.Migrations
                 column: "MenuId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Groups_CreatorId",
+                name: "IX_Groups_UserId",
                 table: "Groups",
-                column: "CreatorId");
+                column: "UserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_GroupUsers_GroupId",

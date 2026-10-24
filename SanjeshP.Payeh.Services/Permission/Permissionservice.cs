@@ -24,11 +24,11 @@ namespace SanjeshP.Payeh.Services.Permissions
             _cache = cache;
         }
 
-        public async Task<bool> HasAccessAsync(Guid userId,string? version, string? area, string controller, string action, CancellationToken cancellationToken)
+        public async Task<bool> HasAccessAsync(Guid userId, string? version, string controller, string action, CancellationToken cancellationToken)
         {
             var permissions = await GetPermissionsAsync(userId, cancellationToken);
-            var dsad = BuildKey(version, area, controller, action);
-            return permissions.Contains(BuildKey(version, area, controller, action));
+            var dsad = BuildKey(version, controller, action);
+            return permissions.Contains(BuildKey(version, controller, action));
         }
 
         public void Invalidate(Guid userId) => _cache.Remove(CacheKey(userId));
@@ -56,9 +56,7 @@ namespace SanjeshP.Payeh.Services.Permissions
         private async Task<HashSet<string>> LoadFromDatabaseAsync(Guid userId, CancellationToken cancellationToken)
         {
             // دسترسی مستقیم کاربر
-            var direct = _db.Set<UserAccessMenus>()
-                .Where(a => a.UserId == userId && a.IsActive && !a.IsDeleted)
-                .Select(a => a.Menu);
+            var direct = _db.Set<UserAccessMenus>().Where(a => a.UserId == userId && a.IsActive && !a.IsDeleted).Select(a => a.Menu);
 
             // دسترسی از طریق گروه‌های فعال کاربر
             var viaGroups = from gu in _db.Set<GroupUsers>()
@@ -70,19 +68,17 @@ namespace SanjeshP.Payeh.Services.Permissions
 
             var rows = await direct.Union(viaGroups)
                 .Where(m => m.IsActive && !m.IsDeleted && m.ControllerName != null && m.ActionName != null)
-                .Select(m => new {m.version, m.Area, m.ControllerName, m.ActionName })
+                .Select(m => new { m.version, m.ControllerName, m.ActionName })
                 .Distinct()
                 .AsNoTracking()
                 .ToListAsync(cancellationToken);
 
-            return rows
-                .Select(r => BuildKey(r.version, r.Area, r.ControllerName, r.ActionName))
-                .ToHashSet(StringComparer.Ordinal);
+            return rows.Select(r => BuildKey(r.version, r.ControllerName, r.ActionName)).ToHashSet(StringComparer.Ordinal);
         }
 
         private static string CacheKey(Guid userId) => $"perm:{userId:N}";
 
-        private static string BuildKey(string? version, string? area, string controller, string action)
-            => $"{version?.Trim().ToLowerInvariant() ?? string.Empty}|{area?.Trim().ToLowerInvariant() ?? string.Empty}|{controller.Trim().ToLowerInvariant()}|{action.Trim().ToLowerInvariant()}";
+        private static string BuildKey(string? version, string controller, string action)
+            => $"{version?.Trim().ToLowerInvariant() ?? string.Empty}|{controller.Trim().ToLowerInvariant()}|{action.Trim().ToLowerInvariant()}";
     }
 }

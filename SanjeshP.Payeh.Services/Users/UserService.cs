@@ -223,5 +223,51 @@ namespace SanjeshP.Payeh.Services.Users
             if (existingCount != roleIds.Count)
                 throw new BadRequestException("یک یا چند نقش ارسالی معتبر نیستند.");
         }
+
+
+        public async Task<User?> ValidateCredentialsAsync(string userName, string password, CancellationToken cancellationToken)
+        {
+            var normalized = userName.Trim().ToUpperInvariant();
+
+            // نقش‌ها لازم‌اند چون JwtService در ساخت توکن از user.UserRoles می‌خواند
+            var user = await _userRepository.Table
+                .Include(x => x.UserRoles).ThenInclude(ur => ur.Role)
+                .FirstOrDefaultAsync(x => x.NormalizedUserName == normalized && !x.IsDeleted && x.IsActive, cancellationToken);
+
+            if (user is null || string.IsNullOrEmpty(user.PasswordHash))
+            {
+                // هزینه‌ی زمانی یکسان تا از روی سرعت پاسخ نتوان وجود کاربر را فهمید
+                _passwordHasher.HashPassword(new User(), password);
+                return null;
+            }
+
+            if (user.LockoutEnd is { } lockEnd && lockEnd > DateTimeOffset.UtcNow)
+                return null;
+
+            PasswordVerificationResult result;
+            try { result = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, password); }
+            catch (FormatException) { result = PasswordVerificationResult.Failed; } // هش با فرمت دیگر (مثل BCrypt)
+
+            if (result == PasswordVerificationResult.Failed)
+            {
+                user.AccessFailedCount = (user.AccessFailedCount ?? 0) + 1;
+                if (user.AccessFailedCount >= 5)
+                {
+                    user.LockoutEnd = DateTimeOffset.UtcNow.AddMinutes(15);
+                    user.AccessFailedCount = 0;
+                }
+                await _dbContext.SaveChangesAsync(cancellationToken);
+                return null;
+            }
+
+            if (result == PasswordVerificationResult.SuccessRehashNeeded)
+                user.PasswordHash = _passwordHasher.HashPassword(user, password);
+
+            user.AccessFailedCount = 0;
+            user.LockoutEnd = null;
+            user.LastLoginDate = DateTimeOffset.UtcNow;
+            await _dbContext.SaveChangesAsync(cancellationToken);
+            return user;
+        }
     }
 }

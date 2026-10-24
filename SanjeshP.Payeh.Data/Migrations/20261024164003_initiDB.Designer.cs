@@ -12,8 +12,8 @@ using SanjeshP.Payeh.Data;
 namespace SanjeshP.Payeh.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20261024052647_addversioninMenu")]
-    partial class addversioninMenu
+    [Migration("20261024164003_initiDB")]
+    partial class initiDB
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -250,11 +250,6 @@ namespace SanjeshP.Payeh.Data.Migrations
                         .HasDefaultValueSql("NEWSEQUENTIALID()");
 
                     b.Property<string>("ActionName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("Area")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");

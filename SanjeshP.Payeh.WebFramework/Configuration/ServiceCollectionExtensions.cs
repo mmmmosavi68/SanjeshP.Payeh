@@ -15,6 +15,7 @@ using SanjeshP.Payeh.Entities.User;
 using SanjeshP.Payeh.Services.Captcha;
 using SanjeshP.Payeh.Services.Permissions;
 using SanjeshP.Payeh.Services.Sms;
+using SanjeshP.Payeh.WebFramework.Api;
 using SanjeshP.Payeh.WebFramework.CustomMapping;
 using System.Reflection;
 using System.Text.Encodings.Web;
@@ -157,7 +158,22 @@ namespace SanjeshP.Payeh.WebFramework.Configuration
             services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 
             // پیامک: فعلاً Mock؛ ارائه‌دهنده‌ی واقعی را اینجا بر اساس SmsSettings.Provider اضافه کنید.
-            services.AddScoped<ISmsSender, MockSmsSender>();
+            // پیامک: بر اساس SmsSettings.Provider
+            var smsProvider = siteSettings.SmsSettings.Provider?.Trim() ?? "Mock";
+            switch (smsProvider.ToLowerInvariant())
+            {
+                case "mock":
+                    services.AddScoped<ISmsSender, MockSmsSender>();
+                    break;
+
+                // ارائه‌دهنده‌ی واقعی را بعداً اینجا اضافه کن، مثلاً:
+                // case "kavenegar":
+                //     services.AddHttpClient<ISmsSender, KavenegarSmsSender>();
+                //     break;
+
+                default:
+                    throw new InvalidOperationException($"SmsSettings:Provider با مقدار '{smsProvider}' پشتیبانی نمی‌شود.");
+            }
 
             // کپچا: روشن/خاموش از تنظیمات
             if (siteSettings.CaptchaSettings.Enabled)
@@ -167,20 +183,55 @@ namespace SanjeshP.Payeh.WebFramework.Configuration
         }
 
         /// <summary>محدودیت نرخ درخواست برای اکشن‌های حساس (درخواست کد پیامکی) بر اساس IP.</summary>
+        /// <summary>محدودیت نرخ درخواست برای اکشن‌های حساس بر اساس IP.</summary>
         private static void AddRateLimiting(IServiceCollection services)
         {
+            static string Ip(HttpContext c) => c.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+
             services.AddRateLimiter(options =>
             {
                 options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+                // درخواست کد پیامکی (قبلاً بود)
                 options.AddPolicy("otp", httpContext =>
                     RateLimitPartition.GetFixedWindowLimiter(
-                        partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                        partitionKey: Ip(httpContext),
                         factory: _ => new FixedWindowRateLimiterOptions
                         {
                             PermitLimit = 5,
                             Window = TimeSpan.FromMinutes(10),
                             QueueLimit = 0
                         }));
+
+                // تأیید کد (جدید)
+                options.AddPolicy("otp-verify", httpContext =>
+                    RateLimitPartition.GetFixedWindowLimiter(
+                        partitionKey: Ip(httpContext),
+                        factory: _ => new FixedWindowRateLimiterOptions
+                        {
+                            PermitLimit = 60,
+                            Window = TimeSpan.FromMinutes(10),
+                            QueueLimit = 0
+                        }));
+
+                // تازه‌سازی توکن (جدید)
+                options.AddPolicy("refresh", httpContext =>
+                    RateLimitPartition.GetFixedWindowLimiter(
+                        partitionKey: Ip(httpContext),
+                        factory: _ => new FixedWindowRateLimiterOptions
+                        {
+                            PermitLimit = 120,
+                            Window = TimeSpan.FromMinutes(1),
+                            QueueLimit = 0
+                        }));
+
+                // پاسخ ۴۲۹ هم در قالب ApiResult برگردد (جدید)
+                options.OnRejected = async (ctx, ct) =>
+                {
+                    ctx.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+                    await ctx.HttpContext.Response.WriteAsJsonAsync(
+                        new ApiResult(false, ApiResultStatusCode.TooManyRequests, "تعداد درخواست‌ها بیش از حد مجاز است."), ct);
+                };
             });
         }
 

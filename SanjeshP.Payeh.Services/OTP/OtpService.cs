@@ -21,7 +21,7 @@ namespace SanjeshP.Payeh.Services.Otp
     public class OtpService : IOtpService, IScopedDependency
     {
         private const string LoginPurpose = "Login";
-
+        private const string InvalidCodeMessage = "کد وارد شده نامعتبر یا منقضی شده است.";
         private readonly ApplicationDbContext _dbContext;
         private readonly ISmsSender _smsSender;
         private readonly OtpSettings _settings;
@@ -105,44 +105,53 @@ namespace SanjeshP.Payeh.Services.Otp
             code = NormalizeDigits(code).Trim();
 
             var user = await FindActiveUserByMobileAsync(mobileNumber, cancellationToken, includeRoles: true)
-                ?? throw new BadRequestException("کد وارد شده نامعتبر یا منقضی شده است.");
+                ?? throw new BadRequestException(InvalidCodeMessage);
 
-            var otp = await _dbContext.Set<UserOtp>()
+            var otps = _dbContext.Set<UserOtp>();
+
+            var otp = await otps.AsNoTracking()
                 .Where(x => x.UserId == user.Id && x.Purpose == LoginPurpose && !x.IsUsed)
                 .OrderByDescending(x => x.CreatedDate)
                 .FirstOrDefaultAsync(cancellationToken)
-                ?? throw new BadRequestException("کد وارد شده نامعتبر یا منقضی شده است.");
+                ?? throw new BadRequestException(InvalidCodeMessage);
 
             var now = DateTime.UtcNow;
 
             if (otp.ExpireAt <= now)
                 throw new BadRequestException("کد وارد شده منقضی شده است؛ کد جدید درخواست کنید.");
 
-            if (otp.FailedAttempts >= _settings.MaxAttempts)
-                throw new BadRequestException("تعداد تلاش‌های ناموفق بیش از حد مجاز است؛ کد جدید درخواست کنید.");
+            // ۱) رزرو اتمیک یک تلاش: حتی با درخواست‌های موازی، مجموع تلاش‌ها از MaxAttempts بیشتر نمی‌شود.
+            var reserved = await otps
+                .Where(x => x.Id == otp.Id && !x.IsUsed && x.FailedAttempts < _settings.MaxAttempts)
+                .ExecuteUpdateAsync(s => s.SetProperty(x => x.FailedAttempts, x => x.FailedAttempts + 1), cancellationToken);
 
-            // مقایسه‌ی زمان‌ثابت برای جلوگیری از حملات زمان‌سنجی
+            if (reserved == 0)
+                throw new BadRequestException("تعداد تلاش‌ها بیش از حد مجاز است؛ کد جدید درخواست کنید.");
+
             var expected = Convert.FromBase64String(otp.CodeHash);
             var actual = Convert.FromBase64String(HashCode(otp.Id, code));
 
             if (!CryptographicOperations.FixedTimeEquals(expected, actual))
             {
-                otp.FailedAttempts++;
-                await _dbContext.SaveChangesAsync(cancellationToken);
-
-                var remainingAttempts = _settings.MaxAttempts - otp.FailedAttempts;
-                throw new BadRequestException(remainingAttempts > 0
-                    ? $"کد وارد شده اشتباه است. {remainingAttempts} تلاش دیگر باقی مانده است."
+                var remaining = Math.Max(0, _settings.MaxAttempts - (otp.FailedAttempts + 1));
+                throw new BadRequestException(remaining > 0
+                    ? $"کد وارد شده اشتباه است. {remaining} تلاش دیگر باقی مانده است."
                     : "تعداد تلاش‌های ناموفق بیش از حد مجاز است؛ کد جدید درخواست کنید.");
             }
 
-            // مصرف کد + به‌روزرسانی وضعیت کاربر
-            otp.IsUsed = true;
-            otp.ConsumedAt = now;
+            // ۲) مصرف اتمیک: اگر دو درخواست درست هم‌زمان برسند، فقط یکی نشست می‌گیرد.
+            var consumed = await otps
+                .Where(x => x.Id == otp.Id && !x.IsUsed)
+                .ExecuteUpdateAsync(s => s
+                    .SetProperty(x => x.IsUsed, true)
+                    .SetProperty(x => x.ConsumedAt, (DateTime?)now), cancellationToken);
+
+            if (consumed == 0)
+                throw new BadRequestException(InvalidCodeMessage);
+
             user.PhoneNumberConfirmed = true;
             user.LastLoginDate = now;
             user.AccessFailedCount = 0;
-
             await _dbContext.SaveChangesAsync(cancellationToken);
             return user;
         }

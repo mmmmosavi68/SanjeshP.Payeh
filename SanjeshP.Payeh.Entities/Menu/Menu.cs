@@ -28,10 +28,6 @@ namespace SanjeshP.Payeh.Entities.Menu
         [Display(Name = "ورژن")]
         public string version { get; set; }
 
-        [MaxLength(100, ErrorMessage = "منطقه نباید بیش از 100 کاراکتر باشد")]
-        [Display(Name = "منطقه")]
-        public string Area { get; set; }
-
         [MaxLength(100, ErrorMessage = "نام کنترلر نباید بیش از 100 کاراکتر باشد")]
         [Display(Name = "نام کنترلر")]
         public string ControllerName { get; set; }

@@ -21,6 +21,7 @@ namespace SanjeshP.Payeh.Services.Users
     /// </summary>
     public interface IUserService
     {
+        Task<User?> ValidateCredentialsAsync(string userName, string password, CancellationToken cancellationToken);
         Task<PagedUsers> GetPagedAsync(UserQuery query, CancellationToken cancellationToken);
         Task<User> GetByIdAsync(Guid id, CancellationToken cancellationToken);
         Task<User> CreateAsync(User user, string? plainPassword, IEnumerable<int> roleIds, string? firstName, string? lastName, string? nationalCode, Guid createdBy, CancellationToken cancellationToken);
