@@ -28,5 +28,7 @@ namespace SanjeshP.Payeh.Services.Users
         Task<User> UpdateAsync(Guid id, Action<User> applyChanges, IEnumerable<int>? roleIds, string? firstName, string? lastName, CancellationToken cancellationToken);
         /// <summary>حذف نرم: IsDeleted=true و ابطال همه‌ی نشست‌ها.</summary>
         Task SoftDeleteAsync(Guid id, CancellationToken cancellationToken);
+        /// <summary>تعیین رمز جدید: هش می‌شود، قفل حساب برداشته می‌شود و همه‌ی نشست‌ها باطل می‌شوند.</summary>
+        Task SetPasswordAsync(Guid id, string newPassword, CancellationToken cancellationToken);
     }
 }

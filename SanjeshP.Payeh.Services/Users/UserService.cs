@@ -181,6 +181,29 @@ namespace SanjeshP.Payeh.Services.Users
             await _dbContext.SaveChangesAsync(cancellationToken);
         }
 
+        /// <inheritdoc />
+        public async Task SetPasswordAsync(Guid id, string newPassword, CancellationToken cancellationToken)
+        {
+            var user = await _userRepository.Table.FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted, cancellationToken)
+                ?? throw new NotFoundException("کاربر مورد نظر یافت نشد.");
+
+            user.PasswordHash = _passwordHasher.HashPassword(user, newPassword);
+            user.SecurityStamp = Guid.NewGuid();
+            user.AccessFailedCount = 0;
+            user.LockoutEnd = null;
+            user.UpdatedDate = DateTime.UtcNow;
+
+            // با تغییر رمز، همه‌ی نشست‌های فعال باطل می‌شوند.
+            var sessions = await _dbContext.Set<UserSession>()
+                .Where(x => x.UserId == id && x.RevocationDate == null)
+                .ToListAsync(cancellationToken);
+            foreach (var session in sessions)
+                session.RevocationDate = DateTime.UtcNow;
+
+            _userRepository.Update(user, saveNow: false);
+            await _dbContext.SaveChangesAsync(cancellationToken);
+        }
+
         /// <summary>مرتب‌سازی امن بر اساس لیست سفید؛ مقدار نامعتبر ⇒ پیش‌فرض createdDate desc.</summary>
         private static IQueryable<User> ApplySorting(IQueryable<User> users, string? sortBy, string? sortDirection)
         {

@@ -214,6 +214,17 @@ namespace SanjeshP.Payeh.WebFramework.Configuration
                             QueueLimit = 0
                         }));
 
+                // ورود با نام کاربری و رمز عبور
+                options.AddPolicy("login", httpContext =>
+                    RateLimitPartition.GetFixedWindowLimiter(
+                        partitionKey: Ip(httpContext),
+                        factory: _ => new FixedWindowRateLimiterOptions
+                        {
+                            PermitLimit = 10,
+                            Window = TimeSpan.FromMinutes(10),
+                            QueueLimit = 0
+                        }));
+
                 // تازه‌سازی توکن (جدید)
                 options.AddPolicy("refresh", httpContext =>
                     RateLimitPartition.GetFixedWindowLimiter(

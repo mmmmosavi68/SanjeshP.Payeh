@@ -52,4 +52,31 @@ namespace SanjeshP.Payeh.Common.Exceptions
         {
         }
     }
+
+    /// <summary>کپچا نامعتبر است (HTTP 400).</summary>
+    public class CaptchaInvalidException : AppException
+    {
+        public CaptchaInvalidException(string message = "کپچا نامعتبر است. لطفاً دوباره تلاش کنید.")
+            : base(ApiResultStatusCode.CaptchaInvalid, message, HttpStatusCode.BadRequest)
+        {
+        }
+    }
+
+    /// <summary>نام کاربری یا رمز عبور نادرست است؛ پیام عمداً عمومی است (HTTP 400).</summary>
+    public class InvalidCredentialsException : AppException
+    {
+        public InvalidCredentialsException(string message = "نام کاربری یا رمز عبور نادرست است.")
+            : base(ApiResultStatusCode.InvalidCredentials, message, HttpStatusCode.BadRequest)
+        {
+        }
+    }
+
+    /// <summary>کد یک‌بارمصرف نادرست یا منقضی است (HTTP 400).</summary>
+    public class InvalidOtpException : AppException
+    {
+        public InvalidOtpException(string message)
+            : base(ApiResultStatusCode.InvalidOtp, message, HttpStatusCode.BadRequest)
+        {
+        }
+    }
 }

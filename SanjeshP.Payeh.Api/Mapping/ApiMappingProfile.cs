@@ -22,7 +22,14 @@ namespace SanjeshP.Payeh.Api.Mapping
                 .ForMember(dest => dest.NationalCode,
                     opt => opt.MapFrom(src => src.UserProfile.FirstOrDefault() != null ? src.UserProfile.FirstOrDefault()!.NationalCode : null))
                 .ForMember(dest => dest.Roles,
-                    opt => opt.MapFrom(src => src.UserRoles.Where(ur => ur.Role != null).Select(ur => ur.Role.RoleNameFa)));
+                    opt => opt.MapFrom(src => src.UserRoles
+                        .Where(ur => ur.Role != null)
+                        .Select(ur => new RoleDto
+                        {
+                            Id = ur.Role.Id,
+                            NameEn = ur.Role.RoleNameEn,
+                            NameFa = ur.Role.RoleNameFa
+                        })));
 
             // CreateUserDto → User (رمز، نقش و پروفایل در سرویس ساخته می‌شوند)
             CreateMap<CreateUserDto, User>()

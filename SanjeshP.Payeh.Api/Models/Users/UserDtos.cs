@@ -20,7 +20,7 @@ namespace SanjeshP.Payeh.Api.Models.Users
         public string? FirstName { get; set; }
         public string? LastName { get; set; }
         public string? NationalCode { get; set; }
-        public List<string> Roles { get; set; } = new();
+        public List<RoleDto> Roles { get; set; } = new();
     }
     //public sealed class UserMapping : IHaveCustomMapping
     //{
@@ -108,6 +108,21 @@ namespace SanjeshP.Payeh.Api.Models.Users
 
         /// <summary>در صورت ارسال، جایگزین همه‌ی نقش‌های فعلی می‌شود.</summary>
         public List<int>? RoleIds { get; set; }
+
+        /// <summary>رمز عبور جدید (اختیاری). در صورت ارسال، رمز جایگزین و همه‌ی نشست‌های کاربر باطل می‌شود.</summary>
+        [MinLength(8, ErrorMessage = "رمز عبور باید حداقل 8 کاراکتر باشد")]
+        [MaxLength(128, ErrorMessage = "رمز عبور نباید بیش از 128 کاراکتر باشد")]
+        [DataType(DataType.Password)]
+        [Display(Name = "رمز عبور")]
+        public string? Password { get; set; }
+    }
+
+    /// <summary>نقش با عنوان فارسی و انگلیسی.</summary>
+    public class RoleDto
+    {
+        public int Id { get; set; }
+        public string NameEn { get; set; } = null!;
+        public string NameFa { get; set; } = null!;
     }
 
     /// <summary>پارامترهای صفحه‌بندی، جستجو، مرتب‌سازی و فیلتر فهرست کاربران.</summary>

@@ -1,25 +1,28 @@
 namespace SanjeshP.Payeh.Services.Otp
 {
-    /// <summary>نتیجه‌ی درخواست کد یک‌بارمصرف.</summary>
-    /// <param name="DevCode">
-    /// فقط در حالت توسعه (OtpSettings.ReturnCodeInResponse=true) مقدار دارد
-    /// تا بدون پنل پیامک بتوان در Scalar تست کرد؛ در Production همیشه null.
-    /// </param>
+    /// <param name="DevCode">فقط در توسعه (OtpSettings.ReturnCodeInResponse=true) مقدار دارد.</param>
     public record OtpRequestResult(string? DevCode);
 
+    /// <summary>نتیجه‌ی صدور کد مرحله‌ی دوم ورود با رمز عبور.</summary>
+    public record LoginChallengeResult(Guid ChallengeId, string MaskedMobile, string? DevCode, int ResendAfterSeconds);
+
     /// <summary>
-    /// سرویس کد یک‌بارمصرف پیامکی با الزامات امنیتی:
-    /// ذخیره‌ی Hash، انقضا، سقف تلاش ناموفق، فاصله‌ی ارسال مجدد و یک‌بارمصرف بودن.
+    /// سرویس کد یک‌بارمصرف پیامکی: ذخیره‌ی Hash، انقضا، سقف تلاش، فاصله‌ی ارسال مجدد و یک‌بارمصرف بودن.
+    /// دو سناریو: ورود با موبایل (Login) و مرحله‌ی دوم ورود با رمز (PasswordLogin، متصل به challengeId).
     /// </summary>
     public interface IOtpService
     {
-        /// <summary>تولید و ارسال کد ورود به شماره‌ی موبایل. کدهای قبلیِ مصرف‌نشده باطل می‌شوند.</summary>
         Task<OtpRequestResult> RequestLoginCodeAsync(string mobileNumber, CancellationToken cancellationToken);
 
-        /// <summary>
-        /// تأیید کد ورود. در صورت موفقیت، کد مصرف و کاربر (به‌همراه نقش‌ها) برگردانده می‌شود.
-        /// خطاها به‌صورت AppException پرتاب می‌شوند تا مدیریت خطای مرکزی پاسخ استاندارد بسازد.
-        /// </summary>
         Task<Entities.User.User> VerifyLoginCodeAsync(string mobileNumber, string code, CancellationToken cancellationToken);
+
+        /// <summary>بعد از اعتبارسنجی موفق رمز: کد را برای موبایل کاربر می‌فرستد و challengeId برمی‌گرداند.</summary>
+        Task<LoginChallengeResult> RequestPasswordLoginCodeAsync(Entities.User.User user, CancellationToken cancellationToken);
+
+        /// <summary>تأیید کد مرحله‌ی دوم؛ فقط challengeIdای که از مرحله‌ی رمز صادر شده معتبر است.</summary>
+        Task<Entities.User.User> VerifyPasswordLoginCodeAsync(Guid challengeId, string code, CancellationToken cancellationToken);
+
+        /// <summary>ارسال دوباره‌ی کد مرحله‌ی دوم؛ challengeId جدید برمی‌گرداند.</summary>
+        Task<LoginChallengeResult> ResendPasswordLoginCodeAsync(Guid challengeId, CancellationToken cancellationToken);
     }
 }

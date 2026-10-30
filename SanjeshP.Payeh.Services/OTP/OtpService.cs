@@ -17,11 +17,16 @@ namespace SanjeshP.Payeh.Services.Otp
     /// - فقط هش SHA-256 با نمکِ شناسه‌ی رکورد ذخیره می‌شود.
     /// - انقضا، سقف تلاش ناموفق، فاصله‌ی ارسال مجدد و یک‌بارمصرف بودن اعمال می‌شود.
     /// - مقایسه‌ی هش به‌صورت زمان‌ثابت (FixedTimeEquals) است.
+    /// دو هدف (Purpose): Login (ورود با موبایل) و PasswordLogin (مرحله‌ی دوم ورود با رمز).
     /// </summary>
     public class OtpService : IOtpService, IScopedDependency
     {
         private const string LoginPurpose = "Login";
+        private const string PasswordLoginPurpose = "PasswordLogin";
         private const string InvalidCodeMessage = "کد وارد شده نامعتبر یا منقضی شده است.";
+        private const string InvalidChallengeMessage = "درخواست ورود نامعتبر یا منقضی شده است؛ دوباره وارد شوید.";
+        private const int ChallengeMaxAgeMinutes = 30;
+
         private readonly ApplicationDbContext _dbContext;
         private readonly ISmsSender _smsSender;
         private readonly OtpSettings _settings;
@@ -39,6 +44,8 @@ namespace SanjeshP.Payeh.Services.Otp
             _logger = logger;
         }
 
+        // ───────────── ورود با موبایل ─────────────
+
         /// <inheritdoc />
         public async Task<OtpRequestResult> RequestLoginCodeAsync(string mobileNumber, CancellationToken cancellationToken)
         {
@@ -54,9 +61,7 @@ namespace SanjeshP.Payeh.Services.Otp
                 return new OtpRequestResult(null);
             }
 
-            var otps = _dbContext.Set<UserOtp>();
-
-            var lastOtp = await otps
+            var lastOtp = await _dbContext.Set<UserOtp>()
                 .Where(x => x.UserId == user.Id && x.Purpose == LoginPurpose)
                 .OrderByDescending(x => x.CreatedDate)
                 .FirstOrDefaultAsync(cancellationToken);
@@ -66,35 +71,10 @@ namespace SanjeshP.Payeh.Services.Otp
             {
                 var elapsed = (now - lastOtp.CreatedDate).TotalSeconds;
                 if (elapsed < _settings.ResendIntervalSeconds)
-                {
-                    var remaining = (int)Math.Ceiling(_settings.ResendIntervalSeconds - elapsed);
-                    throw new TooManyRequestsException($"برای دریافت کد جدید، {remaining} ثانیه صبر کنید.");
-                }
+                    throw new TooManyRequestsException(WaitMessage(elapsed));
             }
 
-            // یک‌بارمصرف بودن: همه‌ی کدهای قبلیِ مصرف‌نشده باطل می‌شوند.
-            await otps
-                .Where(x => x.UserId == user.Id && x.Purpose == LoginPurpose && !x.IsUsed)
-                .ExecuteUpdateAsync(s => s.SetProperty(x => x.IsUsed, true), cancellationToken);
-
-            var code = GenerateNumericCode(_settings.CodeLength);
-
-            var otp = new UserOtp
-            {
-                UserId = user.Id,
-                SentTo = mobileNumber,
-                Purpose = LoginPurpose,
-                ExpireAt = now.AddSeconds(_settings.ExpirationSeconds),
-                CreatedBy = user.Id
-            };
-            // شناسه‌ی رکورد (Guid) در سازنده ساخته شده و نقش نمک هش را دارد.
-            otp.CodeHash = HashCode(otp.Id, code);
-
-            otps.Add(otp);
-            await _dbContext.SaveChangesAsync(cancellationToken);
-
-            await _smsSender.SendAsync(mobileNumber, $"کد ورود شما: {code}\nاعتبار: {_settings.ExpirationSeconds} ثانیه", cancellationToken);
-
+            var (_, code) = await CreateAndSendAsync(user, mobileNumber, LoginPurpose, cancellationToken);
             return new OtpRequestResult(_settings.ReturnCodeInResponse ? code : null);
         }
 
@@ -105,20 +85,154 @@ namespace SanjeshP.Payeh.Services.Otp
             code = NormalizeDigits(code).Trim();
 
             var user = await FindActiveUserByMobileAsync(mobileNumber, cancellationToken, includeRoles: true)
-                ?? throw new BadRequestException(InvalidCodeMessage);
+                ?? throw new InvalidOtpException(InvalidCodeMessage);
 
-            var otps = _dbContext.Set<UserOtp>();
-
-            var otp = await otps.AsNoTracking()
+            var otp = await _dbContext.Set<UserOtp>().AsNoTracking()
                 .Where(x => x.UserId == user.Id && x.Purpose == LoginPurpose && !x.IsUsed)
                 .OrderByDescending(x => x.CreatedDate)
                 .FirstOrDefaultAsync(cancellationToken)
-                ?? throw new BadRequestException(InvalidCodeMessage);
+                ?? throw new InvalidOtpException(InvalidCodeMessage);
 
+            await ConsumeAsync(otp, code, cancellationToken);
+            await MarkLoggedInAsync(user, cancellationToken);
+            return user;
+        }
+
+        // ───────────── مرحله‌ی دوم ورود با رمز ─────────────
+
+        /// <inheritdoc />
+        public async Task<LoginChallengeResult> RequestPasswordLoginCodeAsync(User user, CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrWhiteSpace(user.PhoneNumber))
+                throw new BadRequestException("برای این حساب شماره موبایل ثبت نشده است؛ با مدیر سیستم تماس بگیرید.");
+
+            var mobile = NormalizeMobile(user.PhoneNumber);
+            var now = DateTime.UtcNow;
+
+            var latest = await _dbContext.Set<UserOtp>().AsNoTracking()
+                .Where(x => x.UserId == user.Id && x.Purpose == PasswordLoginPurpose)
+                .OrderByDescending(x => x.CreatedDate)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (latest is not null)
+            {
+                var elapsed = (now - latest.CreatedDate).TotalSeconds;
+                if (elapsed < _settings.ResendIntervalSeconds)
+                {
+                    var remaining = (int)Math.Ceiling(_settings.ResendIntervalSeconds - elapsed);
+
+                    // ورود تکراری در فاصله‌ی مجاز: بدون ارسال پیامک جدید همان درخواست قبلی برمی‌گردد.
+                    if (!latest.IsUsed && latest.ExpireAt > now && latest.FailedAttempts < _settings.MaxAttempts)
+                        return new LoginChallengeResult(latest.Id, MaskMobile(mobile), null, remaining);
+
+                    throw new TooManyRequestsException(WaitMessage(elapsed));
+                }
+            }
+
+            var (otp, code) = await CreateAndSendAsync(user, mobile, PasswordLoginPurpose, cancellationToken);
+            return new LoginChallengeResult(
+                otp.Id, MaskMobile(mobile), _settings.ReturnCodeInResponse ? code : null, _settings.ResendIntervalSeconds);
+        }
+
+        /// <inheritdoc />
+        public async Task<User> VerifyPasswordLoginCodeAsync(Guid challengeId, string code, CancellationToken cancellationToken)
+        {
+            code = NormalizeDigits(code).Trim();
+
+            var otp = await _dbContext.Set<UserOtp>().AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Id == challengeId && x.Purpose == PasswordLoginPurpose && !x.IsUsed, cancellationToken)
+                ?? throw new InvalidOtpException(InvalidCodeMessage);
+
+            var user = await _dbContext.Set<User>()
+                .Where(x => x.Id == otp.UserId && !x.IsDeleted && x.IsActive
+                            && (x.LockoutEnd == null || x.LockoutEnd <= DateTimeOffset.UtcNow))
+                .Include(x => x.UserRoles).ThenInclude(ur => ur.Role)
+                .FirstOrDefaultAsync(cancellationToken)
+                ?? throw new InvalidOtpException(InvalidCodeMessage);
+
+            await ConsumeAsync(otp, code, cancellationToken);
+            await MarkLoggedInAsync(user, cancellationToken);
+            return user;
+        }
+
+        /// <inheritdoc />
+        public async Task<LoginChallengeResult> ResendPasswordLoginCodeAsync(Guid challengeId, CancellationToken cancellationToken)
+        {
+            var now = DateTime.UtcNow;
+            var otps = _dbContext.Set<UserOtp>();
+
+            var old = await otps.AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Id == challengeId && x.Purpose == PasswordLoginPurpose && x.ConsumedAt == null, cancellationToken);
+
+            if (old is null || old.CreatedDate < now.AddMinutes(-ChallengeMaxAgeMinutes))
+                throw new InvalidOtpException(InvalidChallengeMessage);
+
+            var user = await _dbContext.Set<User>().AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Id == old.UserId && !x.IsDeleted && x.IsActive
+                                          && (x.LockoutEnd == null || x.LockoutEnd <= DateTimeOffset.UtcNow), cancellationToken)
+                ?? throw new InvalidOtpException(InvalidChallengeMessage);
+
+            var mobile = old.SentTo ?? user.PhoneNumber;
+            if (string.IsNullOrWhiteSpace(mobile))
+                throw new InvalidOtpException(InvalidChallengeMessage);
+
+            var latest = await otps.AsNoTracking()
+                .Where(x => x.UserId == user.Id && x.Purpose == PasswordLoginPurpose)
+                .OrderByDescending(x => x.CreatedDate)
+                .FirstAsync(cancellationToken);
+
+            var elapsed = (now - latest.CreatedDate).TotalSeconds;
+            if (elapsed < _settings.ResendIntervalSeconds)
+                throw new TooManyRequestsException(WaitMessage(elapsed));
+
+            var (otp, code) = await CreateAndSendAsync(user, mobile, PasswordLoginPurpose, cancellationToken);
+            return new LoginChallengeResult(
+                otp.Id, MaskMobile(mobile), _settings.ReturnCodeInResponse ? code : null, _settings.ResendIntervalSeconds);
+        }
+
+        // ───────────── اشتراکی ─────────────
+
+        /// <summary>کدهای قبلیِ مصرف‌نشده را باطل می‌کند، کد جدید می‌سازد و پیامک می‌فرستد.</summary>
+        private async Task<(UserOtp Otp, string Code)> CreateAndSendAsync(
+            User user, string mobileNumber, string purpose, CancellationToken cancellationToken)
+        {
+            var otps = _dbContext.Set<UserOtp>();
+
+            // یک‌بارمصرف بودن: همه‌ی کدهای قبلیِ مصرف‌نشده باطل می‌شوند.
+            await otps
+                .Where(x => x.UserId == user.Id && x.Purpose == purpose && !x.IsUsed)
+                .ExecuteUpdateAsync(s => s.SetProperty(x => x.IsUsed, true), cancellationToken);
+
+            var code = GenerateNumericCode(_settings.CodeLength);
+
+            var otp = new UserOtp
+            {
+                UserId = user.Id,
+                SentTo = mobileNumber,
+                Purpose = purpose,
+                ExpireAt = DateTime.UtcNow.AddSeconds(_settings.ExpirationSeconds),
+                CreatedBy = user.Id
+            };
+            // شناسه‌ی رکورد (Guid) در سازنده ساخته شده و نقش نمک هش را دارد.
+            otp.CodeHash = HashCode(otp.Id, code);
+
+            otps.Add(otp);
+            await _dbContext.SaveChangesAsync(cancellationToken);
+
+            await _smsSender.SendAsync(mobileNumber, $"کد ورود شما: {code}\nاعتبار: {_settings.ExpirationSeconds} ثانیه", cancellationToken);
+
+            return (otp, code);
+        }
+
+        /// <summary>بررسی انقضا، رزرو اتمیک تلاش، مقایسه‌ی زمان‌ثابت و مصرف اتمیک کد.</summary>
+        private async Task ConsumeAsync(UserOtp otp, string code, CancellationToken cancellationToken)
+        {
             var now = DateTime.UtcNow;
 
             if (otp.ExpireAt <= now)
-                throw new BadRequestException("کد وارد شده منقضی شده است؛ کد جدید درخواست کنید.");
+                throw new InvalidOtpException("کد وارد شده منقضی شده است؛ کد جدید درخواست کنید.");
+
+            var otps = _dbContext.Set<UserOtp>();
 
             // ۱) رزرو اتمیک یک تلاش: حتی با درخواست‌های موازی، مجموع تلاش‌ها از MaxAttempts بیشتر نمی‌شود.
             var reserved = await otps
@@ -126,20 +240,21 @@ namespace SanjeshP.Payeh.Services.Otp
                 .ExecuteUpdateAsync(s => s.SetProperty(x => x.FailedAttempts, x => x.FailedAttempts + 1), cancellationToken);
 
             if (reserved == 0)
-                throw new BadRequestException("تعداد تلاش‌ها بیش از حد مجاز است؛ کد جدید درخواست کنید.");
+                throw new InvalidOtpException("تعداد تلاش‌ها بیش از حد مجاز است؛ کد جدید درخواست کنید.");
 
+            // ۲) مقایسه‌ی زمان‌ثابت هش‌ها
             var expected = Convert.FromBase64String(otp.CodeHash);
             var actual = Convert.FromBase64String(HashCode(otp.Id, code));
 
             if (!CryptographicOperations.FixedTimeEquals(expected, actual))
             {
                 var remaining = Math.Max(0, _settings.MaxAttempts - (otp.FailedAttempts + 1));
-                throw new BadRequestException(remaining > 0
+                throw new InvalidOtpException(remaining > 0
                     ? $"کد وارد شده اشتباه است. {remaining} تلاش دیگر باقی مانده است."
                     : "تعداد تلاش‌های ناموفق بیش از حد مجاز است؛ کد جدید درخواست کنید.");
             }
 
-            // ۲) مصرف اتمیک: اگر دو درخواست درست هم‌زمان برسند، فقط یکی نشست می‌گیرد.
+            // ۳) مصرف اتمیک: اگر دو درخواست درست هم‌زمان برسند، فقط یکی نشست می‌گیرد.
             var consumed = await otps
                 .Where(x => x.Id == otp.Id && !x.IsUsed)
                 .ExecuteUpdateAsync(s => s
@@ -147,13 +262,21 @@ namespace SanjeshP.Payeh.Services.Otp
                     .SetProperty(x => x.ConsumedAt, (DateTime?)now), cancellationToken);
 
             if (consumed == 0)
-                throw new BadRequestException(InvalidCodeMessage);
+                throw new InvalidOtpException(InvalidCodeMessage);
+        }
 
+        private async Task MarkLoggedInAsync(User user, CancellationToken cancellationToken)
+        {
             user.PhoneNumberConfirmed = true;
-            user.LastLoginDate = now;
+            user.LastLoginDate = DateTime.UtcNow;
             user.AccessFailedCount = 0;
             await _dbContext.SaveChangesAsync(cancellationToken);
-            return user;
+        }
+
+        private string WaitMessage(double elapsedSeconds)
+        {
+            var remaining = Math.Max(1, (int)Math.Ceiling(_settings.ResendIntervalSeconds - elapsedSeconds));
+            return $"برای دریافت کد جدید، {remaining} ثانیه صبر کنید.";
         }
 
         /// <summary>هش کد با نمکِ شناسه‌ی رکورد.</summary>
@@ -169,15 +292,20 @@ namespace SanjeshP.Payeh.Services.Otp
 
         private async Task<User?> FindActiveUserByMobileAsync(string mobileNumber, CancellationToken cancellationToken, bool includeRoles = false)
         {
-            var query = _dbContext.Set<User>().AsNoTracking().Where(x => !x.IsDeleted);
-            if (includeRoles)
-                query = _dbContext.Set<User>().Where(x => !x.IsDeleted)
-                    .Include(x => x.UserRoles).ThenInclude(ur => ur.Role);
+            IQueryable<User> query = _dbContext.Set<User>().Where(x => !x.IsDeleted);
+
+            query = includeRoles
+                ? query.Include(x => x.UserRoles).ThenInclude(ur => ur.Role)
+                : query.AsNoTracking();
 
             return await query.FirstOrDefaultAsync(
                 x => x.PhoneNumber == mobileNumber && x.IsActive && (x.LockoutEnd == null || x.LockoutEnd <= DateTimeOffset.UtcNow),
                 cancellationToken);
         }
+
+        /// <summary>نمایش پوشیده‌ی شماره: 0937•••1160.</summary>
+        private static string MaskMobile(string mobile)
+            => mobile.Length >= 8 ? $"{mobile[..4]}•••{mobile[^4..]}" : "••••";
 
         /// <summary>نرمال‌سازی شماره به فرمت 09xxxxxxxxx.</summary>
         private static string NormalizeMobile(string mobile)

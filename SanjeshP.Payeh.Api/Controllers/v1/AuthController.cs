@@ -4,20 +4,23 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Options;
 using SanjeshP.Payeh.Api.Models.Auth;
+using SanjeshP.Payeh.Api.Models.Users;
 using SanjeshP.Payeh.Common;
 using SanjeshP.Payeh.Common.Exceptions;
 using SanjeshP.Payeh.Services.Captcha;
 using SanjeshP.Payeh.Services.JwtService;
 using SanjeshP.Payeh.Services.Otp;
+using SanjeshP.Payeh.Services.Users;
 using SanjeshP.Payeh.WebFramework.Api;
 using SanjeshP.Payeh.WebFramework.Middlewares;
 using Serilog;
+using UserEntity = SanjeshP.Payeh.Entities.User.User;
 
 namespace SanjeshP.Payeh.Api.Controllers.V1
 {
     /// <summary>
-    /// احراز هویت با کد یک‌بارمصرف پیامکی + مدیریت نشست‌ها.
-    /// جریان ورود: otp/request → otp/verify → دریافت AccessToken/RefreshToken.
+    /// احراز هویت: ورود با موبایل + کد پیامکی، یا نام کاربری + رمز (با کد پیامکی اختیاری/اجباری)،
+    /// کپچا در همه‌ی مراحل ورود، و مدیریت نشست‌ها.
     /// هر ورود یک نشست مستقل است؛ خروج از یک دستگاه بقیه را باطل نمی‌کند.
     /// </summary>
     [ApiVersion("1")]
@@ -26,34 +29,55 @@ namespace SanjeshP.Payeh.Api.Controllers.V1
         private readonly IOtpService _otpService;
         private readonly IJwtService _jwtService;
         private readonly ICaptchaService _captchaService;
+        private readonly IUserService _userService;
         private readonly SiteSettings _siteSettings;
 
         public AuthController(
             IOtpService otpService,
             IJwtService jwtService,
             ICaptchaService captchaService,
+            IUserService userService,
             IOptions<SiteSettings> siteSettings)
         {
             _otpService = otpService;
             _jwtService = jwtService;
             _captchaService = captchaService;
+            _userService = userService;
             _siteSettings = siteSettings.Value;
         }
 
-        /// <summary>درخواست کد ورود پیامکی. کپچا در صورت فعال بودن از تنظیمات بررسی می‌شود.</summary>
-        /// <response code="200">در صورت ثبت‌نام بودن شماره، کد ارسال شد (پاسخ عمداً عمومی است).</response>
-        /// <response code="429">ارسال مجدد زودتر از فاصله‌ی مجاز یا عبور از سقف درخواست.</response>
+        /// <summary>تنظیمات عمومی ورود (روش‌های فعال و کپچا) برای ساخت صفحه‌ی ورود.</summary>
+        [HttpGet("config")]
+        [AllowAnonymous]
+        [ProducesResponseType(typeof(ApiResult<AuthConfigDto>), StatusCodes.Status200OK)]
+        public ApiResult<AuthConfigDto> GetConfig()
+        {
+            var auth = _siteSettings.AuthSettings;
+            var captcha = _siteSettings.CaptchaSettings;
+
+            return new AuthConfigDto
+            {
+                CaptchaEnabled = _captchaService.IsEnabled,
+                CaptchaProvider = _captchaService.IsEnabled ? captcha.Provider : null,
+                CaptchaSiteKey = _captchaService.IsEnabled ? captcha.SiteKey : null,
+                MobileLoginEnabled = auth.MobileLoginEnabled,
+                PasswordLoginEnabled = auth.PasswordLoginEnabled,
+                PasswordLoginRequiresOtp = auth.PasswordLoginRequiresOtp,
+                OtpLength = _siteSettings.OtpSettings.CodeLength
+            };
+        }
+
+        // ───────────── ورود با موبایل ─────────────
+
+        /// <summary>درخواست کد ورود پیامکی (ضد افشای عضویت: پاسخ برای شماره‌ی نامعتبر هم عمومی است).</summary>
         [HttpPost("otp/request")]
         [AllowAnonymous]
         [EnableRateLimiting("otp")]
         [ProducesResponseType(typeof(ApiResult<RequestOtpResponseDto>), StatusCodes.Status200OK)]
         public async Task<ApiResult<RequestOtpResponseDto>> RequestOtp([FromBody] RequestOtpDto dto, CancellationToken cancellationToken)
         {
-            if (_captchaService.IsEnabled &&
-                !await _captchaService.ValidateAsync(dto.CaptchaToken, HttpContext.Connection.RemoteIpAddress?.ToString(), cancellationToken))
-            {
-                throw new BadRequestException("کپچا نامعتبر است. لطفاً دوباره تلاش کنید.");
-            }
+            EnsureMobileLoginEnabled();
+            await EnsureCaptchaAsync(dto.CaptchaToken, cancellationToken);
 
             var result = await _otpService.RequestLoginCodeAsync(dto.MobileNumber, cancellationToken);
 
@@ -65,31 +89,88 @@ namespace SanjeshP.Payeh.Api.Controllers.V1
             };
         }
 
-        /// <summary>تأیید کد پیامکی و ورود؛ خروجی شامل جفت توکن و شناسه‌ی نشست است.</summary>
-        /// <response code="200">ورود موفق.</response>
-        /// <response code="400">کد اشتباه/منقضی یا عبور از سقف تلاش.</response>
+        /// <summary>تأیید کد پیامکی و ورود؛ نشست جدید ساخته می‌شود.</summary>
         [HttpPost("otp/verify")]
         [AllowAnonymous]
         [EnableRateLimiting("otp-verify")]
         [ProducesResponseType(typeof(ApiResult<AuthResponseDto>), StatusCodes.Status200OK)]
         public async Task<ApiResult<AuthResponseDto>> VerifyOtp([FromBody] VerifyOtpDto dto, CancellationToken cancellationToken)
         {
+            EnsureMobileLoginEnabled();
+            await EnsureCaptchaAsync(dto.CaptchaToken, cancellationToken);
+
             var user = await _otpService.VerifyLoginCodeAsync(dto.MobileNumber, dto.Code, cancellationToken);
-
-            var token = await _jwtService.GenerateAsync(
-                user,
-                dto.DeviceName ?? "دستگاه ناشناس",
-                HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
-                Request.Headers.UserAgent.ToString(),
-                cancellationToken);
-
-            var sessionId = Guid.Parse(ReadSessionIdFromToken(token));
-            Log.ForContext("Audit", true).Information("{Action} کاربر {UserId} از {Ip}", "Login", user.Id, HttpContext.Connection.RemoteIpAddress?.ToString());
-            return ToAuthResponse(token, sessionId);
+            return await IssueTokensAsync(user, dto.DeviceName, cancellationToken);
         }
 
-        /// <summary>دریافت جفت توکن‌ی جدید با Refresh Token (چرخشی؛ توکن قبلی باطل می‌شود).</summary>
-        /// <response code="401">توکن نامعتبر/منقضی یا استفاده‌ی مجدد از توکن چرخش‌یافته.</response>
+        // ───────────── ورود با نام کاربری و رمز ─────────────
+
+        /// <summary>
+        /// مرحله‌ی اول: نام کاربری و رمز. اگر دو مرحله‌ای لازم باشد requiresOtp=true و challenge برمی‌گردد؛
+        /// وگرنه همین‌جا توکن‌ها صادر می‌شوند.
+        /// </summary>
+        [HttpPost("login")]
+        [AllowAnonymous]
+        [EnableRateLimiting("login")]
+        [ProducesResponseType(typeof(ApiResult<PasswordLoginResponseDto>), StatusCodes.Status200OK)]
+        public async Task<ApiResult<PasswordLoginResponseDto>> Login([FromBody] PasswordLoginDto dto, CancellationToken cancellationToken)
+        {
+            EnsurePasswordLoginEnabled();
+            await EnsureCaptchaAsync(dto.CaptchaToken, cancellationToken);
+
+            var user = await _userService.ValidateCredentialsAsync(dto.UserName, dto.Password, cancellationToken);
+            if (user is null)
+            {
+                Log.ForContext("Audit", true).Warning(
+                    "{Action} نام کاربری {UserName} از {Ip}", "PasswordLoginFailed", dto.UserName, ClientIp());
+                throw new InvalidCredentialsException();
+            }
+
+            var requiresOtp = _siteSettings.AuthSettings.PasswordLoginRequiresOtp || user.TwoFactorEnabled == true;
+            if (requiresOtp)
+            {
+                var challenge = await _otpService.RequestPasswordLoginCodeAsync(user, cancellationToken);
+                return new PasswordLoginResponseDto { RequiresOtp = true, Challenge = ToChallengeDto(challenge) };
+            }
+
+            return new PasswordLoginResponseDto
+            {
+                RequiresOtp = false,
+                Auth = await IssueTokensAsync(user, dto.DeviceName, cancellationToken)
+            };
+        }
+
+        /// <summary>مرحله‌ی دوم ورود با رمز: تأیید کد پیامکی.</summary>
+        [HttpPost("login/verify")]
+        [AllowAnonymous]
+        [EnableRateLimiting("otp-verify")]
+        [ProducesResponseType(typeof(ApiResult<AuthResponseDto>), StatusCodes.Status200OK)]
+        public async Task<ApiResult<AuthResponseDto>> VerifyLogin([FromBody] VerifyLoginChallengeDto dto, CancellationToken cancellationToken)
+        {
+            EnsurePasswordLoginEnabled();
+            await EnsureCaptchaAsync(dto.CaptchaToken, cancellationToken);
+
+            var user = await _otpService.VerifyPasswordLoginCodeAsync(dto.ChallengeId, dto.Code, cancellationToken);
+            return await IssueTokensAsync(user, dto.DeviceName, cancellationToken);
+        }
+
+        /// <summary>ارسال دوباره‌ی کد مرحله‌ی دوم (challengeId جدید برمی‌گردد).</summary>
+        [HttpPost("login/resend")]
+        [AllowAnonymous]
+        [EnableRateLimiting("otp")]
+        [ProducesResponseType(typeof(ApiResult<LoginChallengeDto>), StatusCodes.Status200OK)]
+        public async Task<ApiResult<LoginChallengeDto>> ResendLogin([FromBody] ResendLoginChallengeDto dto, CancellationToken cancellationToken)
+        {
+            EnsurePasswordLoginEnabled();
+            await EnsureCaptchaAsync(dto.CaptchaToken, cancellationToken);
+
+            var challenge = await _otpService.ResendPasswordLoginCodeAsync(dto.ChallengeId, cancellationToken);
+            return ToChallengeDto(challenge);
+        }
+
+        // ───────────── توکن و نشست‌ها ─────────────
+
+        /// <summary>دریافت جفت توکن جدید با Refresh Token (چرخشی؛ استفاده‌ی مجدد از توکن قدیمی نشست را باطل می‌کند).</summary>
         [HttpPost("refresh")]
         [AllowAnonymous]
         [EnableRateLimiting("refresh")]
@@ -99,6 +180,29 @@ namespace SanjeshP.Payeh.Api.Controllers.V1
             var token = await _jwtService.RefreshAsync(dto.RefreshToken, cancellationToken);
             var sessionId = Guid.Parse(ReadSessionIdFromToken(token));
             return ToAuthResponse(token, sessionId);
+        }
+
+        /// <summary>اطلاعات کاربر واردشده (نام، موبایل، نقش‌ها).</summary>
+        [HttpGet("me")]
+        [SkipMenuPermission]
+        [ProducesResponseType(typeof(ApiResult<MeDto>), StatusCodes.Status200OK)]
+        public async Task<ApiResult<MeDto>> Me(CancellationToken cancellationToken)
+        {
+            var user = await _userService.GetByIdAsync(CurrentUserId, cancellationToken);
+            var profile = user.UserProfile.FirstOrDefault();
+
+            return new MeDto
+            {
+                Id = user.Id,
+                UserName = user.UserName,
+                FirstName = profile?.FirstName,
+                LastName = profile?.LastName,
+                PhoneNumber = user.PhoneNumber,
+                Roles = user.UserRoles
+                    .Where(ur => ur.Role != null)
+                    .Select(ur => new RoleDto { Id = ur.Role.Id, NameEn = ur.Role.RoleNameEn, NameFa = ur.Role.RoleNameFa })
+                    .ToList()
+            };
         }
 
         /// <summary>خروج از دستگاه فعلی؛ فقط نشستِ همین توکن باطل می‌شود.</summary>
@@ -149,7 +253,55 @@ namespace SanjeshP.Payeh.Api.Controllers.V1
             }).ToList();
         }
 
-        /// <summary>استخراج شناسه‌ی نشست از claim توکن صادرشده.</summary>
+        // ───────────── کمکی ─────────────
+
+        private string ClientIp() => HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+
+        private void EnsureMobileLoginEnabled()
+        {
+            if (!_siteSettings.AuthSettings.MobileLoginEnabled)
+                throw new ForbiddenException("ورود با شماره موبایل غیرفعال است.");
+        }
+
+        private void EnsurePasswordLoginEnabled()
+        {
+            if (!_siteSettings.AuthSettings.PasswordLoginEnabled)
+                throw new ForbiddenException("ورود با نام کاربری و رمز عبور غیرفعال است.");
+        }
+
+        /// <summary>اعتبارسنجی کپچا؛ هر توکن فقط یک‌بار قابل استفاده است، پس هر مرحله توکن تازه می‌خواهد.</summary>
+        private async Task EnsureCaptchaAsync(string? token, CancellationToken cancellationToken)
+        {
+            if (!_captchaService.IsEnabled) return;
+
+            if (!await _captchaService.ValidateAsync(token, ClientIp(), cancellationToken))
+                throw new CaptchaInvalidException();
+        }
+
+        private async Task<AuthResponseDto> IssueTokensAsync(UserEntity user, string? deviceName, CancellationToken cancellationToken)
+        {
+            var ip = ClientIp();
+            var token = await _jwtService.GenerateAsync(
+                user,
+                deviceName ?? "دستگاه ناشناس",
+                ip,
+                Request.Headers.UserAgent.ToString(),
+                cancellationToken);
+
+            var sessionId = Guid.Parse(ReadSessionIdFromToken(token));
+            Log.ForContext("Audit", true).Information("{Action} کاربر {UserId} از {Ip}", "Login", user.Id, ip);
+            return ToAuthResponse(token, sessionId);
+        }
+
+        private LoginChallengeDto ToChallengeDto(LoginChallengeResult challenge) => new()
+        {
+            ChallengeId = challenge.ChallengeId,
+            MaskedMobile = challenge.MaskedMobile,
+            ExpiresInSeconds = _siteSettings.OtpSettings.ExpirationSeconds,
+            ResendAfterSeconds = challenge.ResendAfterSeconds,
+            DevCode = challenge.DevCode
+        };
+
         private static string ReadSessionIdFromToken(Services.AccessToken token)
         {
             var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();

@@ -22,6 +22,7 @@ namespace SanjeshP.Payeh.Common
         public SmsSettings SmsSettings { get; set; } = new();
         public RefreshTokenSettings RefreshTokenSettings { get; set; } = new();
         public ApiDocsSettings ApiDocsSettings { get; set; } = new();
+        public AuthSettings AuthSettings { get; set; } = new();
     }
 
     public class IdentitySettings
@@ -61,12 +62,27 @@ namespace SanjeshP.Payeh.Common
         public bool ReturnCodeInResponse { get; set; }
     }
 
+    /// <summary>تنظیمات روش‌های ورود.</summary>
+    public class AuthSettings
+    {
+        /// <summary>ورود با شماره موبایل و کد پیامکی فعال باشد؟</summary>
+        public bool MobileLoginEnabled { get; set; } = true;
+
+        /// <summary>ورود با نام کاربری و رمز عبور فعال باشد؟</summary>
+        public bool PasswordLoginEnabled { get; set; } = true;
+
+        /// <summary>true: بعد از رمز صحیح همه باید کد پیامکی هم وارد کنند. false: فقط کاربرانی که TwoFactorEnabled دارند.</summary>
+        public bool PasswordLoginRequiresOtp { get; set; }
+    }
+
     /// <summary>کپچا اختیاری است و با Enabled از تنظیمات روشن/خاموش می‌شود.</summary>
     public class CaptchaSettings
     {
         public bool Enabled { get; set; }
         /// <summary>نام ارائه‌دهنده؛ فعلاً Recaptcha. با تعویض پیاده‌سازی ICaptchaService قابل تغییر است.</summary>
         public string Provider { get; set; } = "Recaptcha";
+        /// <summary>کلید عمومی (Site Key) برای نمایش ویجت در فرانت؛ محرمانه نیست.</summary>
+        public string SiteKey { get; set; } = string.Empty;
         public string SecretKey { get; set; } = string.Empty;
         public string VerifyUrl { get; set; } = "https://www.google.com/recaptcha/api/siteverify";
     }

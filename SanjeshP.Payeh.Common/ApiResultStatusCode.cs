@@ -57,6 +57,18 @@ namespace SanjeshP.Payeh.Common
 
         /// <summary>درخواست‌های بیش از حد مجاز (HTTP 429)</summary>
         [Display(Name = "تعداد درخواست‌ها بیش از حد مجاز است؛ کمی بعد تلاش کنید")]
-        TooManyRequests = 11
+        TooManyRequests = 11,
+
+        /// <summary>کپچا نامعتبر یا منقضی است (HTTP 400)</summary>
+        [Display(Name = "کپچا نامعتبر است")]
+        CaptchaInvalid = 12,
+
+        /// <summary>نام کاربری یا رمز عبور نادرست است (HTTP 400)</summary>
+        [Display(Name = "نام کاربری یا رمز عبور نادرست است")]
+        InvalidCredentials = 13,
+
+        /// <summary>کد یک‌بارمصرف نادرست یا منقضی است (HTTP 400)</summary>
+        [Display(Name = "کد تأیید نادرست یا منقضی است")]
+        InvalidOtp = 14
     }
 }

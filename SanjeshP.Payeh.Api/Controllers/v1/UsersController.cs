@@ -85,6 +85,9 @@ namespace SanjeshP.Payeh.Api.Controllers.V1
                 if (dto.IsActive.HasValue) user.IsActive = dto.IsActive.Value;
             }, dto.RoleIds, dto.FirstName, dto.LastName, cancellationToken);
 
+            if (!string.IsNullOrWhiteSpace(dto.Password))
+                await _userService.SetPasswordAsync(id, dto.Password, cancellationToken);
+
             return _mapper.Map<UserSelectDto>(updated);
         }
 
