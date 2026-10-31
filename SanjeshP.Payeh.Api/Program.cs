@@ -2,6 +2,8 @@ using SanjeshP.Payeh.Common;
 using SanjeshP.Payeh.WebFramework.Configuration;
 using SanjeshP.Payeh.WebFramework.Middlewares;
 using Serilog;
+using Microsoft.AspNetCore.HttpOverrides;
+using System.Net;
 
 // logger موقت: خطاهای startup (مثل اعتبارسنجی کلید JWT) هم ثبت شوند
 Log.Logger = new LoggerConfiguration().WriteTo.Console().CreateBootstrapLogger();
@@ -35,6 +37,17 @@ try
     // ── ثبت سرویس‌ها (همه قبل از Build) ──
     builder.Services.AddMinimalServices(builder.Configuration);
 
+    // پشت BFF/Reverse Proxy: IP واقعی کلاینت از X-Forwarded-For (فقط از پروکسی‌های مورد اعتماد).
+    // Loopback به‌صورت پیش‌فرض مورد اعتماد است؛ در سرور واقعی IP سرور BFF را در ForwardedHeaders:KnownProxies بگذارید.
+    var knownProxies = builder.Configuration.GetSection("ForwardedHeaders:KnownProxies").Get<string[]>() ?? Array.Empty<string>();
+    builder.Services.Configure<ForwardedHeadersOptions>(options =>
+    {
+        options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+        options.ForwardLimit = 1;
+        foreach (var ip in knownProxies)
+            options.KnownProxies.Add(IPAddress.Parse(ip));
+    });
+
     // مدیریت مرکزی خطا با IExceptionHandler — همه‌ی خطاها در قالب ApiResult برمی‌گردند.
     builder.Services.AddExceptionHandler<CustomExceptionHandler>();
     builder.Services.AddProblemDetails();
@@ -44,6 +57,7 @@ try
     // ── pipeline ──
     // اولین میان‌افزار زنجیره تا هر خطایی (حتی خارج از MVC) گرفته شود.
     app.UseExceptionHandler();
+    app.UseForwardedHeaders();
     app.UseSerilogRequestLogging();
 
     // مستندات Scalar: در Development همیشه، در بقیه‌ی محیط‌ها با ApiDocsSettings:Enabled
