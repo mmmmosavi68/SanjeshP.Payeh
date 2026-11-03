@@ -37,7 +37,7 @@ namespace SanjeshP.Payeh.Api.Models.Users
     //    }
     //}
     /// <summary>ورودی ایجاد کاربر. اعتبارسنجی با DataAnnotations و پیام فارسی.</summary>
-    public class CreateUserDto
+    public class CreateUserDto : BaseDto<CreateUserDto, User, Guid>
     {
         [Required(ErrorMessage = "نام کاربری الزامی است")]
         [StringLength(50, MinimumLength = 3, ErrorMessage = "نام کاربری باید بین 3 تا 50 کاراکتر باشد")]
