@@ -5,6 +5,7 @@ using SanjeshP.Payeh.Common.Exceptions;
 using SanjeshP.Payeh.Data;
 using SanjeshP.Payeh.Data.Contracts;
 using SanjeshP.Payeh.Entities.User;
+using System.Net.Mail;
 
 namespace SanjeshP.Payeh.Services.Users
 {
@@ -27,51 +28,56 @@ namespace SanjeshP.Payeh.Services.Users
         private readonly ApplicationDbContext _dbContext;
         private readonly IPasswordHasher<User> _passwordHasher;
 
-        public UserService(
-            IEFRepository<User> userRepository,
-            ApplicationDbContext dbContext,
-            IPasswordHasher<User> passwordHasher)
+        public UserService(IEFRepository<User> userRepository, ApplicationDbContext dbContext, IPasswordHasher<User> passwordHasher)
         {
             _userRepository = userRepository;
             _dbContext = dbContext;
             _passwordHasher = passwordHasher;
         }
 
-        /// <inheritdoc />
-        public async Task<PagedUsers> GetPagedAsync(UserQuery query, CancellationToken cancellationToken)
+        public async Task<User?> ValidateCredentialsAsync(string userName, string password, CancellationToken cancellationToken)
         {
-            var users = _userRepository.TableNoTracking
-                .Where(x => !x.IsDeleted);
+            var normalized = userName.Trim().ToUpperInvariant();
 
-            // جستجو در نام کاربری، موبایل، ایمیل و پروفایل
-            if (!string.IsNullOrWhiteSpace(query.Search))
+            // نقش‌ها لازم‌اند چون JwtService در ساخت توکن از user.UserRoles می‌خواند
+            var user = await _userRepository.Table
+                .Include(x => x.UserRoles).ThenInclude(ur => ur.Role)
+                .FirstOrDefaultAsync(x => x.NormalizedUserName == normalized && !x.IsDeleted && x.IsActive, cancellationToken);
+
+            if (user is null || string.IsNullOrEmpty(user.PasswordHash))
             {
-                var search = query.Search.Trim();
-                users = users.Where(x =>
-                    x.UserName.Contains(search) ||
-                    (x.PhoneNumber != null && x.PhoneNumber.Contains(search)) ||
-                    (x.EmailAddress != null && x.EmailAddress.Contains(search)) ||
-                    x.UserProfile.Any(p => p.FirstName.Contains(search) || p.LastName.Contains(search) || p.NationalCode.Contains(search)));
+                // هزینه‌ی زمانی یکسان تا از روی سرعت پاسخ نتوان وجود کاربر را فهمید
+                _passwordHasher.HashPassword(new User(), password);
+                return null;
             }
 
-            if (query.IsActive.HasValue)
-                users = users.Where(x => x.IsActive == query.IsActive.Value);
+            if (user.LockoutEnd is { } lockEnd && lockEnd > DateTimeOffset.UtcNow)
+                return null;
 
-            if (query.RoleId.HasValue)
-                users = users.Where(x => x.UserRoles.Any(ur => ur.RoleId == query.RoleId.Value));
+            PasswordVerificationResult result;
+            try { result = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, password); }
+            catch (FormatException) { result = PasswordVerificationResult.Failed; } // هش با فرمت دیگر (مثل BCrypt)
 
-            var totalCount = await users.CountAsync(cancellationToken);
+            if (result == PasswordVerificationResult.Failed)
+            {
+                user.AccessFailedCount = (user.AccessFailedCount ?? 0) + 1;
+                if (user.AccessFailedCount >= 5)
+                {
+                    user.LockoutEnd = DateTimeOffset.UtcNow.AddMinutes(15);
+                    user.AccessFailedCount = 0;
+                }
+                await _dbContext.SaveChangesAsync(cancellationToken);
+                return null;
+            }
 
-            users = ApplySorting(users, query.SortBy, query.SortDirection);
+            if (result == PasswordVerificationResult.SuccessRehashNeeded)
+                user.PasswordHash = _passwordHasher.HashPassword(user, password);
 
-            var items = await users
-                .Skip((query.PageNumber - 1) * query.PageSize)
-                .Take(query.PageSize)
-                .Include(x => x.UserProfile)
-                .Include(x => x.UserRoles).ThenInclude(ur => ur.Role)
-                .ToListAsync(cancellationToken);
-
-            return new PagedUsers(items, totalCount, query.PageNumber, query.PageSize);
+            user.AccessFailedCount = 0;
+            user.LockoutEnd = null;
+            user.LastLoginDate = DateTimeOffset.UtcNow;
+            await _dbContext.SaveChangesAsync(cancellationToken);
+            return user;
         }
 
         /// <inheritdoc />
@@ -99,6 +105,8 @@ namespace SanjeshP.Payeh.Services.Users
 
             var roleIdList = roleIds.Distinct().ToList();
             await EnsureRolesExistAsync(roleIdList, cancellationToken);
+            await EnsureEmailUniqueAsync(user.NormalizedEmailAddress, null, cancellationToken);
+            await EnsureNationalCodeUniqueAsync(nationalCode, excludeUserId: null, cancellationToken);
             foreach (var roleId in roleIdList)
                 user.UserRoles.Add(new UserRole { RoleId = roleId, CreatedBy = createdBy });
 
@@ -112,7 +120,8 @@ namespace SanjeshP.Payeh.Services.Users
                     CreatedBy = createdBy
                 });
             }
-
+            if (cancellationToken.IsCancellationRequested)
+                throw new OperationCanceledException("درخواست قبل از اجرای کوئری لغو شده است.");
             await _userRepository.AddAsync(user, cancellationToken);
             return await GetByIdAsync(user.Id, cancellationToken);
         }
@@ -128,15 +137,24 @@ namespace SanjeshP.Payeh.Services.Users
 
             applyChanges(user);
 
+            // بررسی تکراری نبودن نام کاربری و موبایل
             if (user.PhoneNumber is not null)
-                await EnsureUniqueAsync(user.UserName, user.PhoneNumber, excludeUserId: id, cancellationToken);
+                await EnsureUniqueAsync(user.UserName, user.PhoneNumber, id, cancellationToken);
+
+            // بررسی تکراری نبودن ایمیل
+            await EnsureEmailUniqueAsync(user.EmailAddress, id, cancellationToken);
+
+            // بررسی تکراری نبودن کد ملی
+            var profile = user.UserProfile.FirstOrDefault();
+            if (profile is not null)
+                await EnsureNationalCodeUniqueAsync(profile.NationalCode, id, cancellationToken);
+
 
             user.NormalizedUserName = user.UserName.ToUpperInvariant();
             user.NormalizedEmailAddress = user.EmailAddress?.ToUpperInvariant();
             user.UpdatedDate = DateTime.UtcNow;
 
             // به‌روزرسانی پروفایل (اولین رکورد)
-            var profile = user.UserProfile.FirstOrDefault();
             if (profile is not null)
             {
                 if (!string.IsNullOrWhiteSpace(firstName)) profile.FirstName = firstName.Trim();
@@ -204,6 +222,43 @@ namespace SanjeshP.Payeh.Services.Users
             await _dbContext.SaveChangesAsync(cancellationToken);
         }
 
+        /// <inheritdoc />
+        public async Task<PagedUsers> GetPagedAsync(UserQuery query, CancellationToken cancellationToken)
+        {
+            var users = _userRepository.TableNoTracking
+                .Where(x => !x.IsDeleted);
+
+            // جستجو در نام کاربری، موبایل، ایمیل و پروفایل
+            if (!string.IsNullOrWhiteSpace(query.Search))
+            {
+                var search = query.Search.Trim();
+                users = users.Where(x =>
+                    x.UserName.Contains(search) ||
+                    (x.PhoneNumber != null && x.PhoneNumber.Contains(search)) ||
+                    (x.EmailAddress != null && x.EmailAddress.Contains(search)) ||
+                    x.UserProfile.Any(p => p.FirstName.Contains(search) || p.LastName.Contains(search) || p.NationalCode.Contains(search)));
+            }
+
+            if (query.IsActive.HasValue)
+                users = users.Where(x => x.IsActive == query.IsActive.Value);
+
+            if (query.RoleId.HasValue)
+                users = users.Where(x => x.UserRoles.Any(ur => ur.RoleId == query.RoleId.Value));
+
+            var totalCount = await users.CountAsync(cancellationToken);
+
+            users = ApplySorting(users, query.SortBy, query.SortDirection);
+
+            var items = await users
+                .Skip((query.PageNumber - 1) * query.PageSize)
+                .Take(query.PageSize)
+                .Include(x => x.UserProfile)
+                .Include(x => x.UserRoles).ThenInclude(ur => ur.Role)
+                .ToListAsync(cancellationToken);
+
+            return new PagedUsers(items, totalCount, query.PageNumber, query.PageSize);
+        }
+
         /// <summary>مرتب‌سازی امن بر اساس لیست سفید؛ مقدار نامعتبر ⇒ پیش‌فرض createdDate desc.</summary>
         private static IQueryable<User> ApplySorting(IQueryable<User> users, string? sortBy, string? sortDirection)
         {
@@ -229,14 +284,35 @@ namespace SanjeshP.Payeh.Services.Users
         private async Task EnsureUniqueAsync(string userName, string? phoneNumber, Guid? excludeUserId, CancellationToken cancellationToken)
         {
             var normalized = userName.ToUpperInvariant();
-            var duplicated = await _userRepository.TableNoTracking.AnyAsync(x =>
-                !x.IsDeleted &&
-                (excludeUserId == null || x.Id != excludeUserId) &&
-                (x.NormalizedUserName == normalized || (phoneNumber != null && x.PhoneNumber == phoneNumber)),
+
+            var user = _userRepository.TableNoTracking
+                .Where(x =>
+                    !x.IsDeleted &&
+                    (excludeUserId == null || x.Id != excludeUserId));
+
+            // بررسی تکراری بودن نام کاربری
+            var userNameExists = await user.AnyAsync(
+                x => x.NormalizedUserName == normalized,
                 cancellationToken);
 
-            if (duplicated)
-                throw new ConflictException("نام کاربری یا شماره موبایل قبلاً ثبت شده است.");
+            if (userNameExists)
+                throw new ConflictException("این نام کاربری قبلاً ثبت شده است.");
+
+            // بررسی تکراری بودن شماره موبایل
+            if (!string.IsNullOrWhiteSpace(phoneNumber))
+            {
+                var phoneExists = await user.AnyAsync(
+                    x => x.PhoneNumber == phoneNumber,
+                    cancellationToken);
+
+                if (phoneExists)
+                    throw new ConflictException("این شماره موبایل قبلاً ثبت شده است.");
+            }
+
+            var userProfile = _userRepository.TableNoTracking
+               .Where(x =>
+                   !x.IsDeleted &&
+                   (excludeUserId == null || x.Id != excludeUserId));
         }
 
         private async Task EnsureRolesExistAsync(List<int> roleIds, CancellationToken cancellationToken)
@@ -247,50 +323,38 @@ namespace SanjeshP.Payeh.Services.Users
                 throw new BadRequestException("یک یا چند نقش ارسالی معتبر نیستند.");
         }
 
-
-        public async Task<User?> ValidateCredentialsAsync(string userName, string password, CancellationToken cancellationToken)
+        /// <summary>بررسی تکراری نبودن کد ملی کاربران در ایجاد و ویرایش.</summary>
+        private async Task EnsureNationalCodeUniqueAsync(string? nationalCode, Guid? excludeUserId, CancellationToken cancellationToken)
         {
-            var normalized = userName.Trim().ToUpperInvariant();
+            if (string.IsNullOrWhiteSpace(nationalCode))
+                return;
 
-            // نقش‌ها لازم‌اند چون JwtService در ساخت توکن از user.UserRoles می‌خواند
-            var user = await _userRepository.Table
-                .Include(x => x.UserRoles).ThenInclude(ur => ur.Role)
-                .FirstOrDefaultAsync(x => x.NormalizedUserName == normalized && !x.IsDeleted && x.IsActive, cancellationToken);
+            var normalizedNationalCode = nationalCode.Trim();
 
-            if (user is null || string.IsNullOrEmpty(user.PasswordHash))
-            {
-                // هزینه‌ی زمانی یکسان تا از روی سرعت پاسخ نتوان وجود کاربر را فهمید
-                _passwordHasher.HashPassword(new User(), password);
-                return null;
-            }
+            var exists = await _dbContext.Set<UserProfile>().AnyAsync(
+                up => !up.IsDeleted &&
+                      up.NationalCode == normalizedNationalCode &&
+                      (excludeUserId == null || up.UserId != excludeUserId),
+                cancellationToken);
 
-            if (user.LockoutEnd is { } lockEnd && lockEnd > DateTimeOffset.UtcNow)
-                return null;
+            if (exists)
+                throw new ConflictException("این کد ملی قبلاً ثبت شده است.");
+        }
 
-            PasswordVerificationResult result;
-            try { result = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, password); }
-            catch (FormatException) { result = PasswordVerificationResult.Failed; } // هش با فرمت دیگر (مثل BCrypt)
+        /// <summary>بررسی تکراری نبودن ایمیل کاربران در ایجاد و ویرایش.</summary>
+        private async Task EnsureEmailUniqueAsync(string? NormalizedEmailAddress, Guid? excludeUserId, CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrWhiteSpace(NormalizedEmailAddress))
+                return;
 
-            if (result == PasswordVerificationResult.Failed)
-            {
-                user.AccessFailedCount = (user.AccessFailedCount ?? 0) + 1;
-                if (user.AccessFailedCount >= 5)
-                {
-                    user.LockoutEnd = DateTimeOffset.UtcNow.AddMinutes(15);
-                    user.AccessFailedCount = 0;
-                }
-                await _dbContext.SaveChangesAsync(cancellationToken);
-                return null;
-            }
+            var exists = await _dbContext.Set<User>().AnyAsync(
+                u => !u.IsDeleted &&
+                     u.NormalizedEmailAddress == NormalizedEmailAddress &&
+                     (excludeUserId == null || u.Id != excludeUserId),
+                cancellationToken);
 
-            if (result == PasswordVerificationResult.SuccessRehashNeeded)
-                user.PasswordHash = _passwordHasher.HashPassword(user, password);
-
-            user.AccessFailedCount = 0;
-            user.LockoutEnd = null;
-            user.LastLoginDate = DateTimeOffset.UtcNow;
-            await _dbContext.SaveChangesAsync(cancellationToken);
-            return user;
+            if (exists)
+                throw new ConflictException("این ایمیل قبلاً ثبت شده است.");
         }
     }
 }

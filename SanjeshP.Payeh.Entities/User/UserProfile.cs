@@ -24,7 +24,7 @@ namespace SanjeshP.Payeh.Entities.User
 
         [MaxLength(50, ErrorMessage = "نام پدر نباید بیش از 50 کاراکتر باشد")]
         [Display(Name = "نام پدر")]
-        public string FatherName { get; set; }
+        public string? FatherName { get; set; }
 
         [Required(ErrorMessage = "کد ملی الزامی است")]
         [MaxLength(10, ErrorMessage = "کد ملی نباید بیش از 10 کاراکتر باشد")]
