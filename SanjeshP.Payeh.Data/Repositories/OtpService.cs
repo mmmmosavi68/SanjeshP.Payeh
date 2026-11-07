@@ -6,7 +6,7 @@ using SanjeshP.Payeh.Common.Exceptions;
 using SanjeshP.Payeh.Common.Utilities;
 using SanjeshP.Payeh.Data;
 using SanjeshP.Payeh.Entities.User;
-using SanjeshP.Payeh.Services.Sms;
+//using SanjeshP.Payeh.Services.Sms;
 using System.Security.Cryptography;
 
 namespace SanjeshP.Payeh.Services.Otp
@@ -28,18 +28,18 @@ namespace SanjeshP.Payeh.Services.Otp
         private const int ChallengeMaxAgeMinutes = 30;
 
         private readonly ApplicationDbContext _dbContext;
-        private readonly ISmsSender _smsSender;
+        //private readonly ISmsSender _smsSender;
         private readonly OtpSettings _settings;
         private readonly ILogger<OtpService> _logger;
 
         public OtpService(
             ApplicationDbContext dbContext,
-            ISmsSender smsSender,
+            //ISmsSender smsSender,
             IOptions<SiteSettings> siteSettings,
             ILogger<OtpService> logger)
         {
             _dbContext = dbContext;
-            _smsSender = smsSender;
+            //_smsSender = smsSender;
             _settings = siteSettings.Value.OtpSettings;
             _logger = logger;
         }
@@ -219,7 +219,7 @@ namespace SanjeshP.Payeh.Services.Otp
             otps.Add(otp);
             await _dbContext.SaveChangesAsync(cancellationToken);
 
-            await _smsSender.SendAsync(mobileNumber, $"کد ورود شما: {code}\nاعتبار: {_settings.ExpirationSeconds} ثانیه", cancellationToken);
+            //await _smsSender.SendAsync(mobileNumber, $"کد ورود شما: {code}\nاعتبار: {_settings.ExpirationSeconds} ثانیه", cancellationToken);
 
             return (otp, code);
         }

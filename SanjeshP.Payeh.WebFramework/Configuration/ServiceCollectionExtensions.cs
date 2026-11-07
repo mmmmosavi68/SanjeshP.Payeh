@@ -179,7 +179,7 @@ namespace SanjeshP.Payeh.WebFramework.Configuration
             if (siteSettings.CaptchaSettings.Enabled)
                 services.AddScoped<ICaptchaService, GoogleRecaptchaService>();
             else
-                services.AddScoped<ICaptchaService, DisabledCaptchaService>();
+                services.AddScoped<ICaptchaService, CaptchaService>();
         }
 
         /// <summary>محدودیت نرخ درخواست برای اکشن‌های حساس (درخواست کد پیامکی) بر اساس IP.</summary>

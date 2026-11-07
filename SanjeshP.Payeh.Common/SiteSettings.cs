@@ -23,6 +23,8 @@ namespace SanjeshP.Payeh.Common
         public RefreshTokenSettings RefreshTokenSettings { get; set; } = new();
         public ApiDocsSettings ApiDocsSettings { get; set; } = new();
         public AuthSettings AuthSettings { get; set; } = new();
+        public PayamSMS payamSMS { get; set; }
+
     }
 
     public class IdentitySettings
@@ -105,5 +107,11 @@ namespace SanjeshP.Payeh.Common
         public bool Enabled { get; set; }
         /// <summary>مسیر نمایش مستندات.</summary>
         public string Path { get; set; } = "/scalar";
+    }
+
+    public class PayamSMS
+    {
+        public string UserName { get; set; }
+        public string Password { get; set; }
     }
 }

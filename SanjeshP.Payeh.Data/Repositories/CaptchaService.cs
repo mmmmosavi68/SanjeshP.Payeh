@@ -5,7 +5,7 @@ namespace SanjeshP.Payeh.Services.Captcha
     /// این کلاس در DI ثبت می‌شود و همیشه معتبر برمی‌گرداند.
     /// به این ترتیب کنترلر هیچ if پراکنده‌ای برای وضعیت کپچا ندارد.
     /// </summary>
-    public class DisabledCaptchaService : ICaptchaService
+    public class CaptchaService : ICaptchaService
     {
         /// <inheritdoc />
         public bool IsEnabled => false;

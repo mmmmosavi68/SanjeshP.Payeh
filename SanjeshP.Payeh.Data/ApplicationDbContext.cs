@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using SanjeshP.Payeh.Common.Utilities;
 using SanjeshP.Payeh.Entities.Common;
+using SanjeshP.Payeh.Entities.Audit;
 using SanjeshP.Payeh.Entities.Menu;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -31,6 +32,15 @@ namespace SanjeshP.Payeh.Data
 
             modelBuilder.RegisterAllEntities<IEntity>(entitiesAssembly);
             modelBuilder.RegisterEntityTypeConfiguration(entitiesAssembly);
+
+            // ایندکس‌های جدول Audit برای جستجوی تاریخچه بر اساس زمان و کاربر.
+            modelBuilder.Entity<AuditLog>(entity =>
+            {
+                entity.ToTable("AuditLogs");
+                entity.HasIndex(x => x.OccurredAtUtc);
+                entity.HasIndex(x => new { x.UserId, x.OccurredAtUtc });
+                entity.HasIndex(x => x.Action);
+            });
             modelBuilder.AddRestrictDeleteBehaviorConvention();
             modelBuilder.AddSequentialGuidForIdConvention();
             modelBuilder.AddPluralizingTableNameConvention();
