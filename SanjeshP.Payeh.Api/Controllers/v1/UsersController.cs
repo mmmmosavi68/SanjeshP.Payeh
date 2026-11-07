@@ -4,8 +4,9 @@ using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SanjeshP.Payeh.Api.Models.Users;
-using SanjeshP.Payeh.Entities.User;
+using SanjeshP.Payeh.Common;
 using SanjeshP.Payeh.Data.Contracts;
+using SanjeshP.Payeh.Entities.User;
 using SanjeshP.Payeh.Services.Users;
 using SanjeshP.Payeh.WebFramework.Api;
 using System.Text.Json;
@@ -356,7 +357,7 @@ namespace SanjeshP.Payeh.Api.Controllers.V1
         /// </summary>
         [HttpDelete("{id:guid}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
-        public async Task<IActionResult> Delete([FromRoute] Guid id,     CancellationToken cancellationToken)
+        public async Task<ApiResult> Delete([FromRoute] Guid id,     CancellationToken cancellationToken)
         {
             // کاربر اجازه حذف حساب خودش را ندارد.
             if (id == CurrentUserId)
@@ -390,7 +391,7 @@ namespace SanjeshP.Payeh.Api.Controllers.V1
                 }),
                 cancellationToken: cancellationToken);
 
-            return NoContent();
+            return new ApiResult(true, ApiResultStatusCode.Success, "کاربر با موفقیت حذف شد.");
         }
 
         #region Audit Helpers
