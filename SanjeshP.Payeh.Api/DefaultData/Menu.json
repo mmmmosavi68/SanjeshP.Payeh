@@ -117,5 +117,39 @@
     "Link": "No Link",
     "IsActive": true,
     "IsDeleted": false
+  },
+  {
+    "Id": "00000000-0000-0000-0000-000000000020",
+    "MenuTitle": "گزارش ممیزی",
+    "ParentId": "00000000-0000-0000-0000-000000000001",
+    "PageCode": 200,
+    "Path": null,
+    "version": "1",
+
+    "ControllerName": "AuditLogs",
+    "ActionName": null,
+    "ShowMenu": true,
+    "CssClass": "nav-item",
+    "Icon": "fa fa-history",
+    "Link": "No Link",
+    "IsActive": true,
+    "IsDeleted": false
+  },
+  {
+    "Id": "00000000-0000-0000-0000-000000000021",
+    "MenuTitle": "جستجوی سوابق ممیزی",
+    "ParentId": "00000000-0000-0000-0000-000000000020",
+    "PageCode": 201,
+    "Path": null,
+    "version": "1",
+
+    "ControllerName": "AuditLogs",
+    "ActionName": "Search",
+    "ShowMenu": true,
+    "CssClass": "nav-item",
+    "Icon": "fa fa-search",
+    "Link": "/audit-logs",
+    "IsActive": true,
+    "IsDeleted": false
   }
 ]

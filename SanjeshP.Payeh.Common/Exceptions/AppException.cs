@@ -27,7 +27,7 @@ namespace SanjeshP.Payeh.Common.Exceptions
         }
 
         public AppException(ApiResultStatusCode statusCode, string message)
-            : this(statusCode, message, HttpStatusCode.InternalServerError)
+            : this(statusCode, message, DefaultHttpStatus(statusCode))
         {
         }
 
@@ -42,7 +42,7 @@ namespace SanjeshP.Payeh.Common.Exceptions
         }
 
         public AppException(ApiResultStatusCode statusCode, string message, object additionalData)
-            : this(statusCode, message, HttpStatusCode.InternalServerError, additionalData)
+            : this(statusCode, message, DefaultHttpStatus(statusCode), additionalData)
         {
         }
 
@@ -67,12 +67,12 @@ namespace SanjeshP.Payeh.Common.Exceptions
         }
 
         public AppException(ApiResultStatusCode statusCode, string message, Exception exception)
-            : this(statusCode, message, HttpStatusCode.InternalServerError, exception)
+            : this(statusCode, message, DefaultHttpStatus(statusCode), exception)
         {
         }
 
         public AppException(ApiResultStatusCode statusCode, string message, Exception exception, object additionalData)
-            : this(statusCode, message, HttpStatusCode.InternalServerError, exception, additionalData)
+            : this(statusCode, message, DefaultHttpStatus(statusCode), exception, additionalData)
         {
         }
 
@@ -88,5 +88,25 @@ namespace SanjeshP.Payeh.Common.Exceptions
             HttpStatusCode = httpStatusCode;
             AdditionalData = additionalData;
         }
+
+        /// <summary>
+        /// کد HTTP پیش‌فرض بر اساس ApiResultStatusCode؛ قبلاً NotFound و BadRequest و ... بدون کد صریح
+        /// با HTTP 500 برمی‌گشتند.
+        /// </summary>
+        private static HttpStatusCode DefaultHttpStatus(ApiResultStatusCode statusCode) => statusCode switch
+        {
+            ApiResultStatusCode.BadRequest => HttpStatusCode.BadRequest,
+            ApiResultStatusCode.LogicError => HttpStatusCode.BadRequest,
+            ApiResultStatusCode.CaptchaInvalid => HttpStatusCode.BadRequest,
+            ApiResultStatusCode.InvalidCredentials => HttpStatusCode.BadRequest,
+            ApiResultStatusCode.InvalidOtp => HttpStatusCode.BadRequest,
+            ApiResultStatusCode.NotFound => HttpStatusCode.NotFound,
+            ApiResultStatusCode.UnAuthorized => HttpStatusCode.Unauthorized,
+            ApiResultStatusCode.Forbidden => HttpStatusCode.Forbidden,
+            ApiResultStatusCode.Conflict => HttpStatusCode.Conflict,
+            ApiResultStatusCode.UnprocessableEntity => HttpStatusCode.UnprocessableEntity,
+            ApiResultStatusCode.TooManyRequests => HttpStatusCode.TooManyRequests,
+            _ => HttpStatusCode.InternalServerError
+        };
     }
 }

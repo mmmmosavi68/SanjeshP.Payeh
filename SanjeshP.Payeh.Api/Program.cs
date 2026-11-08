@@ -68,6 +68,9 @@ try
     // محدودیت نرخ درخواست
     app.UseRateLimiter();
 
+    // انتقال توکن Cookie مستندات به Authorization Header
+    app.UseScalarDocsCookieAuthentication();
+
     app.UseAuthentication();
     app.UseAuthorization();
     // پس از احراز هویت و قبل از کنترل دسترسی منو قرار می‌گیرد تا درخواست‌های ردشده نیز ثبت شوند.
