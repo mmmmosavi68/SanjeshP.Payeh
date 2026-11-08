@@ -1,20 +1,19 @@
 namespace SanjeshP.Payeh.Services.Captcha
 {
-    /// <summary>
-    /// انتزاع اعتبارسنجی کپچا. کپچا از طریق CaptchaSettings:Enabled روشن/خاموش می‌شود
-    /// و ارائه‌دهنده با تعویض پیاده‌سازی این اینترفیس قابل تغییر است
-    /// (نمونه‌ی واقعی: GoogleRecaptchaService).
-    /// </summary>
+    /// <summary>اطلاعات لازم برای نمایش کپچای تصویری در کلاینت.</summary>
+    public sealed record CaptchaChallenge(string CaptchaId, string ImageBase64, string ContentType, int ExpiresInSeconds);
+
+    /// <summary>قرارداد عمومی اعتبارسنجی کپچا.</summary>
     public interface ICaptchaService
     {
-        /// <summary>آیا کپچا در تنظیمات فعال است؟</summary>
         bool IsEnabled { get; }
-
-        /// <summary>اعتبارسنجی توکن کپچای ارسالی کلاینت.</summary>
-        /// <param name="token">توکن دریافتی از ویجت کپچا در کلاینت.</param>
-        /// <param name="remoteIp">آی‌پی کاربر (اختیاری، برای دقت بیشتر ارائه‌دهنده).</param>
-        /// <param name="cancellationToken">توکن لغو عملیات.</param>
-        /// <returns>true یعنی کپچا معتبر است (یا کپچا غیرفعال است).</returns>
+        /// <summary>توکن مرکب شناسه.پاسخ را اعتبارسنجی می‌کند.</summary>
         Task<bool> ValidateAsync(string? token, string? remoteIp, CancellationToken cancellationToken);
+    }
+
+    /// <summary>قرارداد تولید تصویر کپچای محلی.</summary>
+    public interface ICaptchaImageService
+    {
+        Task<CaptchaChallenge> CreateAsync(string? remoteIp, CancellationToken cancellationToken);
     }
 }

@@ -77,16 +77,22 @@ namespace SanjeshP.Payeh.Common
         public bool PasswordLoginRequiresOtp { get; set; }
     }
 
-    /// <summary>کپچا اختیاری است و با Enabled از تنظیمات روشن/خاموش می‌شود.</summary>
+    /// <summary>تنظیمات کپچای تصویری محلی.</summary>
     public class CaptchaSettings
     {
-        public bool Enabled { get; set; }
-        /// <summary>نام ارائه‌دهنده؛ فعلاً Recaptcha. با تعویض پیاده‌سازی ICaptchaService قابل تغییر است.</summary>
-        public string Provider { get; set; } = "Recaptcha";
-        /// <summary>کلید عمومی (Site Key) برای نمایش ویجت در فرانت؛ محرمانه نیست.</summary>
-        public string SiteKey { get; set; } = string.Empty;
-        public string SecretKey { get; set; } = string.Empty;
-        public string VerifyUrl { get; set; } = "https://www.google.com/recaptcha/api/siteverify";
+        public bool Enabled { get; set; } = true;
+        public string Provider { get; set; } = "Local";
+        public int CodeLength { get; set; } = 6;
+        public int ExpirationSeconds { get; set; } = 180;
+        public int MaxAttempts { get; set; } = 5;
+        public int Width { get; set; } = 200;
+        public int Height { get; set; } = 72;
+
+        // سازگاری با سرویس قدیمی Google reCAPTCHA
+        // در حالت Provider = Local استفاده نمی‌شوند.
+        public string? SecretKey { get; set; }
+
+        public string? VerifyUrl { get; set; }
     }
 
     public class SmsSettings

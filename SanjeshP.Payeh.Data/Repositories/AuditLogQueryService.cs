@@ -87,7 +87,8 @@ public sealed class AuditLogQueryService : IAuditLogQueryService, IScopedDepende
         var items = await records
             .OrderByDescending(x => x.OccurredAtUtc)
             .ThenByDescending(x => x.Id)
-            .Skip((pageNumber - 1) * pageSize)
+            // جلوگیری از overflow در محاسبه Skip برای شماره صفحه‌های بسیار بزرگ.
+            .Skip((int)Math.Min(((long)pageNumber - 1L) * pageSize, int.MaxValue))
             .Take(pageSize)
             .ToListAsync(cancellationToken);
 

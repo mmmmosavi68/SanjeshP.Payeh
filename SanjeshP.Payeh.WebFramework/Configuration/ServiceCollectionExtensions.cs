@@ -175,11 +175,14 @@ namespace SanjeshP.Payeh.WebFramework.Configuration
                     throw new InvalidOperationException($"SmsSettings:Provider با مقدار '{smsProvider}' پشتیبانی نمی‌شود.");
             }
 
-            // کپچا: روشن/خاموش از تنظیمات
-            if (siteSettings.CaptchaSettings.Enabled)
-                services.AddScoped<ICaptchaService, GoogleRecaptchaService>();
-            else
-                services.AddScoped<ICaptchaService, CaptchaService>();
+            // کپچای تصویری محلی؛ هیچ ارتباطی با Google reCAPTCHA ندارد.
+            var captchaProvider = siteSettings.CaptchaSettings.Provider?.Trim();
+            if (!string.Equals(captchaProvider, "Local", StringComparison.OrdinalIgnoreCase))
+                throw new InvalidOperationException("CaptchaSettings:Provider باید Local باشد.");
+
+            services.AddScoped<CaptchaService>();
+            services.AddScoped<ICaptchaService>(sp => sp.GetRequiredService<CaptchaService>());
+            services.AddScoped<ICaptchaImageService>(sp => sp.GetRequiredService<CaptchaService>());
         }
 
         /// <summary>محدودیت نرخ درخواست برای اکشن‌های حساس (درخواست کد پیامکی) بر اساس IP.</summary>
@@ -222,6 +225,17 @@ namespace SanjeshP.Payeh.WebFramework.Configuration
                         {
                             PermitLimit = 10,
                             Window = TimeSpan.FromMinutes(10),
+                            QueueLimit = 0
+                        }));
+
+                // دریافت تصویر کپچا؛ محدودیت مستقل بر اساس IP
+                options.AddPolicy("captcha", httpContext =>
+                    RateLimitPartition.GetFixedWindowLimiter(
+                        partitionKey: Ip(httpContext),
+                        factory: _ => new FixedWindowRateLimiterOptions
+                        {
+                            PermitLimit = 30,
+                            Window = TimeSpan.FromMinutes(1),
                             QueueLimit = 0
                         }));
 

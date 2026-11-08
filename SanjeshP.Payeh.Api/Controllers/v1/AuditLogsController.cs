@@ -8,9 +8,9 @@ using SanjeshP.Payeh.WebFramework.Api;
 
 namespace SanjeshP.Payeh.Api.Controllers.V1;
 
-/// <summary>گزارش سوابق ممیزی سامانه؛ دسترسی صرفاً برای مدیر سیستم.</summary>
+/// <summary>گزارش سوابق ممیزی سامانه؛ دسترسی از طریق مجوز منویی کنترل می‌شود.</summary>
 [ApiVersion("1")]
-[Authorize(Policy = "UserManagement")]
+[Authorize]
 public sealed class AuditLogsController : BaseController
 {
     private readonly IAuditLogQueryService _auditLogQueryService;

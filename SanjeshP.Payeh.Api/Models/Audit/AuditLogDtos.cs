@@ -1,4 +1,6 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using SanjeshP.Payeh.Entities.Audit;
 
 namespace SanjeshP.Payeh.Api.Models.Audit;
@@ -68,10 +70,76 @@ public sealed class AuditLogDto
         IpAddress = entity.IpAddress,
         UserAgent = entity.UserAgent,
         CorrelationId = entity.CorrelationId,
-        OldValuesJson = entity.OldValuesJson,
-        NewValuesJson = entity.NewValuesJson,
+        // دفاع در عمق: حتی اگر در آینده فیلد حساسی اشتباهاً وارد Snapshot شد،
+        // مقدار خام آن از طریق API گزارش‌گیری افشا نمی‌شود.
+        OldValuesJson = SanitizeJson(entity.OldValuesJson),
+        NewValuesJson = SanitizeJson(entity.NewValuesJson),
         OccurredAtUtc = entity.OccurredAtUtc
     };
+    private static readonly HashSet<string> SensitivePropertyNames = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "password", "passwordhash", "oldpassword", "newpassword",
+        "otp", "otpcode", "devcode", "verificationcode", "code",
+        "token", "accesstoken", "refreshtoken", "authorization",
+        "secret", "secretkey", "clientsecret", "apikey", "privatekey",
+        "nationalcode", "meliCode", "cookie", "setcookie"
+    };
+
+    private static string? SanitizeJson(string? json)
+    {
+        if (string.IsNullOrWhiteSpace(json))
+            return json;
+
+        try
+        {
+            var node = JsonNode.Parse(json);
+            SanitizeNode(node);
+            return node?.ToJsonString();
+        }
+        catch (JsonException)
+        {
+            // محتوای خراب یا غیر JSON را به‌صورت خام به مصرف‌کننده گزارش نمی‌دهیم.
+            return "\"[محتوای ثبت‌شده قابل نمایش نیست]\"";
+        }
+    }
+
+    private static bool IsSensitiveProperty(string normalizedName)
+    {
+        return SensitivePropertyNames.Contains(normalizedName) ||
+               normalizedName.Contains("password", StringComparison.OrdinalIgnoreCase) ||
+               normalizedName.Contains("token", StringComparison.OrdinalIgnoreCase) ||
+               normalizedName.Contains("secret", StringComparison.OrdinalIgnoreCase) ||
+               normalizedName.Contains("otp", StringComparison.OrdinalIgnoreCase) ||
+               normalizedName.Contains("nationalcode", StringComparison.OrdinalIgnoreCase) ||
+               normalizedName.EndsWith("verificationcode", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static void SanitizeNode(JsonNode? node)
+    {
+        if (node is JsonObject obj)
+        {
+            foreach (var property in obj.ToList())
+            {
+                var normalizedName = new string(property.Key
+                    .Where(char.IsLetterOrDigit)
+                    .ToArray());
+
+                if (IsSensitiveProperty(normalizedName))
+                {
+                    obj[property.Key] = "[REDACTED]";
+                    continue;
+                }
+
+                SanitizeNode(property.Value);
+            }
+        }
+        else if (node is JsonArray array)
+        {
+            foreach (var item in array)
+                SanitizeNode(item);
+        }
+    }
+
 }
 
 /// <summary>خروجی صفحه‌بندی‌شده گزارش ممیزی.</summary>

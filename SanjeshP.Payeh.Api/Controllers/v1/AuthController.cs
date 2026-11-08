@@ -1,4 +1,4 @@
-﻿using Asp.Versioning;
+using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
@@ -35,6 +35,7 @@ namespace SanjeshP.Payeh.Api.Controllers.V1
         private readonly IOtpService _otpService;
         private readonly IJwtService _jwtService;
         private readonly ICaptchaService _captchaService;
+        private readonly ICaptchaImageService _captchaImageService;
         private readonly IUserService _userService;
         private readonly ISmsSender _smsSender;
         private readonly IPayamSMS _payamSMS;
@@ -45,6 +46,7 @@ namespace SanjeshP.Payeh.Api.Controllers.V1
             IOtpService otpService,
             IJwtService jwtService,
             ICaptchaService captchaService,
+            ICaptchaImageService captchaImageService,
             IUserService userService,
             ISmsSender smsSender,
             IOptions<SiteSettings> siteSettings,
@@ -55,6 +57,7 @@ namespace SanjeshP.Payeh.Api.Controllers.V1
             _otpService = otpService;
             _jwtService = jwtService;
             _captchaService = captchaService;
+            _captchaImageService = captchaImageService;
             _userService = userService;
             _smsSender = smsSender;
             _payamSMS = payamSMS;
@@ -70,17 +73,37 @@ namespace SanjeshP.Payeh.Api.Controllers.V1
         public ApiResult<AuthConfigDto> GetConfig()
         {
             var auth = _siteSettings.AuthSettings;
-            var captcha = _siteSettings.CaptchaSettings;
-
             return new AuthConfigDto
             {
                 CaptchaEnabled = _captchaService.IsEnabled,
-                CaptchaProvider = _captchaService.IsEnabled ? captcha.Provider : null,
-                CaptchaSiteKey = _captchaService.IsEnabled ? captcha.SiteKey : null,
+                CaptchaProvider = _captchaService.IsEnabled ? "Local" : null,
                 MobileLoginEnabled = auth.MobileLoginEnabled,
                 PasswordLoginEnabled = auth.PasswordLoginEnabled,
                 PasswordLoginRequiresOtp = auth.PasswordLoginRequiresOtp,
                 OtpLength = _siteSettings.OtpSettings.CodeLength
+            };
+        }
+
+        /// <summary>تولید تصویر کپچای عددی PNG برای فرانت‌اند.</summary>
+        [HttpGet("captcha")]
+        [AllowAnonymous]
+        [EnableRateLimiting("captcha")]
+        [ProducesResponseType(typeof(ApiResult<CaptchaImageDto>), StatusCodes.Status200OK)]
+        public async Task<ApiResult<CaptchaImageDto>> GetCaptcha(CancellationToken cancellationToken)
+        {
+            if (!_captchaService.IsEnabled)
+                throw new ForbiddenException("کپچا در تنظیمات غیرفعال است.");
+
+            Response.Headers["Cache-Control"] = "no-store, no-cache, must-revalidate";
+            Response.Headers["Pragma"] = "no-cache";
+
+            var challenge = await _captchaImageService.CreateAsync(ClientIp(), cancellationToken);
+            return new CaptchaImageDto
+            {
+                CaptchaId = challenge.CaptchaId,
+                ImageBase64 = challenge.ImageBase64,
+                ContentType = challenge.ContentType,
+                ExpiresInSeconds = challenge.ExpiresInSeconds
             };
         }
 
@@ -94,12 +117,13 @@ namespace SanjeshP.Payeh.Api.Controllers.V1
         public async Task<ApiResult<RequestOtpResponseDto>> RequestOtp([FromBody] RequestOtpDto dto, CancellationToken cancellationToken)
         {
             EnsureMobileLoginEnabled();
-            await EnsureCaptchaAsync(dto.CaptchaToken, cancellationToken);
+            await EnsureCaptchaAsync(dto.CaptchaId, dto.CaptchaCode, cancellationToken);
 
             var result = await _otpService.RequestLoginCodeAsync(dto.MobileNumber, cancellationToken);
             // ارسال پیامک
             //await _smsSender.SendAsync(dto.MobileNumber, $"کد ورود شما: {result.DevCode}\nاعتبار: {_siteSettings.OtpSettings.ExpirationSeconds} ثانیه", cancellationToken);
-            await _payamSMS.Send(dto.MobileNumber, $"کد ورود شما: {result.DevCode}\nاعتبار: {_siteSettings.OtpSettings.ExpirationSeconds} ثانیه");
+            if (!string.IsNullOrWhiteSpace(result.CodeForDelivery))
+                await _payamSMS.Send(dto.MobileNumber, $"کد ورود شما: {result.CodeForDelivery}\nاعتبار: {_siteSettings.OtpSettings.ExpirationSeconds} ثانیه");
             await _auditLogService.LogActivityAsync(
                 action: "Auth.Otp.Requested",
                 description: "درخواست کد ورود پیامکی",
@@ -107,7 +131,7 @@ namespace SanjeshP.Payeh.Api.Controllers.V1
                 cancellationToken: cancellationToken);
             return new RequestOtpResponseDto
             {
-                DevCode = result.DevCode,
+                DevCode = _siteSettings.OtpSettings.ReturnCodeInResponse ? result.DevCode : null,
                 ExpiresInSeconds = _siteSettings.OtpSettings.ExpirationSeconds,
                 ResendAfterSeconds = _siteSettings.OtpSettings.ResendIntervalSeconds
             };
@@ -121,7 +145,7 @@ namespace SanjeshP.Payeh.Api.Controllers.V1
         public async Task<ApiResult<AuthResponseDto>> VerifyOtp([FromBody] VerifyOtpDto dto, CancellationToken cancellationToken)
         {
             EnsureMobileLoginEnabled();
-            await EnsureCaptchaAsync(dto.CaptchaToken, cancellationToken);
+            await EnsureCaptchaAsync(dto.CaptchaId, dto.CaptchaCode, cancellationToken);
 
             UserEntity user;
             try
@@ -154,7 +178,7 @@ namespace SanjeshP.Payeh.Api.Controllers.V1
         public async Task<ApiResult<PasswordLoginResponseDto>> Login([FromBody] PasswordLoginDto dto, CancellationToken cancellationToken)
         {
             EnsurePasswordLoginEnabled();
-            await EnsureCaptchaAsync(dto.CaptchaToken, cancellationToken);
+            await EnsureCaptchaAsync(dto.CaptchaId, dto.CaptchaCode, cancellationToken);
 
             var user = await _userService.ValidateCredentialsAsync(dto.UserName, dto.Password, cancellationToken);
             if (user is null)
@@ -173,7 +197,8 @@ namespace SanjeshP.Payeh.Api.Controllers.V1
                 var challenge = await _otpService.RequestPasswordLoginCodeAsync(user, cancellationToken);
                 //ارسال پیامک
                 //await _smsSender.SendAsync(challenge.MaskedMobile, $"کد ورود شما: {challenge.DevCode}\nاعتبار: {_siteSettings.OtpSettings.ExpirationSeconds} ثانیه", cancellationToken);
-                await _payamSMS.Send(challenge.MaskedMobile, $"کد ورود شما: {challenge.DevCode}\nاعتبار: {_siteSettings.OtpSettings.ExpirationSeconds} ثانیه");
+                if (!string.IsNullOrWhiteSpace(challenge.CodeForDelivery))
+                    await _payamSMS.Send(challenge.MaskedMobile, $"کد ورود شما: {challenge.CodeForDelivery}\nاعتبار: {_siteSettings.OtpSettings.ExpirationSeconds} ثانیه");
                 await _auditLogService.LogActivityAsync(
                     action: "Auth.PasswordLogin.OtpChallengeCreated",
                     description: "مرحله اول ورود موفق بود و کد تأیید ارسال شد",
@@ -202,7 +227,7 @@ namespace SanjeshP.Payeh.Api.Controllers.V1
         public async Task<ApiResult<AuthResponseDto>> VerifyLogin([FromBody] VerifyLoginChallengeDto dto, CancellationToken cancellationToken)
         {
             EnsurePasswordLoginEnabled();
-            await EnsureCaptchaAsync(dto.CaptchaToken, cancellationToken);
+            await EnsureCaptchaAsync(dto.CaptchaId, dto.CaptchaCode, cancellationToken);
 
             UserEntity user;
             try
@@ -230,12 +255,13 @@ namespace SanjeshP.Payeh.Api.Controllers.V1
         public async Task<ApiResult<LoginChallengeDto>> ResendLogin([FromBody] ResendLoginChallengeDto dto, CancellationToken cancellationToken)
         {
             EnsurePasswordLoginEnabled();
-            await EnsureCaptchaAsync(dto.CaptchaToken, cancellationToken);
+            await EnsureCaptchaAsync(dto.CaptchaId, dto.CaptchaCode, cancellationToken);
 
             var challenge = await _otpService.ResendPasswordLoginCodeAsync(dto.ChallengeId, cancellationToken);
             // ارسال پیامک
             //await _smsSender.SendAsync(challenge.MaskedMobile, $"کد ورود شما: {challenge.DevCode}\nاعتبار: {_siteSettings.OtpSettings.ExpirationSeconds} ثانیه", cancellationToken);
-            await _payamSMS.Send(challenge.MaskedMobile, $"کد ورود شما: {challenge.DevCode}\nاعتبار: {_siteSettings.OtpSettings.ExpirationSeconds} ثانیه");
+            if (!string.IsNullOrWhiteSpace(challenge.CodeForDelivery))
+                await _payamSMS.Send(challenge.MaskedMobile, $"کد ورود شما: {challenge.CodeForDelivery}\nاعتبار: {_siteSettings.OtpSettings.ExpirationSeconds} ثانیه");
 
             return ToChallengeDto(challenge);
         }
@@ -374,13 +400,26 @@ namespace SanjeshP.Payeh.Api.Controllers.V1
                 throw new ForbiddenException("ورود با نام کاربری و رمز عبور غیرفعال است.");
         }
 
-        /// <summary>اعتبارسنجی کپچا؛ هر توکن فقط یک‌بار قابل استفاده است، پس هر مرحله توکن تازه می‌خواهد.</summary>
-        private async Task EnsureCaptchaAsync(string? token, CancellationToken cancellationToken)
+        /// <summary>اعتبارسنجی کپچای تصویری؛ هر شناسه فقط یک‌بار قابل استفاده است.</summary>
+        private async Task EnsureCaptchaAsync(string? captchaId, string? captchaCode, CancellationToken cancellationToken)
         {
             if (!_captchaService.IsEnabled) return;
 
-            if (!await _captchaService.ValidateAsync(token, ClientIp(), cancellationToken))
+            if (!await _captchaService.ValidateAsync(
+                string.IsNullOrWhiteSpace(captchaId) || string.IsNullOrWhiteSpace(captchaCode)
+                    ? null
+                    : $"{captchaId}.{captchaCode}",
+                ClientIp(),
+                cancellationToken))
+            {
+                await _auditLogService.LogActivityAsync(
+                    action: "Auth.Captcha.Failed",
+                    description: "اعتبارسنجی کپچای تصویری ناموفق بود",
+                    eventType: "Security",
+                    cancellationToken: CancellationToken.None);
+
                 throw new CaptchaInvalidException();
+            }
         }
 
         private async Task<AuthResponseDto> IssueTokensAsync(UserEntity user, string? deviceName, string loginMethod, CancellationToken cancellationToken)
@@ -394,6 +433,17 @@ namespace SanjeshP.Payeh.Api.Controllers.V1
                 cancellationToken);
 
             var sessionId = Guid.Parse(ReadSessionIdFromToken(token));
+
+            await _auditLogService.LogActivityAsync(
+                action: "Auth.Login.Success",
+                description: $"ورود موفق با روش {loginMethod}",
+                entityName: "UserSession",
+                entityId: sessionId.ToString(),
+                eventType: "Security",
+                actorUserId: user.Id,
+                actorUserName: user.UserName,
+                cancellationToken: cancellationToken);
+
             Log.ForContext("Audit", true).Information("{Action} کاربر {UserId} از {Ip}", "Login", user.Id, ip);
             return ToAuthResponse(token, sessionId);
         }
@@ -404,7 +454,7 @@ namespace SanjeshP.Payeh.Api.Controllers.V1
             MaskedMobile = challenge.MaskedMobile,
             ExpiresInSeconds = _siteSettings.OtpSettings.ExpirationSeconds,
             ResendAfterSeconds = challenge.ResendAfterSeconds,
-            DevCode = challenge.DevCode
+            DevCode = _siteSettings.OtpSettings.ReturnCodeInResponse ? challenge.DevCode : null
         };
 
         private static string ReadSessionIdFromToken(Services.AccessToken token)

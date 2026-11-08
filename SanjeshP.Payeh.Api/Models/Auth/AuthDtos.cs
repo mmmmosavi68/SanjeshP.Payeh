@@ -8,13 +8,20 @@ namespace SanjeshP.Payeh.Api.Models.Auth
     {
         public bool CaptchaEnabled { get; set; }
         public string? CaptchaProvider { get; set; }
-        /// <summary>کلید عمومی ویجت کپچا؛ فقط وقتی کپچا فعال است مقدار دارد.</summary>
-        public string? CaptchaSiteKey { get; set; }
         public bool MobileLoginEnabled { get; set; }
         public bool PasswordLoginEnabled { get; set; }
         /// <summary>اگر true باشد بعد از رمز صحیح برای همه کد پیامکی هم لازم است.</summary>
         public bool PasswordLoginRequiresOtp { get; set; }
         public int OtpLength { get; set; }
+    }
+
+    /// <summary>تصویر کپچای تولیدشده توسط بک‌اند برای نمایش در Next.js.</summary>
+    public class CaptchaImageDto
+    {
+        public string CaptchaId { get; set; } = null!;
+        public string ImageBase64 { get; set; } = null!;
+        public string ContentType { get; set; } = "image/png";
+        public int ExpiresInSeconds { get; set; }
     }
 
     /// <summary>درخواست ارسال کد یک‌بارمصرف به شماره‌ی موبایل.</summary>
@@ -25,9 +32,12 @@ namespace SanjeshP.Payeh.Api.Models.Auth
         [Display(Name = "شماره موبایل")]
         public string MobileNumber { get; set; } = null!;
 
-        /// <summary>توکن کپچا؛ فقط وقتی کپچا فعال است الزامی است.</summary>
-        [MaxLength(4096)]
-        public string? CaptchaToken { get; set; }
+        /// <summary>شناسه‌ی دریافتی از API تصویر کپچا.</summary>
+        [MaxLength(64)]
+        public string? CaptchaId { get; set; }
+
+        [MaxLength(8)]
+        public string? CaptchaCode { get; set; }
     }
 
     /// <summary>تأیید کد یک‌بارمصرف و ورود با موبایل.</summary>
@@ -43,9 +53,12 @@ namespace SanjeshP.Payeh.Api.Models.Auth
         [Display(Name = "کد تأیید")]
         public string Code { get; set; } = null!;
 
-        /// <summary>توکن کپچا؛ فقط وقتی کپچا فعال است الزامی است (هر توکن یک‌بارمصرف است).</summary>
-        [MaxLength(4096)]
-        public string? CaptchaToken { get; set; }
+        /// <summary>شناسه‌ی دریافتی از API تصویر کپچا.</summary>
+        [MaxLength(64)]
+        public string? CaptchaId { get; set; }
+
+        [MaxLength(8)]
+        public string? CaptchaCode { get; set; }
 
         [MaxLength(100, ErrorMessage = "نام دستگاه نباید بیش از 100 کاراکتر باشد")]
         [Display(Name = "نام دستگاه")]
@@ -66,8 +79,11 @@ namespace SanjeshP.Payeh.Api.Models.Auth
         [Display(Name = "رمز عبور")]
         public string Password { get; set; } = null!;
 
-        [MaxLength(4096)]
-        public string? CaptchaToken { get; set; }
+        [MaxLength(64)]
+        public string? CaptchaId { get; set; }
+
+        [MaxLength(8)]
+        public string? CaptchaCode { get; set; }
 
         [MaxLength(100, ErrorMessage = "نام دستگاه نباید بیش از 100 کاراکتر باشد")]
         [Display(Name = "نام دستگاه")]
@@ -106,8 +122,11 @@ namespace SanjeshP.Payeh.Api.Models.Auth
         [Display(Name = "کد تأیید")]
         public string Code { get; set; } = null!;
 
-        [MaxLength(4096)]
-        public string? CaptchaToken { get; set; }
+        [MaxLength(64)]
+        public string? CaptchaId { get; set; }
+
+        [MaxLength(8)]
+        public string? CaptchaCode { get; set; }
 
         [MaxLength(100, ErrorMessage = "نام دستگاه نباید بیش از 100 کاراکتر باشد")]
         [Display(Name = "نام دستگاه")]
@@ -120,8 +139,11 @@ namespace SanjeshP.Payeh.Api.Models.Auth
         [Required(ErrorMessage = "شناسه‌ی درخواست ورود الزامی است")]
         public Guid ChallengeId { get; set; }
 
-        [MaxLength(4096)]
-        public string? CaptchaToken { get; set; }
+        [MaxLength(64)]
+        public string? CaptchaId { get; set; }
+
+        [MaxLength(8)]
+        public string? CaptchaCode { get; set; }
     }
 
     /// <summary>درخواست توکن جدید با Refresh Token.</summary>

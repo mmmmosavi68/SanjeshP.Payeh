@@ -58,7 +58,7 @@ namespace SanjeshP.Payeh.Services.Otp
             if (user is null)
             {
                 _logger.LogInformation("درخواست OTP برای شماره‌ی ثبت‌نشده {Mobile}", mobileNumber);
-                return new OtpRequestResult(null);
+                return new OtpRequestResult(null, null);
             }
 
             var lastOtp = await _dbContext.Set<UserOtp>()
@@ -75,7 +75,7 @@ namespace SanjeshP.Payeh.Services.Otp
             }
 
             var (_, code) = await CreateAndSendAsync(user, mobileNumber, LoginPurpose, cancellationToken);
-            return new OtpRequestResult(_settings.ReturnCodeInResponse ? code : null);
+            return new OtpRequestResult(_settings.ReturnCodeInResponse ? code : null, code);
         }
 
         /// <inheritdoc />
@@ -123,7 +123,7 @@ namespace SanjeshP.Payeh.Services.Otp
 
                     // ورود تکراری در فاصله‌ی مجاز: بدون ارسال پیامک جدید همان درخواست قبلی برمی‌گردد.
                     if (!latest.IsUsed && latest.ExpireAt > now && latest.FailedAttempts < _settings.MaxAttempts)
-                        return new LoginChallengeResult(latest.Id, MaskMobile(mobile), null, remaining);
+                        return new LoginChallengeResult(latest.Id, MaskMobile(mobile), null, remaining, null);
 
                     throw new TooManyRequestsException(WaitMessage(elapsed));
                 }
@@ -131,7 +131,7 @@ namespace SanjeshP.Payeh.Services.Otp
 
             var (otp, code) = await CreateAndSendAsync(user, mobile, PasswordLoginPurpose, cancellationToken);
             return new LoginChallengeResult(
-                otp.Id, MaskMobile(mobile), _settings.ReturnCodeInResponse ? code : null, _settings.ResendIntervalSeconds);
+                otp.Id, MaskMobile(mobile), _settings.ReturnCodeInResponse ? code : null, _settings.ResendIntervalSeconds, code);
         }
 
         /// <inheritdoc />
@@ -187,7 +187,7 @@ namespace SanjeshP.Payeh.Services.Otp
 
             var (otp, code) = await CreateAndSendAsync(user, mobile, PasswordLoginPurpose, cancellationToken);
             return new LoginChallengeResult(
-                otp.Id, MaskMobile(mobile), _settings.ReturnCodeInResponse ? code : null, _settings.ResendIntervalSeconds);
+                otp.Id, MaskMobile(mobile), _settings.ReturnCodeInResponse ? code : null, _settings.ResendIntervalSeconds, code);
         }
 
         // ───────────── اشتراکی ─────────────

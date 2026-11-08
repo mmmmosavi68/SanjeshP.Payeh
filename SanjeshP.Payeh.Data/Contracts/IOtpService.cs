@@ -1,10 +1,10 @@
 namespace SanjeshP.Payeh.Services.Otp
 {
     /// <param name="DevCode">فقط در توسعه (OtpSettings.ReturnCodeInResponse=true) مقدار دارد.</param>
-    public record OtpRequestResult(string? DevCode);
+    public record OtpRequestResult(string? DevCode, string? CodeForDelivery = null);
 
     /// <summary>نتیجه‌ی صدور کد مرحله‌ی دوم ورود با رمز عبور.</summary>
-    public record LoginChallengeResult(Guid ChallengeId, string MaskedMobile, string? DevCode, int ResendAfterSeconds);
+    public record LoginChallengeResult(Guid ChallengeId, string MaskedMobile, string? DevCode, int ResendAfterSeconds, string? CodeForDelivery = null);
 
     /// <summary>
     /// سرویس کد یک‌بارمصرف پیامکی: ذخیره‌ی Hash، انقضا، سقف تلاش، فاصله‌ی ارسال مجدد و یک‌بارمصرف بودن.
