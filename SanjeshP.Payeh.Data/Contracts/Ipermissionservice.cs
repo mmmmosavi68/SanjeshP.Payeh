@@ -1,4 +1,5 @@
-﻿namespace SanjeshP.Payeh.Services.Permissions
+﻿using SanjeshP.Payeh.Entities.Menu;
+namespace SanjeshP.Payeh.Services.Permissions
 {
     /// <summary>
     /// بررسی دسترسی کاربر به Area/Controller/Action بر اساس جدول‌های
@@ -8,6 +9,10 @@
     {
         /// <summary>آیا کاربر به این اکشن دسترسی دارد؟ (مقایسه‌ی بدون حساسیت به حروف)</summary>
         Task<bool> HasAccessAsync(Guid userId,string? version,  string controller, string action, CancellationToken cancellationToken);
+
+        /// <summary>فهرست منوهای مجاز کاربر از دسترسی مستقیم و گروهی؛ شامل آیتم‌های Action برای کنترل عناصر صفحه.</summary>
+        Task<List<Menu>> GetUserMenuItemsAsync(Guid userId, CancellationToken cancellationToken);
+
 
         /// <summary>پاک‌کردن کش یک کاربر (بعد از تغییر دسترسی یا گروه‌های او).</summary>
         void Invalidate(Guid userId);

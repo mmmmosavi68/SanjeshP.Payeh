@@ -6,7 +6,6 @@
     "PageCode": 0,
     "Path": null,
     "version": "1",
-    
     "ControllerName": null,
     "ActionName": null,
     "ShowMenu": true,
@@ -23,7 +22,6 @@
     "PageCode": 100,
     "Path": null,
     "version": "1",
-    
     "ControllerName": "Users",
     "ActionName": null,
     "ShowMenu": true,
@@ -40,7 +38,6 @@
     "PageCode": 101,
     "Path": null,
     "version": "1",
-    
     "ControllerName": "Users",
     "ActionName": "Get",
     "ShowMenu": true,
@@ -57,7 +54,6 @@
     "PageCode": 102,
     "Path": null,
     "version": "1",
-    
     "ControllerName": "Users",
     "ActionName": "GetById",
     "ShowMenu": false,
@@ -74,7 +70,6 @@
     "PageCode": 103,
     "Path": null,
     "version": "1",
-    
     "ControllerName": "Users",
     "ActionName": "Create",
     "ShowMenu": false,
@@ -91,7 +86,6 @@
     "PageCode": 104,
     "Path": null,
     "version": "1",
-    
     "ControllerName": "Users",
     "ActionName": "Update",
     "ShowMenu": false,
@@ -108,7 +102,6 @@
     "PageCode": 105,
     "Path": null,
     "version": "1",
-    
     "ControllerName": "Users",
     "ActionName": "Delete",
     "ShowMenu": false,
@@ -125,7 +118,6 @@
     "PageCode": 200,
     "Path": null,
     "version": "1",
-
     "ControllerName": "AuditLogs",
     "ActionName": null,
     "ShowMenu": true,
@@ -142,13 +134,28 @@
     "PageCode": 201,
     "Path": null,
     "version": "1",
-
     "ControllerName": "AuditLogs",
     "ActionName": "Search",
     "ShowMenu": true,
     "CssClass": "nav-item",
     "Icon": "fa fa-search",
     "Link": "/audit-logs",
+    "IsActive": true,
+    "IsDeleted": false
+  },
+  {
+    "Id": "00000000-0000-0000-0000-000000000022",
+    "MenuTitle": "خروجی گزارش ممیزی",
+    "ParentId": "00000000-0000-0000-0000-000000000020",
+    "PageCode": 202,
+    "Path": null,
+    "version": "1",
+    "ControllerName": "AuditLogs",
+    "ActionName": "Export",
+    "ShowMenu": false,
+    "CssClass": "nav-item",
+    "Icon": "fa fa-file-excel",
+    "Link": "No Link",
     "IsActive": true,
     "IsDeleted": false
   }

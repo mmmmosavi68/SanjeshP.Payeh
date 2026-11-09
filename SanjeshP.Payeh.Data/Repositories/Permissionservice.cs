@@ -31,6 +31,50 @@ namespace SanjeshP.Payeh.Services.Permissions
             return permissions.Contains(BuildKey(version, controller, action));
         }
 
+        public async Task<List<Menu>> GetUserMenuItemsAsync(Guid userId, CancellationToken cancellationToken)
+        {
+            var direct = _db.Set<UserAccessMenus>()
+                .Where(a => a.UserId == userId && a.IsActive && !a.IsDeleted)
+                .Select(a => a.Menu);
+
+            var viaGroups = from gu in _db.Set<GroupUsers>()
+                            where gu.UserId == userId && gu.IsActive && !gu.IsDeleted
+                                  && gu.Group.IsActive && !gu.Group.IsDeleted
+                            join ga in _db.Set<GroupAccessMenus>() on gu.GroupId equals ga.GroupId
+                            where ga.IsActive && !ga.IsDeleted
+                            select ga.Menu;
+
+            var allowed = await direct.Union(viaGroups)
+                .Where(m => m.IsActive && !m.IsDeleted)
+                .Distinct()
+                .AsNoTracking()
+                .ToListAsync(cancellationToken);
+
+            // والدهای منو فقط برای ساخت درخت به پاسخ اضافه می‌شوند؛ مجوز Action جدیدی ایجاد نمی‌شود.
+            var allMenus = await _db.Set<Menu>()
+                .Where(m => m.IsActive && !m.IsDeleted)
+                .AsNoTracking()
+                .ToListAsync(cancellationToken);
+            var byId = allMenus.ToDictionary(m => m.Id);
+            var result = allowed.ToDictionary(m => m.Id);
+            foreach (var item in allowed)
+            {
+                var parentId = item.ParentId;
+                var visitedParents = new HashSet<Guid>();
+                while (parentId.HasValue && visitedParents.Add(parentId.Value)
+                       && byId.TryGetValue(parentId.Value, out var parent))
+                {
+                    if (string.IsNullOrWhiteSpace(parent.ActionName))
+                        result.TryAdd(parent.Id, parent);
+                    parentId = parent.ParentId;
+                }
+            }
+
+            return result.Values
+                .OrderBy(m => m.PageCode)
+                .ToList();
+        }
+
         public void Invalidate(Guid userId) => _cache.Remove(CacheKey(userId));
 
         public void InvalidateAll()
