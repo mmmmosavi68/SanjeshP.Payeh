@@ -29,7 +29,7 @@ namespace SanjeshP.Payeh.Services.JwtService
 
         /// <summary>ابطال همه‌ی نشست‌های کاربر (خروج از همه‌ی دستگاه‌ها).</summary>
         Task RevokeAllAsync(Guid userId, CancellationToken cancellationToken);
-
+        Task RevokeAllExceptCurrentAsync(Guid userId, Guid currentSessionId, CancellationToken cancellationToken);
         /// <summary>اعتبارسنجی نشست در هر درخواست (رویداد OnTokenValidated).</summary>
         Task<bool> ValidateSessionAsync(Guid sessionId, Guid userId, CancellationToken cancellationToken);
 

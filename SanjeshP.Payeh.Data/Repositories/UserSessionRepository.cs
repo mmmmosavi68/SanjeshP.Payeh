@@ -47,8 +47,12 @@ namespace SanjeshP.Payeh.Data.Repositories
         public async Task<List<UserSession>> GetActiveSessionsByUserIdAsync(Guid userId, CancellationToken cancellationToken)
         {
             var now = DateTime.UtcNow;
+
             return await TableNoTracking
-                .Where(x => x.UserId == userId && x.RevocationDate == null && x.RefreshTokenExpireDate > now)
+                .Where(x =>
+                    x.UserId == userId &&
+                    x.RevocationDate == null &&
+                    x.RefreshTokenExpireDate > now)
                 .OrderByDescending(x => x.LastUsedAt ?? x.CreatedDate)
                 .ToListAsync(cancellationToken);
         }

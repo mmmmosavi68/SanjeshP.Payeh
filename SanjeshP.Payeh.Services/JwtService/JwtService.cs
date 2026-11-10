@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using SanjeshP.Payeh.Common;
@@ -42,11 +43,19 @@ namespace SanjeshP.Payeh.Services.JwtService
             => GenerateAsync(user, deviceName, ipAddress, userAgent: null, cancellationToken);
 
         /// <inheritdoc />
-        public async Task<AccessToken> GenerateAsync(User user, string deviceName, string ipAddress, string? userAgent, CancellationToken cancellationToken)
+        public async Task<AccessToken> GenerateAsync(
+     User user,
+     string deviceName,
+     string ipAddress,
+     string? userAgent,
+     CancellationToken cancellationToken)
         {
-            // اگر ورود چنددستگاهی مجاز نیست، نشست‌های قبلی باطل می‌شوند.
+            // در صورت غیرفعال بودن ورود چنددستگاهی،
+            // تمام نشست‌های قبلی کاربر باطل می‌شوند.
             if (!_siteSettings.AllowMultipleSessions)
+            {
                 await RevokeAllAsync(user.Id, cancellationToken);
+            }
 
             var now = DateTime.UtcNow;
             var jti = Guid.NewGuid().ToString("N");
@@ -57,11 +66,15 @@ namespace SanjeshP.Payeh.Services.JwtService
                 UserId = user.Id,
                 Jti = jti,
                 RefreshTokenHash = SecurityHelper.GetSha256Hash(refreshToken),
-                DeviceName = string.IsNullOrWhiteSpace(deviceName) ? "دستگاه ناشناس" : deviceName.Trim(),
+                DeviceName = string.IsNullOrWhiteSpace(deviceName)
+                    ? "دستگاه ناشناس"
+                    : deviceName.Trim(),
                 UserAgent = userAgent,
                 IpAddress = ipAddress,
-                TokenExpireDate = now.AddMinutes(_siteSettings.JwtSettings.ExpirationMinutes),
-                RefreshTokenExpireDate = now.AddDays(_siteSettings.RefreshTokenSettings.ExpirationDays),
+                TokenExpireDate = now.AddMinutes(
+                    _siteSettings.JwtSettings.ExpirationMinutes),
+                RefreshTokenExpireDate = now.AddDays(
+                    _siteSettings.RefreshTokenSettings.ExpirationDays),
                 LastUsedAt = now,
                 CreatedBy = user.Id
             };
@@ -138,22 +151,69 @@ namespace SanjeshP.Payeh.Services.JwtService
                 ?? throw new NotFoundException("نشست مورد نظر یافت نشد.");
 
             session.RevocationDate = DateTime.UtcNow;
+            session.IsActive = false;
+            session.IsDeleted = true;
             _sessionRepository.Update(session, saveNow: false);
             await _dbContext.SaveChangesAsync(cancellationToken);
         }
 
         /// <inheritdoc />
+
+
+        /// <summary>
+        /// خروج از تمام دستگاه‌ها به‌جز دستگاه فعلی.
+        /// </summary>
+        public async Task RevokeAllExceptCurrentAsync(Guid userId, Guid currentSessionId, CancellationToken cancellationToken)
+        {
+            var now = DateTime.UtcNow;
+
+            var activeSessions = _dbContext.Set<UserSession>()
+                .AsNoTracking()
+                .Where(x =>
+                    x.UserId == userId &&
+                    x.Id != currentSessionId &&
+                    x.RevocationDate == null &&
+                    x.RefreshTokenExpireDate > now)
+                .Select(x => new
+                {
+                    x.Id,
+                    x.DeviceName,
+                    x.IpAddress
+                })
+                .ToList();
+
+            var affectedRows = _dbContext.Set<UserSession>()
+                .Where(x =>
+                    x.UserId == userId &&
+                    x.Id != currentSessionId &&
+                    x.RevocationDate == null &&
+                    x.RefreshTokenExpireDate > now)
+                .ExecuteUpdate(
+                    setters => setters.SetProperty(
+                        x => x.RevocationDate,
+                        now));
+        }
+
+        /// <summary>
+        /// باطل کردن تمام نشست‌های فعال کاربر.
+        /// </summary>
         public async Task RevokeAllAsync(Guid userId, CancellationToken cancellationToken)
         {
-            var sessions = await _sessionRepository.GetActiveSessionsByUserIdAsync(userId, cancellationToken);
             var now = DateTime.UtcNow;
-            foreach (var session in sessions)
-            {
-                session.RevocationDate = now;
-                _sessionRepository.Update(session, saveNow: false);
-            }
-            await _dbContext.SaveChangesAsync(cancellationToken);
+
+            await _dbContext.Set<UserSession>()
+                .Where(x =>
+                    x.UserId == userId &&
+                    x.RevocationDate == null &&
+                    x.RefreshTokenExpireDate > now)
+                .ExecuteUpdateAsync(
+                    setters => setters.SetProperty(
+                        x => x.RevocationDate,
+                        now),
+                    cancellationToken);
         }
+
+
 
         /// <inheritdoc />
         public async Task<bool> ValidateSessionAsync(Guid sessionId, Guid userId, CancellationToken cancellationToken)

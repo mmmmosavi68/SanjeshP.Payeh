@@ -41,7 +41,7 @@ namespace SanjeshP.Payeh.Api.Controllers.V1
         private readonly IPayamSMS _payamSMS;
         private readonly SiteSettings _siteSettings;
         private readonly IAuditLogService _auditLogService;
-        
+
         public AuthController(
             IOtpService otpService,
             IJwtService jwtService,
@@ -334,16 +334,24 @@ namespace SanjeshP.Payeh.Api.Controllers.V1
         [SkipMenuPermission]
         public async Task<ApiResult> LogoutAll(CancellationToken cancellationToken)
         {
-            await _jwtService.RevokeAllAsync(CurrentUserId, cancellationToken);
+            await _jwtService.RevokeAllExceptCurrentAsync(
+     CurrentUserId,
+     CurrentSessionId,
+     cancellationToken);
+
             await _auditLogService.LogActivityAsync(
                 action: "Auth.LogoutAll",
-                description: "خروج از تمام نشست‌های کاربر",
+                description: "خروج از تمام دستگاه‌ها به‌جز دستگاه فعلی",
                 entityName: "User",
                 entityId: CurrentUserId.ToString(),
                 eventType: "Security",
                 actorUserId: CurrentUserId,
                 cancellationToken: cancellationToken);
-            return new ApiResult(true, ApiResultStatusCode.Success, "از همه‌ی دستگاه‌ها خارج شدید.");
+
+            return new ApiResult(
+                true,
+                ApiResultStatusCode.Success,
+                "از تمام دستگاه‌های دیگر خارج شدید.");
         }
 
         /// <summary>ابطال یک نشست مشخص با شناسه (مثلاً از صفحه‌ی دستگاه‌های من).</summary>

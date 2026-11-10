@@ -83,7 +83,7 @@ public sealed class AuditLogQueryService : IAuditLogQueryService, IScopedDepende
                 (x.IpAddress != null && x.IpAddress.Contains(value)));
         }
 
-        var totalCount = await records.CountAsync(cancellationToken);
+        var totalCount = records.Count();
         var items = await records
             .OrderByDescending(x => x.OccurredAtUtc)
             .ThenByDescending(x => x.Id)

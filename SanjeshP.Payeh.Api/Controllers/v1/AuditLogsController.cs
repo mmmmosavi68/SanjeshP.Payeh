@@ -27,9 +27,7 @@ public sealed class AuditLogsController : BaseController
     /// </remarks>
     [HttpGet]
     [ProducesResponseType(typeof(ApiResult<AuditLogPagedDto>), StatusCodes.Status200OK)]
-    public async Task<ApiResult<AuditLogPagedDto>> Search(
-        [FromQuery] AuditLogQueryParameters parameters,
-        CancellationToken cancellationToken)
+    public async Task<ApiResult<AuditLogPagedDto>> Search(        [FromQuery] AuditLogQueryParameters parameters,        CancellationToken cancellationToken)
     {
         if (parameters.FromUtc.HasValue && parameters.ToUtc.HasValue && parameters.FromUtc > parameters.ToUtc)
             throw new BadRequestException("تاریخ شروع نمی‌تواند بعد از تاریخ پایان باشد.");
