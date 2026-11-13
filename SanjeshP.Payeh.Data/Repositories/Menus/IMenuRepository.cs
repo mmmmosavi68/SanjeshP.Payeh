@@ -1,10 +1,33 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿
+using SanjeshP.Payeh.Entities.Menu;
 
-namespace SanjeshP.Payeh.Data.Repositories.Menus
+namespace SanjeshP.Payeh.Data.Contracts.Menus;
+
+public interface IMenuRepository
 {
-    internal class IMenuRepository
-    {
-    }
+    Task<List<Menu>> GetAllAsync(CancellationToken cancellationToken);
+
+    Task<Menu?> GetByIdAsync(
+        Guid id,
+        CancellationToken cancellationToken);
+
+    Task<bool> ParentExistsAsync(
+        Guid parentId,
+        CancellationToken cancellationToken);
+
+    Task<bool> HasNonDeletedChildrenAsync(
+        Guid menuId,
+        CancellationToken cancellationToken);
+
+    Task AddAsync(
+        Menu menu,
+        CancellationToken cancellationToken);
+
+    Task UpdateAsync(
+        Menu menu,
+        CancellationToken cancellationToken);
+
+    Task SoftDeleteAsync(
+        Menu menu,
+        CancellationToken cancellationToken);
 }
