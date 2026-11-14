@@ -43,7 +43,16 @@ public interface IGroupService
         Guid groupId,
         Guid userId,
         CancellationToken cancellationToken);
+    Task AddUsersAsync(
+    Guid groupId,
+    List<Guid> userIds,
+    Guid createdBy,
+    CancellationToken cancellationToken);
 
+    Task RemoveUsersAsync(
+        Guid groupId,
+        List<Guid> userIds,
+        CancellationToken cancellationToken);
     // دریافت تمام منوهای فعال سامانه
     Task<List<Menu>> GetAvailableMenusAsync(
         CancellationToken cancellationToken);
@@ -59,4 +68,6 @@ public interface IGroupService
         List<Guid> menuIds,
         Guid updatedBy,
         CancellationToken cancellationToken);
+
+
 }

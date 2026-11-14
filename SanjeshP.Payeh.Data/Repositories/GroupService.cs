@@ -310,7 +310,184 @@ public sealed class GroupService : IGroupService, IScopedDependency
     }
 
 
+    /// <summary>
+    /// افزودن گروهی کاربران به یک گروه
+    /// </summary>
+    public async Task AddUsersAsync(
+        Guid groupId,
+        List<Guid> userIds,
+        Guid createdBy,
+        CancellationToken cancellationToken)
+    {
+        if (userIds is null || userIds.Count == 0)
+            throw new BadRequestException(
+                "حداقل یک کاربر باید انتخاب شود.");
 
+        var distinctUserIds = userIds
+            .Distinct()
+            .ToList();
+
+        if (distinctUserIds.Any(x => x == Guid.Empty))
+            throw new BadRequestException(
+                "شناسه یک یا چند کاربر نامعتبر است.");
+
+        if (distinctUserIds.Count > 200)
+            throw new BadRequestException(
+                "حداکثر ۲۰۰ کاربر در هر درخواست قابل انتخاب است.");
+
+        var group = await _db.Set<UserGroup>()
+            .FirstOrDefaultAsync(
+                x => x.Id == groupId,
+                cancellationToken);
+
+        if (group is null)
+            throw new NotFoundException(
+                "گروه مورد نظر یافت نشد.");
+
+        if (!group.IsActive)
+            throw new BadRequestException(
+                "امکان افزودن کاربر به گروه غیرفعال وجود ندارد.");
+
+        // اعتبارسنجی تمام کاربران قبل از هرگونه تغییر
+        var validUserIds = await _db.Set<User>()
+            .Where(x =>
+                distinctUserIds.Contains(x.Id) &&
+                x.IsActive &&
+                !x.IsDeleted)
+            .Select(x => x.Id)
+            .ToListAsync(cancellationToken);
+
+        if (validUserIds.Count != distinctUserIds.Count)
+            throw new NotFoundException(
+                "یک یا چند کاربر یافت نشدند یا غیرفعال هستند.");
+
+        // دریافت عضویت‌های قبلی، شامل رکوردهای حذف نرم‌شده
+        var existingMemberships = await _db.Set<GroupUsers>()
+            .IgnoreQueryFilters()
+            .Where(x =>
+                x.GroupId == groupId &&
+                distinctUserIds.Contains(x.UserId))
+            .ToListAsync(cancellationToken);
+
+        // اگر حتی یک کاربر در حال حاضر عضو فعال گروه باشد،
+        // کل درخواست رد می‌شود.
+        var alreadyMember = existingMemberships
+            .Any(x => x.IsActive && !x.IsDeleted);
+
+        if (alreadyMember)
+            throw new ConflictException(
+                "یک یا چند کاربر در حال حاضر عضو گروه هستند.");
+
+        var now = DateTime.UtcNow;
+
+        foreach (var userId in distinctUserIds)
+        {
+            var previousMemberships = existingMemberships
+                .Where(x => x.UserId == userId)
+                .ToList();
+
+            if (previousMemberships.Count > 0)
+            {
+                // استفاده مجدد از اولین عضویت قبلی
+                var membership = previousMemberships[0];
+
+                membership.IsActive = true;
+                membership.IsDeleted = false;
+                membership.UpdatedDate = now;
+
+                // پاک‌سازی عضویت‌های تکراری احتمالی
+                foreach (var duplicate in previousMemberships.Skip(1))
+                {
+                    duplicate.IsActive = false;
+                    duplicate.IsDeleted = true;
+                    duplicate.UpdatedDate = now;
+                }
+            }
+            else
+            {
+                var membership = new GroupUsers
+                {
+                    GroupId = groupId,
+                    UserId = userId,
+                    IsActive = true,
+                    IsDeleted = false,
+                    CreatedBy = createdBy
+                };
+
+                await _db.Set<GroupUsers>()
+                    .AddAsync(membership, cancellationToken);
+            }
+        }
+
+        await _db.SaveChangesAsync(cancellationToken);
+
+        // باطل کردن کش دسترسی تمام کاربران اضافه‌شده
+        foreach (var userId in distinctUserIds)
+            _permissionService.Invalidate(userId);
+    }
+
+    /// <summary>
+    /// حذف گروهی کاربران از یک گروه
+    /// </summary>
+    public async Task RemoveUsersAsync(
+        Guid groupId,
+        List<Guid> userIds,
+        CancellationToken cancellationToken)
+    {
+        if (userIds is null || userIds.Count == 0)
+            throw new BadRequestException(
+                "حداقل یک کاربر باید انتخاب شود.");
+
+        var distinctUserIds = userIds
+            .Distinct()
+            .ToList();
+
+        if (distinctUserIds.Any(x => x == Guid.Empty))
+            throw new BadRequestException(
+                "شناسه یک یا چند کاربر نامعتبر است.");
+
+        if (distinctUserIds.Count > 200)
+            throw new BadRequestException(
+                "حداکثر ۲۰۰ کاربر در هر درخواست قابل انتخاب است.");
+
+        var groupExists = await _db.Set<UserGroup>()
+            .AnyAsync(
+                x => x.Id == groupId,
+                cancellationToken);
+
+        if (!groupExists)
+            throw new NotFoundException(
+                "گروه مورد نظر یافت نشد.");
+
+        // دریافت تمام عضویت‌های فعال درخواستی
+        var memberships = await _db.Set<GroupUsers>()
+            .Where(x =>
+                x.GroupId == groupId &&
+                distinctUserIds.Contains(x.UserId) &&
+                x.IsActive &&
+                !x.IsDeleted)
+            .ToListAsync(cancellationToken);
+
+        // اگر حتی یک عضویت معتبر نباشد، هیچ تغییری انجام نمی‌شود.
+        if (memberships.Count != distinctUserIds.Count)
+            throw new NotFoundException(
+                "یک یا چند مورد از عضویت‌های انتخاب‌شده یافت نشدند.");
+
+        var now = DateTime.UtcNow;
+
+        foreach (var membership in memberships)
+        {
+            membership.IsActive = false;
+            membership.IsDeleted = true;
+            membership.UpdatedDate = now;
+        }
+
+        await _db.SaveChangesAsync(cancellationToken);
+
+        // باطل کردن کش دسترسی تمام کاربران حذف‌شده
+        foreach (var userId in distinctUserIds)
+            _permissionService.Invalidate(userId);
+    }
     public async Task<List<Menu>> GetAvailableMenusAsync(
         CancellationToken cancellationToken)
     {

@@ -194,6 +194,48 @@ public sealed class GroupsController : BaseController
             "کاربر با موفقیت از گروه خارج شد.");
     }
 
+
+    /// <summary>
+    /// افزودن گروهی کاربران به گروه
+    /// </summary>
+    [HttpPost("{id:guid}/users/bulk")]
+    public async Task<ApiResult> AddUsers(
+        Guid id,
+        [FromBody] BulkGroupUsersDto dto,
+        CancellationToken cancellationToken)
+    {
+        await _groupService.AddUsersAsync(
+            id,
+            dto.UserIds,
+            CurrentUserId,
+            cancellationToken);
+
+        return new ApiResult(
+            true,
+            ApiResultStatusCode.Success,
+            $"{dto.UserIds.Distinct().Count()} کاربر با موفقیت به گروه اضافه شدند.");
+    }
+
+    /// <summary>
+    /// حذف گروهی کاربران از گروه
+    /// </summary>
+    [HttpDelete("{id:guid}/users/bulk")]
+    public async Task<ApiResult> RemoveUsers(
+        Guid id,
+        [FromBody] BulkGroupUsersDto dto,
+        CancellationToken cancellationToken)
+    {
+        await _groupService.RemoveUsersAsync(
+            id,
+            dto.UserIds,
+            cancellationToken);
+
+        return new ApiResult(
+            true,
+            ApiResultStatusCode.Success,
+            $"{dto.UserIds.Distinct().Count()} کاربر با موفقیت از گروه خارج شدند.");
+    }
+
     #region Group Menu Access
 
     /// <summary>
