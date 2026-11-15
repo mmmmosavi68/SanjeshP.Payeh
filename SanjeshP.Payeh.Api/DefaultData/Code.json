@@ -1,0 +1,207 @@
+[
+  {
+    "Id": 1,
+    "Title": "کدها استاندارد",
+    "ParentId": null,
+    "StandardCode": 0,
+    "PrimaryCode": 0,
+    "SubCode": 0
+  },
+  {
+    "Id": 2,
+    "Title": "تاهل",
+    "ParentId": 1,
+    "StandardCode": 0,
+    "PrimaryCode": 1,
+    "SubCode": 0
+  },
+  {
+    "Id": 3,
+    "Title": ". . .",
+    "ParentId": 2,
+    "StandardCode": 0,
+    "PrimaryCode": 1,
+    "SubCode": 1,
+    "AdditionalInformation": "آیتم تاهل"
+  },
+  {
+    "Id": 4,
+    "Title": "مجرد",
+    "ParentId": 2,
+    "StandardCode": 1,
+    "PrimaryCode": 1,
+    "SubCode": 10,
+    "AdditionalInformation": "آیتم تاهل"
+  },
+  {
+    "Id": 5,
+    "Title": "متاهل",
+    "ParentId": 2,
+    "StandardCode": 2,
+    "PrimaryCode": 1,
+    "SubCode": 11,
+    "AdditionalInformation": "آیتم تاهل"
+  },
+  {
+    "Id": 8,
+    "Title": "جنسیت",
+    "ParentId": 1,
+    "StandardCode": null,
+    "PrimaryCode": 2,
+    "SubCode": 0,
+    "AdditionalInformation": "گروه اطلاعات پایه"
+  },
+  {
+    "Id": 9,
+    "Title": "چپ‌دستی",
+    "ParentId": 1,
+    "StandardCode": null,
+    "PrimaryCode": 5,
+    "SubCode": 0,
+    "AdditionalInformation": "گروه اطلاعات پایه"
+  },
+  {
+    "Id": 10,
+    "Title": "ملیت",
+    "ParentId": 1,
+    "StandardCode": null,
+    "PrimaryCode": 4,
+    "SubCode": 0,
+    "AdditionalInformation": "گروه اطلاعات پایه"
+  },
+  {
+    "Id": 11,
+    "Title": "دین",
+    "ParentId": 1,
+    "StandardCode": null,
+    "PrimaryCode": 3,
+    "SubCode": 0,
+    "AdditionalInformation": "گروه اطلاعات پایه"
+  },
+  {
+    "Id": 12,
+    "Title": "مرد",
+    "ParentId": 8,
+    "StandardCode": null,
+    "PrimaryCode": 2,
+    "SubCode": 10,
+    "AdditionalInformation": "آیتم اطلاعات پایه"
+  },
+  {
+    "Id": 13,
+    "Title": "زن",
+    "ParentId": 8,
+    "StandardCode": null,
+    "PrimaryCode": 2,
+    "SubCode": 11,
+    "AdditionalInformation": "آیتم اطلاعات پایه"
+  },
+  {
+    "Id": 14,
+    "Title": "بله",
+    "ParentId": 9,
+    "StandardCode": null,
+    "PrimaryCode": 5,
+    "SubCode": 10,
+    "AdditionalInformation": "آیتم اطلاعات پایه"
+  },
+  {
+    "Id": 15,
+    "Title": "خیر",
+    "ParentId": 9,
+    "StandardCode": null,
+    "PrimaryCode": 5,
+    "SubCode": 11,
+    "AdditionalInformation": "آیتم اطلاعات پایه"
+  },
+  {
+    "Id": 16,
+    "Title": "ایرانی",
+    "ParentId": 10,
+    "StandardCode": null,
+    "PrimaryCode": 4,
+    "SubCode": 10,
+    "AdditionalInformation": "آیتم اطلاعات پایه"
+  },
+  {
+    "Id": 17,
+    "Title": "افغانستانی",
+    "ParentId": 10,
+    "StandardCode": null,
+    "PrimaryCode": 4,
+    "SubCode": 11,
+    "AdditionalInformation": "آیتم اطلاعات پایه"
+  },
+  {
+    "Id": 18,
+    "Title": "عراقی",
+    "ParentId": 10,
+    "StandardCode": null,
+    "PrimaryCode": 4,
+    "SubCode": 12,
+    "AdditionalInformation": "آیتم اطلاعات پایه"
+  },
+  {
+    "Id": 19,
+    "Title": "پاکستانی",
+    "ParentId": 10,
+    "StandardCode": null,
+    "PrimaryCode": 4,
+    "SubCode": 13,
+    "AdditionalInformation": "آیتم اطلاعات پایه"
+  },
+  {
+    "Id": 20,
+    "Title": "سایر",
+    "ParentId": 10,
+    "StandardCode": null,
+    "PrimaryCode": 4,
+    "SubCode": 14,
+    "AdditionalInformation": "آیتم اطلاعات پایه"
+  },
+  {
+    "Id": 21,
+    "Title": "اسلام",
+    "ParentId": 11,
+    "StandardCode": null,
+    "PrimaryCode": 3,
+    "SubCode": 10,
+    "AdditionalInformation": "آیتم اطلاعات پایه"
+  },
+  {
+    "Id": 22,
+    "Title": "مسیحیت",
+    "ParentId": 11,
+    "StandardCode": null,
+    "PrimaryCode": 3,
+    "SubCode": 11,
+    "AdditionalInformation": "آیتم اطلاعات پایه"
+  },
+  {
+    "Id": 23,
+    "Title": "یهودیت",
+    "ParentId": 11,
+    "StandardCode": null,
+    "PrimaryCode": 3,
+    "SubCode": 12,
+    "AdditionalInformation": "آیتم اطلاعات پایه"
+  },
+  {
+    "Id": 24,
+    "Title": "زرتشتی",
+    "ParentId": 11,
+    "StandardCode": null,
+    "PrimaryCode": 3,
+    "SubCode": 13,
+    "AdditionalInformation": "آیتم اطلاعات پایه"
+  },
+  {
+    "Id": 25,
+    "Title": "سایر",
+    "ParentId": 11,
+    "StandardCode": null,
+    "PrimaryCode": 3,
+    "SubCode": 14,
+    "AdditionalInformation": "آیتم اطلاعات پایه"
+  }
+]
