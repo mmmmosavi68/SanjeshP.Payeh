@@ -68,22 +68,49 @@ namespace SanjeshP.Payeh.Api.Controllers.V1
                 result.PageSize);
         }
 
-        /// <summary>
-        /// دریافت جزئیات کاربر.
-        /// </summary>
         [HttpGet("{id:guid}")]
-        [ProducesResponseType(
-            typeof(ApiResult<UserSelectDto>),
-            StatusCodes.Status200OK)]
         public async Task<ApiResult<UserSelectDto>> GetById(
-            [FromRoute] Guid id,
-            CancellationToken cancellationToken)
+     [FromRoute] Guid id,
+     CancellationToken cancellationToken)
         {
-            var user = await _userService.GetByIdAsync(
-                id,
-                cancellationToken);
+            var user = await _userService.GetByIdAsync(id, cancellationToken);
 
-            return _mapper.Map<UserSelectDto>(user);
+            var profile = user.UserProfile?.FirstOrDefault();
+
+            var result = new UserSelectDto
+            {
+                Id = user.Id,
+                UserName = user.UserName,
+                EmailAddress = user.EmailAddress,
+                PhoneNumber = user.PhoneNumber,
+                PhoneNumberConfirmed = user.PhoneNumberConfirmed,
+                IsActive = user.IsActive,
+                CreatedDate = user.CreatedDate,
+                LastLoginDate = user.LastLoginDate,
+                ExpireDate = user.ExpireDate,
+
+                FirstName = profile?.FirstName,
+                LastName = profile?.LastName,
+                FatherName = profile?.FatherName,
+                NationalCode = profile?.NationalCode,
+                Gender = profile?.Gender,
+                MaritalStatus = profile?.MaritalStatus,
+                Religion = profile?.Religion,
+                LeftHanded = profile?.LeftHanded,
+                Nationality = profile?.Nationality,
+
+                Roles = user.UserRoles?
+                    .Where(x => x.Role != null)
+                    .Select(x => new RoleDto
+                    {
+                        Id = x.Role.Id,
+                        NameEn = x.Role.RoleNameEn,
+                        NameFa = x.Role.RoleNameFa
+                    })
+                    .ToList() ?? new List<RoleDto>()
+            };
+
+            return result;
         }
 
         /// <summary>
