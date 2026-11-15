@@ -2,7 +2,6 @@ using SanjeshP.Payeh.Entities.User;
 
 namespace SanjeshP.Payeh.Services.Users
 {
-    /// <summary>پارامترهای کوئری فهرست کاربران (لایه‌ی سرویس، مستقل از DTO وب).</summary>
     public record UserQuery(
         int PageNumber,
         int PageSize,
@@ -12,23 +11,49 @@ namespace SanjeshP.Payeh.Services.Users
         string? SortBy,
         string? SortDirection);
 
-    /// <summary>نتیجه‌ی صفحه‌بندی‌شده‌ی کوئری کاربران.</summary>
-    public record PagedUsers(IReadOnlyList<User> Items, int TotalCount, int PageNumber, int PageSize);
+    public record PagedUsers(
+        IReadOnlyList<User> Items,
+        int TotalCount,
+        int PageNumber,
+        int PageSize);
 
-    /// <summary>
-    /// سرویس مدیریت کاربران: CRUD با حذف نرم، صفحه‌بندی، جستجو، فیلتر و مرتب‌سازی امن (Whitelist).
-    /// نگاشت Entity ↔ DTO در لایه‌ی وب با AutoMapper انجام می‌شود.
-    /// </summary>
     public interface IUserService
     {
-        Task<User?> ValidateCredentialsAsync(string userName, string password, CancellationToken cancellationToken);
-        Task<PagedUsers> GetPagedAsync(UserQuery query, CancellationToken cancellationToken);
-        Task<User> GetByIdAsync(Guid id, CancellationToken cancellationToken);
-        Task<User> CreateAsync(User user, string? plainPassword, IEnumerable<int> roleIds, string? firstName, string? lastName, string? nationalCode, Guid createdBy, CancellationToken cancellationToken);
-        Task<User> UpdateAsync(Guid id, Action<User> applyChanges, IEnumerable<int>? roleIds, string? firstName, string? lastName, CancellationToken cancellationToken);
-        /// <summary>حذف نرم: IsDeleted=true و ابطال همه‌ی نشست‌ها.</summary>
-        Task SoftDeleteAsync(Guid id, CancellationToken cancellationToken);
-        /// <summary>تعیین رمز جدید: هش می‌شود، قفل حساب برداشته می‌شود و همه‌ی نشست‌ها باطل می‌شوند.</summary>
-        Task SetPasswordAsync(Guid id, string newPassword, CancellationToken cancellationToken);
+        Task<User?> ValidateCredentialsAsync(
+            string userName,
+            string password,
+            CancellationToken cancellationToken);
+
+        Task<PagedUsers> GetPagedAsync(
+            UserQuery query,
+            CancellationToken cancellationToken);
+
+        Task<User> GetByIdAsync(
+            Guid id,
+            CancellationToken cancellationToken);
+
+        Task<User> CreateAsync(
+            User user,
+            string? plainPassword,
+            IEnumerable<int> roleIds,
+            UserProfile profile,
+            Guid createdBy,
+            CancellationToken cancellationToken);
+
+        Task<User> UpdateAsync(
+            Guid id,
+            Action<User> applyChanges,
+            Action<UserProfile> applyProfileChanges,
+            IEnumerable<int>? roleIds,
+            CancellationToken cancellationToken);
+
+        Task SoftDeleteAsync(
+            Guid id,
+            CancellationToken cancellationToken);
+
+        Task SetPasswordAsync(
+            Guid id,
+            string newPassword,
+            CancellationToken cancellationToken);
     }
 }

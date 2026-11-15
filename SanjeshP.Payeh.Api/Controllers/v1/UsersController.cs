@@ -37,13 +37,15 @@ namespace SanjeshP.Payeh.Api.Controllers.V1
         }
 
         /// <summary>
-        /// فهرست صفحه‌بندی‌شده کاربران با جستجو، فیلتر و مرتب‌سازی.
+        /// فهرست صفحه‌بندی‌شده کاربران.
         /// </summary>
         [HttpGet]
         [ProducesResponseType(
             typeof(ApiResult<PagedResult<UserSelectDto>>),
             StatusCodes.Status200OK)]
-        public async Task<ApiResult<PagedResult<UserSelectDto>>> Get([FromQuery] UserQueryParameters query, CancellationToken cancellationToken)
+        public async Task<ApiResult<PagedResult<UserSelectDto>>> Get(
+            [FromQuery] UserQueryParameters query,
+            CancellationToken cancellationToken)
         {
             var result = await _userService.GetPagedAsync(
                 new UserQuery(
@@ -56,7 +58,8 @@ namespace SanjeshP.Payeh.Api.Controllers.V1
                     query.SortDirection),
                 cancellationToken);
 
-            var items = _mapper.Map<IReadOnlyList<UserSelectDto>>(result.Items);
+            var items = _mapper.Map<IReadOnlyList<UserSelectDto>>(
+                result.Items);
 
             return new PagedResult<UserSelectDto>(
                 items,
@@ -66,15 +69,19 @@ namespace SanjeshP.Payeh.Api.Controllers.V1
         }
 
         /// <summary>
-        /// دریافت جزئیات یک کاربر.
+        /// دریافت جزئیات کاربر.
         /// </summary>
         [HttpGet("{id:guid}")]
         [ProducesResponseType(
             typeof(ApiResult<UserSelectDto>),
             StatusCodes.Status200OK)]
-        public async Task<ApiResult<UserSelectDto>> GetById([FromRoute] Guid id, CancellationToken cancellationToken)
+        public async Task<ApiResult<UserSelectDto>> GetById(
+            [FromRoute] Guid id,
+            CancellationToken cancellationToken)
         {
-            var user = await _userService.GetByIdAsync(id, cancellationToken);
+            var user = await _userService.GetByIdAsync(
+                id,
+                cancellationToken);
 
             return _mapper.Map<UserSelectDto>(user);
         }
@@ -86,35 +93,42 @@ namespace SanjeshP.Payeh.Api.Controllers.V1
         [ProducesResponseType(
             typeof(ApiResult<UserSelectDto>),
             StatusCodes.Status201Created)]
-        public async Task<ActionResult<ApiResult<UserSelectDto>>> Create([FromBody] CreateUserDto dto, CancellationToken cancellationToken)
+        public async Task<ActionResult<ApiResult<UserSelectDto>>> Create(
+            [FromBody] CreateUserDto dto,
+            CancellationToken cancellationToken)
         {
             var entity = _mapper.Map<User>(dto);
+
+            var profile = new UserProfile
+            {
+                FirstName = dto.FirstName.Trim(),
+                LastName = dto.LastName.Trim(),
+                FatherName = dto.FatherName?.Trim(),
+                NationalCode = dto.NationalCode.Trim(),
+                Gender = dto.Gender,
+                MaritalStatus = dto.MaritalStatus,
+                Religion = dto.Religion,
+                LeftHanded = dto.LeftHanded,
+                Nationality = dto.Nationality
+            };
 
             var created = await _userService.CreateAsync(
                 entity,
                 dto.Password,
                 dto.RoleIds,
-                dto.FirstName,
-                dto.LastName,
-                dto.NationalCode,
-                createdBy: CurrentUserId,
+                profile,
+                CurrentUserId,
                 cancellationToken);
 
-            // اطلاعات حساس مانند رمز عبور و کد ملی وارد Audit نمی‌شوند.
-            // ایمیل و شماره موبایل نیز به‌صورت پوشیده ثبت می‌شوند.
             var createdValues = new
             {
                 created.UserName,
                 EmailAddress = MaskEmail(created.EmailAddress),
                 PhoneNumber = MaskPhone(created.PhoneNumber),
                 created.IsActive,
-
-                FirstName = created.UserProfile
-                    .FirstOrDefault()?.FirstName,
-
-                LastName = created.UserProfile
-                    .FirstOrDefault()?.LastName,
-
+                created.ExpireDate,
+                FirstName = profile.FirstName,
+                LastName = profile.LastName,
                 RoleIds = created.UserRoles
                     .Select(x => x.RoleId)
                     .OrderBy(x => x)
@@ -131,7 +145,7 @@ namespace SanjeshP.Payeh.Api.Controllers.V1
 
             var result = new ApiResult<UserSelectDto>(
                 true,
-                Common.ApiResultStatusCode.Success,
+                ApiResultStatusCode.Success,
                 _mapper.Map<UserSelectDto>(created),
                 "کاربر با موفقیت ایجاد شد.");
 
@@ -143,126 +157,133 @@ namespace SanjeshP.Payeh.Api.Controllers.V1
 
         /// <summary>
         /// ویرایش اطلاعات کاربر.
-        /// فقط فیلدهای ارسال‌شده اعمال می‌شوند.
+        /// فیلدهای null یا ارسال‌نشده تغییر نمی‌کنند.
         /// </summary>
         [HttpPut("{id:guid}")]
         [ProducesResponseType(
             typeof(ApiResult<UserSelectDto>),
             StatusCodes.Status200OK)]
-        public async Task<ApiResult<UserSelectDto>> Update([FromRoute] Guid id, [FromBody] UpdateUserDto dto, CancellationToken cancellationToken)
+        public async Task<ApiResult<UserSelectDto>> Update(
+            [FromRoute] Guid id,
+            [FromBody] UpdateUserDto dto,
+            CancellationToken cancellationToken)
         {
-            // دریافت اطلاعات قبل از تغییر برای ثبت مقادیر قبلی.
             var before = await _userService.GetByIdAsync(
                 id,
                 cancellationToken);
 
+            var beforeProfile = before.UserProfile.FirstOrDefault();
+
+            // اگر پروفایل وجود ندارد، برای ایجاد آن این سه فیلد ضروری‌اند.
+            if (beforeProfile is null &&
+                (string.IsNullOrWhiteSpace(dto.FirstName) ||
+                 string.IsNullOrWhiteSpace(dto.LastName) ||
+                 string.IsNullOrWhiteSpace(dto.NationalCode)))
+            {
+                throw new Common.Exceptions.BadRequestException(
+                    "برای تکمیل پروفایل کاربر، نام، نام خانوادگی و کد ملی الزامی است.");
+            }
+
             var oldValues = new Dictionary<string, object?>();
             var newValues = new Dictionary<string, object?>();
 
-            #region EmailAddress
+            // اطلاعات اصلی کاربر
+            AddChange(
+                oldValues, newValues,
+                "UserName",
+                before.UserName,
+                dto.UserName,
+                dto.UserName is not null &&
+                !string.Equals(before.UserName, dto.UserName.Trim(),
+                    StringComparison.Ordinal));
 
             AddChange(
-                oldValues,
-                newValues,
+                oldValues, newValues,
                 "EmailAddress",
                 MaskEmail(before.EmailAddress),
                 MaskEmail(dto.EmailAddress),
                 dto.EmailAddress is not null &&
-                !string.Equals(
-                    before.EmailAddress,
-                    dto.EmailAddress,
-                    StringComparison.Ordinal));
-
-            #endregion
-
-            #region PhoneNumber
+                !string.Equals(before.EmailAddress, dto.EmailAddress.Trim(),
+                    StringComparison.OrdinalIgnoreCase));
 
             AddChange(
-                oldValues,
-                newValues,
+                oldValues, newValues,
                 "PhoneNumber",
                 MaskPhone(before.PhoneNumber),
                 MaskPhone(dto.PhoneNumber),
                 dto.PhoneNumber is not null &&
-                !string.Equals(
-                    before.PhoneNumber,
-                    dto.PhoneNumber,
+                !string.Equals(before.PhoneNumber, dto.PhoneNumber.Trim(),
                     StringComparison.Ordinal));
 
-            // تغییر شماره موبایل باعث نیاز به تأیید مجدد می‌شود.
-            if (dto.PhoneNumber is not null &&
-                !string.Equals(
-                    before.PhoneNumber,
-                    dto.PhoneNumber,
-                    StringComparison.Ordinal))
-            {
-                oldValues["PhoneNumberConfirmed"] =
-                    before.PhoneNumberConfirmed;
-
-                newValues["PhoneNumberConfirmed"] = false;
-            }
-
-            #endregion
-
-            #region IsActive
-
             AddChange(
-                oldValues,
-                newValues,
+                oldValues, newValues,
                 "IsActive",
                 before.IsActive,
                 dto.IsActive,
                 dto.IsActive.HasValue &&
                 before.IsActive != dto.IsActive.Value);
 
-            #endregion
+            AddChange(
+                oldValues, newValues,
+                "ExpireDate",
+                before.ExpireDate,
+                dto.ExpireDate,
+                dto.ExpireDate.HasValue &&
+                before.ExpireDate != dto.ExpireDate.Value);
 
-            #region UserProfile
-
-            // نام و نام خانوادگی در موجودیت UserProfile نگهداری می‌شوند.
-            // سرویس فعلی فقط پروفایل موجود را به‌روزرسانی می‌کند.
-            var beforeProfile = before.UserProfile.FirstOrDefault();
-
+            // اطلاعات پروفایل
             if (beforeProfile is not null)
             {
-                if (!string.IsNullOrWhiteSpace(dto.FirstName))
-                {
-                    var newFirstName = dto.FirstName.Trim();
+                AddChange(oldValues, newValues, "FirstName",
+                    beforeProfile.FirstName, dto.FirstName,
+                    dto.FirstName is not null &&
+                    beforeProfile.FirstName != dto.FirstName.Trim());
 
-                    AddChange(
-                        oldValues,
-                        newValues,
-                        "FirstName",
-                        beforeProfile.FirstName,
-                        newFirstName,
-                        !string.Equals(
-                            beforeProfile.FirstName,
-                            newFirstName,
-                            StringComparison.Ordinal));
+                AddChange(oldValues, newValues, "LastName",
+                    beforeProfile.LastName, dto.LastName,
+                    dto.LastName is not null &&
+                    beforeProfile.LastName != dto.LastName.Trim());
+
+                AddChange(oldValues, newValues, "FatherName",
+                    beforeProfile.FatherName, dto.FatherName,
+                    dto.FatherName is not null &&
+                    beforeProfile.FatherName != dto.FatherName.Trim());
+
+                // کد ملی در Audit ثبت نمی‌شود.
+                if (dto.NationalCode is not null &&
+                    beforeProfile.NationalCode != dto.NationalCode.Trim())
+                {
+                    oldValues["NationalCodeChanged"] = true;
+                    newValues["NationalCodeChanged"] = true;
                 }
 
-                if (!string.IsNullOrWhiteSpace(dto.LastName))
-                {
-                    var newLastName = dto.LastName.Trim();
+                AddChange(oldValues, newValues, "Gender",
+                    beforeProfile.Gender, dto.Gender,
+                    dto.Gender.HasValue &&
+                    beforeProfile.Gender != dto.Gender);
 
-                    AddChange(
-                        oldValues,
-                        newValues,
-                        "LastName",
-                        beforeProfile.LastName,
-                        newLastName,
-                        !string.Equals(
-                            beforeProfile.LastName,
-                            newLastName,
-                            StringComparison.Ordinal));
-                }
+                AddChange(oldValues, newValues, "MaritalStatus",
+                    beforeProfile.MaritalStatus, dto.MaritalStatus,
+                    dto.MaritalStatus.HasValue &&
+                    beforeProfile.MaritalStatus != dto.MaritalStatus);
+
+                AddChange(oldValues, newValues, "Religion",
+                    beforeProfile.Religion, dto.Religion,
+                    dto.Religion.HasValue &&
+                    beforeProfile.Religion != dto.Religion);
+
+                AddChange(oldValues, newValues, "LeftHanded",
+                    beforeProfile.LeftHanded, dto.LeftHanded,
+                    dto.LeftHanded.HasValue &&
+                    beforeProfile.LeftHanded != dto.LeftHanded);
+
+                AddChange(oldValues, newValues, "Nationality",
+                    beforeProfile.Nationality, dto.Nationality,
+                    dto.Nationality.HasValue &&
+                    beforeProfile.Nationality != dto.Nationality);
             }
 
-            #endregion
-
-            #region UserRoles
-
-            // نقش‌ها از طریق رابطه UserRoles در موجودیت User قابل دسترسی هستند.
+            // نقش‌ها
             if (dto.RoleIds is not null)
             {
                 var oldRoleIds = before.UserRoles
@@ -283,56 +304,76 @@ namespace SanjeshP.Payeh.Api.Controllers.V1
                 }
             }
 
-            #endregion
-
-            // اعمال تغییرات اطلاعات اصلی کاربر، پروفایل و نقش‌ها.
+            // اعمال تغییرات User
             var updated = await _userService.UpdateAsync(
                 id,
                 user =>
                 {
+                    if (dto.UserName is not null)
+                        user.UserName = dto.UserName.Trim();
+
                     if (dto.EmailAddress is not null)
                     {
-                        user.EmailAddress = dto.EmailAddress;
+                        user.EmailAddress =
+                            string.IsNullOrWhiteSpace(dto.EmailAddress)
+                                ? null
+                                : dto.EmailAddress.Trim();
                     }
 
                     if (dto.PhoneNumber is not null)
                     {
+                        var newPhone = dto.PhoneNumber.Trim();
+
                         if (!string.Equals(
-                                user.PhoneNumber,
-                                dto.PhoneNumber,
-                                StringComparison.Ordinal))
+                            user.PhoneNumber,
+                            newPhone,
+                            StringComparison.Ordinal))
                         {
                             user.PhoneNumberConfirmed = false;
                         }
 
-                        user.PhoneNumber = dto.PhoneNumber;
+                        user.PhoneNumber = newPhone;
                     }
 
                     if (dto.IsActive.HasValue)
-                    {
                         user.IsActive = dto.IsActive.Value;
-                    }
+
+                    if (dto.ExpireDate.HasValue)
+                        user.ExpireDate = dto.ExpireDate.Value;
+                },
+                profile =>
+                {
+                    if (dto.FirstName is not null)
+                        profile.FirstName = dto.FirstName.Trim();
+
+                    if (dto.LastName is not null)
+                        profile.LastName = dto.LastName.Trim();
+
+                    if (dto.FatherName is not null)
+                        profile.FatherName = dto.FatherName.Trim();
+
+                    if (dto.NationalCode is not null)
+                        profile.NationalCode = dto.NationalCode.Trim();
+
+                    if (dto.Gender.HasValue)
+                        profile.Gender = dto.Gender.Value;
+
+                    if (dto.MaritalStatus.HasValue)
+                        profile.MaritalStatus = dto.MaritalStatus.Value;
+
+                    if (dto.Religion.HasValue)
+                        profile.Religion = dto.Religion.Value;
+
+                    if (dto.LeftHanded.HasValue)
+                        profile.LeftHanded = dto.LeftHanded.Value;
+
+                    if (dto.Nationality.HasValue)
+                        profile.Nationality = dto.Nationality.Value;
                 },
                 dto.RoleIds,
-                dto.FirstName,
-                dto.LastName,
                 cancellationToken);
 
-            // ثبت تغییرات اطلاعات کاربر پس از ذخیره موفق.
-            if (oldValues.Count > 0)
-            {
-                await _auditLogService.LogActivityAsync(
-                    action: "Users.Update",
-                    description: "ویرایش اطلاعات کاربر",
-                    entityName: nameof(User),
-                    entityId: id.ToString(),
-                    oldValuesJson: JsonSerializer.Serialize(oldValues),
-                    newValuesJson: JsonSerializer.Serialize(newValues),
-                    cancellationToken: cancellationToken);
-            }
-
-            // تغییر رمز عبور به‌صورت رویداد امنیتی مستقل ثبت می‌شود.
-            // هیچ‌گاه رمز قبلی یا جدید در Audit ذخیره نمی‌شود.
+            // تغییر رمز پس از ذخیره اطلاعات
             if (!string.IsNullOrWhiteSpace(dto.Password))
             {
                 await _userService.SetPasswordAsync(
@@ -349,17 +390,36 @@ namespace SanjeshP.Payeh.Api.Controllers.V1
                     cancellationToken: cancellationToken);
             }
 
-            return _mapper.Map<UserSelectDto>(updated);
+            // ثبت Audit تغییرات
+            if (oldValues.Count > 0)
+            {
+                await _auditLogService.LogActivityAsync(
+                    action: "Users.Update",
+                    description: "ویرایش اطلاعات کاربر",
+                    entityName: nameof(User),
+                    entityId: id.ToString(),
+                    oldValuesJson: JsonSerializer.Serialize(oldValues),
+                    newValuesJson: JsonSerializer.Serialize(newValues),
+                    cancellationToken: cancellationToken);
+            }
+
+            // اطلاعات تازه را مجدداً دریافت می‌کنیم تا خروجی شامل نقش‌ها و پروفایل باشد.
+            var finalUser = await _userService.GetByIdAsync(
+                id,
+                cancellationToken);
+
+            return _mapper.Map<UserSelectDto>(finalUser);
         }
 
         /// <summary>
-        /// حذف نرم کاربر و ابطال نشست‌های فعال او.
+        /// حذف نرم کاربر و ابطال نشست‌های فعال.
         /// </summary>
         [HttpDelete("{id:guid}")]
-        [ProducesResponseType(StatusCodes.Status204NoContent)]
-        public async Task<ApiResult> Delete([FromRoute] Guid id,     CancellationToken cancellationToken)
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<ApiResult> Delete(
+            [FromRoute] Guid id,
+            CancellationToken cancellationToken)
         {
-            // کاربر اجازه حذف حساب خودش را ندارد.
             if (id == CurrentUserId)
             {
                 throw new Common.Exceptions.BadRequestException(
@@ -391,14 +451,14 @@ namespace SanjeshP.Payeh.Api.Controllers.V1
                 }),
                 cancellationToken: cancellationToken);
 
-            return new ApiResult(true, ApiResultStatusCode.Success, "کاربر با موفقیت حذف شد.");
+            return new ApiResult(
+                true,
+                ApiResultStatusCode.Success,
+                "کاربر با موفقیت حذف شد.");
         }
 
         #region Audit Helpers
 
-        /// <summary>
-        /// در صورت تغییر مقدار، مقدار قبلی و جدید را به دیکشنری‌ها اضافه می‌کند.
-        /// </summary>
         private static void AddChange(
             IDictionary<string, object?> oldValues,
             IDictionary<string, object?> newValues,
@@ -414,9 +474,6 @@ namespace SanjeshP.Payeh.Api.Controllers.V1
             newValues[propertyName] = newValue;
         }
 
-        /// <summary>
-        /// پوشاندن شماره موبایل برای جلوگیری از ذخیره اطلاعات کامل تماس در Audit.
-        /// </summary>
         private static string? MaskPhone(string? value)
         {
             if (string.IsNullOrWhiteSpace(value))
@@ -432,9 +489,6 @@ namespace SanjeshP.Payeh.Api.Controllers.V1
             return $"{visiblePrefix}****{phone[^2..]}";
         }
 
-        /// <summary>
-        /// پوشاندن بخش محلی ایمیل.
-        /// </summary>
         private static string? MaskEmail(string? value)
         {
             if (string.IsNullOrWhiteSpace(value))
@@ -445,10 +499,7 @@ namespace SanjeshP.Payeh.Api.Controllers.V1
             if (atIndex <= 0)
                 return "***";
 
-            var localPart = value[..atIndex];
-            var visiblePart = localPart[..1];
-
-            return $"{visiblePart}***{value[atIndex..]}";
+            return $"{value[..1]}***{value[atIndex..]}";
         }
 
         #endregion

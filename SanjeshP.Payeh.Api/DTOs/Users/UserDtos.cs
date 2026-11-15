@@ -1,4 +1,3 @@
-using AutoMapper;
 using SanjeshP.Payeh.Entities.User;
 using SanjeshP.Payeh.WebFramework.Api;
 using SanjeshP.Payeh.WebFramework.CustomMapping;
@@ -6,7 +5,9 @@ using System.ComponentModel.DataAnnotations;
 
 namespace SanjeshP.Payeh.Api.Models.Users
 {
-    /// <summary>خروجی نمایش کاربر (فهرست و جزئیات).</summary>
+    /// <summary>
+    /// خروجی نمایش کاربر در فهرست و جزئیات.
+    /// </summary>
     public class UserSelectDto : BaseDto<UserSelectDto, User, Guid>
     {
         public string UserName { get; set; } = null!;
@@ -17,36 +18,38 @@ namespace SanjeshP.Payeh.Api.Models.Users
         public DateTime CreatedDate { get; set; }
         public DateTimeOffset? LastLoginDate { get; set; }
         public DateTime ExpireDate { get; set; }
+
+        // اطلاعات پروفایل
         public string? FirstName { get; set; }
         public string? LastName { get; set; }
+        public string? FatherName { get; set; }
         public string? NationalCode { get; set; }
+        public GenderType? Gender { get; set; }
+        public MaritalStatusType? MaritalStatus { get; set; }
+        public int? Religion { get; set; }
+        public LeftHandedType? LeftHanded { get; set; }
+        public int? Nationality { get; set; }
+
         public List<RoleDto> Roles { get; set; } = new();
     }
-    //public sealed class UserMapping : IHaveCustomMapping
-    //{
-    //    public void CreateMappings(Profile profile)
-    //    {
-    //        profile.CreateMap<User, UserSelectDto>();
 
-    //        profile.CreateMap<CreateUserDto, User>()
-    //            .ForMember(
-    //                dest => dest.Id,
-    //                opt => opt.Ignore());
-
-    //        profile.CreateMap<UpdateUserDto, User>();
-    //    }
-    //}
-    /// <summary>ورودی ایجاد کاربر. اعتبارسنجی با DataAnnotations و پیام فارسی.</summary>
+    /// <summary>
+    /// ورودی ایجاد کاربر.
+    /// </summary>
     public class CreateUserDto : BaseDto<CreateUserDto, User, Guid>
     {
         [Required(ErrorMessage = "نام کاربری الزامی است")]
         [StringLength(50, MinimumLength = 3, ErrorMessage = "نام کاربری باید بین 3 تا 50 کاراکتر باشد")]
-        [RegularExpression(@"^[a-zA-Z][a-zA-Z0-9._]*$", ErrorMessage = "نام کاربری باید با حرف انگلیسی شروع شود و فقط شامل حروف، عدد، نقطه و زیرخط باشد")]
+        [RegularExpression(
+            @"^[a-zA-Z][a-zA-Z0-9._]*$",
+            ErrorMessage = "نام کاربری باید با حرف انگلیسی شروع شود و فقط شامل حروف، عدد، نقطه و زیرخط باشد")]
         [Display(Name = "نام کاربری")]
         public string UserName { get; set; } = null!;
 
         [Required(ErrorMessage = "شماره موبایل الزامی است")]
-        [RegularExpression(@"^(\+98|0098|98|0)?9\d{9}$", ErrorMessage = "شماره موبایل معتبر نیست")]
+        [RegularExpression(
+            @"^(\+98|0098|98|0)?9\d{9}$",
+            ErrorMessage = "شماره موبایل معتبر نیست")]
         [Display(Name = "شماره موبایل")]
         public string PhoneNumber { get; set; } = null!;
 
@@ -65,33 +68,71 @@ namespace SanjeshP.Payeh.Api.Models.Users
         [Display(Name = "نام خانوادگی")]
         public string LastName { get; set; } = null!;
 
+        [MaxLength(50, ErrorMessage = "نام پدر نباید بیش از 50 کاراکتر باشد")]
+        [Display(Name = "نام پدر")]
+        public string? FatherName { get; set; }
+
         [Required(ErrorMessage = "کد ملی الزامی است")]
         [RegularExpression(@"^\d{10}$", ErrorMessage = "کد ملی باید دقیقاً 10 رقم باشد")]
         [Display(Name = "کد ملی")]
         public string NationalCode { get; set; } = null!;
 
-        /// <summary>رمز عبور اختیاری است؛ ورود اصلی با OTP است. در صورت ارسال، هش می‌شود.</summary>
+        [Display(Name = "جنسیت")]
+        public GenderType? Gender { get; set; }
+
+        [Display(Name = "وضعیت تأهل")]
+        public MaritalStatusType? MaritalStatus { get; set; }
+
+        [Display(Name = "دین")]
+        public int? Religion { get; set; }
+
+        [Display(Name = "چپ‌دستی")]
+        public LeftHandedType? LeftHanded { get; set; }
+
+        [Display(Name = "ملیت")]
+        public int? Nationality { get; set; }
+
+        /// <summary>
+        /// رمز اولیه اختیاری است؛ در صورت ارسال، در سرویس هش می‌شود.
+        /// </summary>
         [MinLength(8, ErrorMessage = "رمز عبور باید حداقل 8 کاراکتر باشد")]
+        [MaxLength(128, ErrorMessage = "رمز عبور نباید بیش از 128 کاراکتر باشد")]
         [DataType(DataType.Password)]
         [Display(Name = "رمز عبور")]
         public string? Password { get; set; }
 
-        /// <summary>شناسه‌ی نقش‌ها (اختیاری).</summary>
+        /// <summary>شناسه نقش‌های کاربر.</summary>
         public List<int> RoleIds { get; set; } = new();
 
         [Display(Name = "فعال")]
         public bool IsActive { get; set; } = true;
+
+        [Required(ErrorMessage = "تاریخ انقضاء الزامی است")]
+        [Display(Name = "تاریخ انقضاء")]
+        public DateTime ExpireDate { get; set; } = DateTime.UtcNow.AddYears(1);
     }
 
-    /// <summary>ورودی ویرایش کاربر؛ فقط فیلدهای ارسالی (غیر null) اعمال می‌شوند.</summary>
+    /// <summary>
+    /// ورودی ویرایش کاربر.
+    /// فیلد null یعنی مقدار فعلی حفظ شود.
+    /// </summary>
     public class UpdateUserDto
     {
+        [StringLength(50, MinimumLength = 3, ErrorMessage = "نام کاربری باید بین 3 تا 50 کاراکتر باشد")]
+        [RegularExpression(
+            @"^[a-zA-Z][a-zA-Z0-9._]*$",
+            ErrorMessage = "نام کاربری باید با حرف انگلیسی شروع شود و فقط شامل حروف، عدد، نقطه و زیرخط باشد")]
+        [Display(Name = "نام کاربری")]
+        public string? UserName { get; set; }
+
         [EmailAddress(ErrorMessage = "ایمیل معتبر نیست")]
         [MaxLength(100, ErrorMessage = "ایمیل نباید بیش از 100 کاراکتر باشد")]
         [Display(Name = "ایمیل")]
         public string? EmailAddress { get; set; }
 
-        [RegularExpression(@"^(\+98|0098|98|0)?9\d{9}$", ErrorMessage = "شماره موبایل معتبر نیست")]
+        [RegularExpression(
+            @"^(\+98|0098|98|0)?9\d{9}$",
+            ErrorMessage = "شماره موبایل معتبر نیست")]
         [Display(Name = "شماره موبایل")]
         public string? PhoneNumber { get; set; }
 
@@ -103,17 +144,47 @@ namespace SanjeshP.Payeh.Api.Models.Users
         [Display(Name = "نام خانوادگی")]
         public string? LastName { get; set; }
 
+        [MaxLength(50, ErrorMessage = "نام پدر نباید بیش از 50 کاراکتر باشد")]
+        [Display(Name = "نام پدر")]
+        public string? FatherName { get; set; }
+
+        [RegularExpression(@"^\d{10}$", ErrorMessage = "کد ملی باید دقیقاً 10 رقم باشد")]
+        [Display(Name = "کد ملی")]
+        public string? NationalCode { get; set; }
+
+        [Display(Name = "جنسیت")]
+        public GenderType? Gender { get; set; }
+
+        [Display(Name = "وضعیت تأهل")]
+        public MaritalStatusType? MaritalStatus { get; set; }
+
+        [Display(Name = "دین")]
+        public int? Religion { get; set; }
+
+        [Display(Name = "چپ‌دستی")]
+        public LeftHandedType? LeftHanded { get; set; }
+
+        [Display(Name = "ملیت")]
+        public int? Nationality { get; set; }
+
         [Display(Name = "فعال")]
         public bool? IsActive { get; set; }
 
-        /// <summary>در صورت ارسال، جایگزین همه‌ی نقش‌های فعلی می‌شود.</summary>
+        [Display(Name = "تاریخ انقضاء")]
+        public DateTime? ExpireDate { get; set; }
+
+        /// <summary>
+        /// در صورت ارسال، جایگزین همه نقش‌های فعلی می‌شود.
+        /// </summary>
         public List<int>? RoleIds { get; set; }
 
-        /// <summary>رمز عبور جدید (اختیاری). در صورت ارسال، رمز جایگزین و همه‌ی نشست‌های کاربر باطل می‌شود.</summary>
+        /// <summary>
+        /// اختیاری: null یا رشته خالی یعنی رمز فعلی تغییر نکند.
+        /// </summary>
         [MinLength(8, ErrorMessage = "رمز عبور باید حداقل 8 کاراکتر باشد")]
         [MaxLength(128, ErrorMessage = "رمز عبور نباید بیش از 128 کاراکتر باشد")]
         [DataType(DataType.Password)]
-        [Display(Name = "رمز عبور")]
+        [Display(Name = "رمز عبور جدید")]
         public string? Password { get; set; }
     }
 
@@ -125,13 +196,12 @@ namespace SanjeshP.Payeh.Api.Models.Users
         public string NameFa { get; set; } = null!;
     }
 
-    /// <summary>پارامترهای صفحه‌بندی، جستجو، مرتب‌سازی و فیلتر فهرست کاربران.</summary>
+    /// <summary>پارامترهای فهرست کاربران.</summary>
     public class UserQueryParameters
     {
         private int _pageNumber = 1;
         private int _pageSize = 10;
 
-        /// <summary>شماره‌ی صفحه (از 1).</summary>
         [Range(1, int.MaxValue, ErrorMessage = "شماره صفحه باید بزرگ‌تر از صفر باشد")]
         public int PageNumber
         {
@@ -139,7 +209,6 @@ namespace SanjeshP.Payeh.Api.Models.Users
             set => _pageNumber = value < 1 ? 1 : value;
         }
 
-        /// <summary>اندازه‌ی صفحه؛ حداکثر 100 برای محافظت از سرور.</summary>
         [Range(1, 100, ErrorMessage = "اندازه صفحه باید بین 1 تا 100 باشد")]
         public int PageSize
         {
@@ -147,20 +216,12 @@ namespace SanjeshP.Payeh.Api.Models.Users
             set => _pageSize = value is < 1 or > 100 ? 10 : value;
         }
 
-        /// <summary>جستجو در نام کاربری، موبایل، ایمیل، نام و نام خانوادگی.</summary>
         [MaxLength(100, ErrorMessage = "عبارت جستجو نباید بیش از 100 کاراکتر باشد")]
         public string? Search { get; set; }
 
-        /// <summary>فیلتر وضعیت فعال/غیرفعال.</summary>
         public bool? IsActive { get; set; }
-
-        /// <summary>فیلتر بر اساس شناسه‌ی نقش.</summary>
         public int? RoleId { get; set; }
-
-        /// <summary>فیلد مرتب‌سازی: userName | createdDate | lastLoginDate | email (پیش‌فرض createdDate).</summary>
         public string? SortBy { get; set; }
-
-        /// <summary>جهت مرتب‌سازی: asc | desc (پیش‌فرض desc).</summary>
         public string? SortDirection { get; set; }
     }
 }

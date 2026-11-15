@@ -93,91 +93,7 @@ namespace SanjeshP.Payeh.Services.Users
         }
 
         /// <inheritdoc />
-        public async Task<User> CreateAsync(User user, string? plainPassword, IEnumerable<int> roleIds, string? firstName, string? lastName, string? nationalCode, Guid createdBy, CancellationToken cancellationToken)
-        {
-            await EnsureUniqueAsync(user.UserName, user.PhoneNumber, excludeUserId: null, cancellationToken);
-
-            user.NormalizedUserName = user.UserName.ToUpperInvariant();
-            user.NormalizedEmailAddress = user.EmailAddress?.ToUpperInvariant();
-            user.CreatedBy = createdBy;
-            if (!string.IsNullOrWhiteSpace(plainPassword))
-                user.PasswordHash = _passwordHasher.HashPassword(user, plainPassword);
-
-            var roleIdList = roleIds.Distinct().ToList();
-            await EnsureRolesExistAsync(roleIdList, cancellationToken);
-            await EnsureEmailUniqueAsync(user.NormalizedEmailAddress, null, cancellationToken);
-            await EnsureNationalCodeUniqueAsync(nationalCode, excludeUserId: null, cancellationToken);
-            foreach (var roleId in roleIdList)
-                user.UserRoles.Add(new UserRole { RoleId = roleId, CreatedBy = createdBy });
-
-            if (!string.IsNullOrWhiteSpace(firstName) && !string.IsNullOrWhiteSpace(lastName))
-            {
-                user.UserProfile.Add(new UserProfile
-                {
-                    FirstName = firstName.Trim(),
-                    LastName = lastName.Trim(),
-                    NationalCode = nationalCode ?? string.Empty,
-                    CreatedBy = createdBy
-                });
-            }
-            if (cancellationToken.IsCancellationRequested)
-                throw new OperationCanceledException("درخواست قبل از اجرای کوئری لغو شده است.");
-            await _userRepository.AddAsync(user, cancellationToken);
-            return await GetByIdAsync(user.Id, cancellationToken);
-        }
-
-        /// <inheritdoc />
-        public async Task<User> UpdateAsync(Guid id, Action<User> applyChanges, IEnumerable<int>? roleIds, string? firstName, string? lastName, CancellationToken cancellationToken)
-        {
-            var user = await _userRepository.Table
-                .Include(x => x.UserProfile)
-                .Include(x => x.UserRoles)
-                .FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted, cancellationToken)
-                ?? throw new NotFoundException("کاربر مورد نظر یافت نشد.");
-
-            applyChanges(user);
-
-            // بررسی تکراری نبودن نام کاربری و موبایل
-            if (user.PhoneNumber is not null)
-                await EnsureUniqueAsync(user.UserName, user.PhoneNumber, id, cancellationToken);
-
-            // بررسی تکراری نبودن ایمیل
-            await EnsureEmailUniqueAsync(user.EmailAddress, id, cancellationToken);
-
-            // بررسی تکراری نبودن کد ملی
-            var profile = user.UserProfile.FirstOrDefault();
-            if (profile is not null)
-                await EnsureNationalCodeUniqueAsync(profile.NationalCode, id, cancellationToken);
-
-
-            user.NormalizedUserName = user.UserName.ToUpperInvariant();
-            user.NormalizedEmailAddress = user.EmailAddress?.ToUpperInvariant();
-            user.UpdatedDate = DateTime.UtcNow;
-
-            // به‌روزرسانی پروفایل (اولین رکورد)
-            if (profile is not null)
-            {
-                if (!string.IsNullOrWhiteSpace(firstName)) profile.FirstName = firstName.Trim();
-                if (!string.IsNullOrWhiteSpace(lastName)) profile.LastName = lastName.Trim();
-                profile.UpdatedDate = DateTime.UtcNow;
-            }
-
-            // جایگزینی نقش‌ها در صورت ارسال
-            if (roleIds is not null)
-            {
-                var roleIdList = roleIds.Distinct().ToList();
-                await EnsureRolesExistAsync(roleIdList, cancellationToken);
-
-                _dbContext.RemoveRange(user.UserRoles.Where(ur => !roleIdList.Contains(ur.RoleId)));
-                foreach (var roleId in roleIdList.Where(r => user.UserRoles.All(ur => ur.RoleId != r)))
-                    user.UserRoles.Add(new UserRole { UserId = user.Id, RoleId = roleId, CreatedBy = user.Id });
-            }
-
-            _userRepository.Update(user, saveNow: false);
-            await _dbContext.SaveChangesAsync(cancellationToken);
-            return await GetByIdAsync(id, cancellationToken);
-        }
-
+      
         /// <inheritdoc />
         public async Task SoftDeleteAsync(Guid id, CancellationToken cancellationToken)
         {
@@ -257,6 +173,178 @@ namespace SanjeshP.Payeh.Services.Users
                 .ToListAsync(cancellationToken);
 
             return new PagedUsers(items, totalCount, query.PageNumber, query.PageSize);
+        }
+        public async Task<User> CreateAsync(
+    User user,
+    string? plainPassword,
+    IEnumerable<int> roleIds,
+    UserProfile profile,
+    Guid createdBy,
+    CancellationToken cancellationToken)
+        {
+            await EnsureUniqueAsync(
+                user.UserName,
+                user.PhoneNumber,
+                excludeUserId: null,
+                cancellationToken);
+
+            user.UserName = user.UserName.Trim();
+            user.NormalizedUserName = user.UserName.ToUpperInvariant();
+
+            user.EmailAddress = string.IsNullOrWhiteSpace(user.EmailAddress)
+                ? null
+                : user.EmailAddress.Trim();
+
+            user.NormalizedEmailAddress = user.EmailAddress?.ToUpperInvariant();
+
+            user.CreatedBy = createdBy;
+
+            if (!string.IsNullOrWhiteSpace(plainPassword))
+                user.PasswordHash = _passwordHasher.HashPassword(user, plainPassword);
+
+            if (user.ExpireDate == default)
+                user.ExpireDate = DateTime.UtcNow.AddYears(1);
+
+            var roleIdList = roleIds.Distinct().ToList();
+
+            await EnsureRolesExistAsync(roleIdList, cancellationToken);
+            await EnsureEmailUniqueAsync(
+                user.NormalizedEmailAddress,
+                null,
+                cancellationToken);
+
+            profile.FirstName = profile.FirstName.Trim();
+            profile.LastName = profile.LastName.Trim();
+            profile.NationalCode = profile.NationalCode.Trim();
+
+            await EnsureNationalCodeUniqueAsync(
+                profile.NationalCode,
+                null,
+                cancellationToken);
+
+            profile.CreatedBy = createdBy;
+            profile.User = user;
+
+            user.UserProfile.Add(profile);
+
+            foreach (var roleId in roleIdList)
+            {
+                user.UserRoles.Add(new UserRole
+                {
+                    RoleId = roleId,
+                    CreatedBy = createdBy
+                });
+            }
+
+            if (cancellationToken.IsCancellationRequested)
+                throw new OperationCanceledException(
+                    "درخواست قبل از اجرای کوئری لغو شده است.");
+
+            await _userRepository.AddAsync(user, cancellationToken);
+
+            return await GetByIdAsync(user.Id, cancellationToken);
+        }
+
+        public async Task<User> UpdateAsync(
+    Guid id,
+    Action<User> applyChanges,
+    Action<UserProfile> applyProfileChanges,
+    IEnumerable<int>? roleIds,
+    CancellationToken cancellationToken)
+        {
+            var user = await _userRepository.Table
+                .Include(x => x.UserProfile)
+                .Include(x => x.UserRoles)
+                .FirstOrDefaultAsync(
+                    x => x.Id == id && !x.IsDeleted,
+                    cancellationToken)
+                ?? throw new NotFoundException("کاربر مورد نظر یافت نشد.");
+
+            // تغییر اطلاعات اصلی کاربر
+            applyChanges(user);
+
+            user.UserName = user.UserName.Trim();
+
+            // بررسی تکراری نبودن نام کاربری و موبایل
+            await EnsureUniqueAsync(
+                user.UserName,
+                user.PhoneNumber,
+                id,
+                cancellationToken);
+
+            // نرمال‌سازی ایمیل
+            user.EmailAddress = string.IsNullOrWhiteSpace(user.EmailAddress)
+                ? null
+                : user.EmailAddress.Trim();
+
+            user.NormalizedUserName = user.UserName.ToUpperInvariant();
+            user.NormalizedEmailAddress = user.EmailAddress?.ToUpperInvariant();
+
+            // بررسی تکراری نبودن ایمیل
+            await EnsureEmailUniqueAsync(
+                user.NormalizedEmailAddress,
+                id,
+                cancellationToken);
+
+            // اعمال تغییرات پروفایل
+            var profile = user.UserProfile.FirstOrDefault();
+
+            if (profile is null)
+            {
+                profile = new UserProfile
+                {
+                    UserId = user.Id,
+                    FirstName = string.Empty,
+                    LastName = string.Empty,
+                    NationalCode = string.Empty,
+                    CreatedBy = user.Id
+                };
+
+                user.UserProfile.Add(profile);
+            }
+
+            applyProfileChanges(profile);
+
+            profile.FirstName = profile.FirstName.Trim();
+            profile.LastName = profile.LastName.Trim();
+            profile.NationalCode = profile.NationalCode.Trim();
+
+            await EnsureNationalCodeUniqueAsync(
+                profile.NationalCode,
+                id,
+                cancellationToken);
+
+            profile.UpdatedDate = DateTime.UtcNow;
+            user.UpdatedDate = DateTime.UtcNow;
+
+            // جایگزینی نقش‌ها در صورت ارسال
+            if (roleIds is not null)
+            {
+                var roleIdList = roleIds.Distinct().ToList();
+
+                await EnsureRolesExistAsync(roleIdList, cancellationToken);
+
+                _dbContext.RemoveRange(
+                    user.UserRoles.Where(
+                        ur => !roleIdList.Contains(ur.RoleId)));
+
+                foreach (var roleId in roleIdList.Where(
+                    r => user.UserRoles.All(ur => ur.RoleId != r)))
+                {
+                    user.UserRoles.Add(new UserRole
+                    {
+                        UserId = user.Id,
+                        RoleId = roleId,
+                        CreatedBy = user.Id
+                    });
+                }
+            }
+
+            _userRepository.Update(user, saveNow: false);
+
+            await _dbContext.SaveChangesAsync(cancellationToken);
+
+            return await GetByIdAsync(id, cancellationToken);
         }
 
         /// <summary>مرتب‌سازی امن بر اساس لیست سفید؛ مقدار نامعتبر ⇒ پیش‌فرض createdDate desc.</summary>

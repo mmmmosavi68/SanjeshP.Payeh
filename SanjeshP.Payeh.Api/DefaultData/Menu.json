@@ -562,5 +562,53 @@
     "Link": "No Link",
     "IsActive": true,
     "IsDeleted": false
+  },
+  {
+    "Id": "00000000-0000-0000-0000-000000000050",
+    "MenuTitle": "مدیریت اطلاعات پایه",
+    "ParentId": "00000000-0000-0000-0000-000000000001",
+    "PageCode": 500,
+    "Path": null,
+    "version": "1",
+    "ControllerName": "Codes",
+    "ActionName": null,
+    "ShowMenu": true,
+    "CssClass": "nav-item",
+    "Icon": "database",
+    "Link": "/codes",
+    "IsActive": true,
+    "IsDeleted": false
+  },
+  {
+    "Id": "00000000-0000-0000-0000-000000000051",
+    "MenuTitle": "دریافت گروه‌های اطلاعات پایه",
+    "ParentId": "00000000-0000-0000-0000-000000000050",
+    "PageCode": 501,
+    "Path": null,
+    "version": "1",
+    "ControllerName": "Codes",
+    "ActionName": "GetGroups",
+    "ShowMenu": false,
+    "CssClass": "nav-item",
+    "Icon": "list",
+    "Link": "No Link",
+    "IsActive": true,
+    "IsDeleted": false
+  },
+  {
+    "Id": "00000000-0000-0000-0000-000000000052",
+    "MenuTitle": "دریافت گزینه‌های اطلاعات پایه",
+    "ParentId": "00000000-0000-0000-0000-000000000050",
+    "PageCode": 502,
+    "Path": null,
+    "version": "1",
+    "ControllerName": "Codes",
+    "ActionName": "GetItems",
+    "ShowMenu": false,
+    "CssClass": "nav-item",
+    "Icon": "list-checks",
+    "Link": "No Link",
+    "IsActive": true,
+    "IsDeleted": false
   }
 ]
