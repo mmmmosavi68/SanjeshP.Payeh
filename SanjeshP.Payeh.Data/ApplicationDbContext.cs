@@ -1,8 +1,10 @@
 using Microsoft.EntityFrameworkCore;
 using SanjeshP.Payeh.Common.Utilities;
-using SanjeshP.Payeh.Entities.Common;
 using SanjeshP.Payeh.Entities.Audit;
+using SanjeshP.Payeh.Entities.Common;
 using SanjeshP.Payeh.Entities.Menu;
+using SanjeshP.Payeh.Entities.University;
+using System.ComponentModel.DataAnnotations;
 using System.Linq.Expressions;
 using System.Reflection;
 
@@ -16,6 +18,8 @@ namespace SanjeshP.Payeh.Data
     /// </summary>
     public class ApplicationDbContext : DbContext
     {
+        [Display(Name = "دانشگاه‌ها")]
+        public DbSet<University> Universities { get; set; }
         public ApplicationDbContext(DbContextOptions options)
             : base(options)
         {
