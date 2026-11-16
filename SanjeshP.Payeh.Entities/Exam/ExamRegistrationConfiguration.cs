@@ -41,11 +41,20 @@ public class ExamRegistrationConfiguration
             .HasForeignKey(x => x.GenderId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasIndex(x => x.ExamId);
+        // یکتایی کد ملی در هر آزمون برای ثبت‌نام‌های حذف‌نشده
+        builder.HasIndex(x => new { x.ExamId, x.NationalCode })
+            .IsUnique()
+            .HasFilter("[IsDeleted] = 0");
+
+        // یکتایی شماره همراه در هر آزمون
+        // شماره‌های خالی در این محدودیت لحاظ نمی‌شوند.
+        builder.HasIndex(x => new { x.ExamId, x.PhoneNumber })
+            .IsUnique()
+            .HasFilter("[IsDeleted] = 0 AND [PhoneNumber] IS NOT NULL");
+
         builder.HasIndex(x => x.UniversityId);
         builder.HasIndex(x => x.ExamVenueUniversityId);
         builder.HasIndex(x => x.UniversityExamCapacityId);
         builder.HasIndex(x => x.UniversityExamGuestCapacityId);
-        builder.HasIndex(x => x.NationalCode);
     }
 }
