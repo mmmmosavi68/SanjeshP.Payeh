@@ -6,7 +6,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SanjeshP.Payeh.Entities.Exam
 {
-    public class Exam : BaseEntity
+    public class Exam : BaseEntity, IValidatableObject
     {
         [Required(ErrorMessage = "عنوان آزمون الزامی است")]
         [MaxLength(200, ErrorMessage = "عنوان آزمون نباید بیش از 200 کاراکتر باشد")]
