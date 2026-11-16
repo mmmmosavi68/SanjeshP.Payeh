@@ -20,11 +20,11 @@ namespace SanjeshP.Payeh.Entities.Exam
         public virtual ExamSession ExamSession { get; set; }
 
         [Display(Name = "نوع آزمون")]
-        public int? ExamTypeId { get; set; }
+        public int ExamTypeId { get; set; }
 
         [Required(ErrorMessage = "نحوه برگزاری آزمون الزامی است")]
         [Display(Name = "نحوه برگزاری")]
-        public int ExamMode { get; set; }
+        public int ExamModeId { get; set; }
 
         [Required(ErrorMessage = "تاریخ شروع ثبت‌نام الزامی است")]
         [Display(Name = "شروع ثبت‌نام")]

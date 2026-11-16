@@ -18,9 +18,17 @@ namespace SanjeshP.Payeh.Entities.Exam
         [Display(Name = "دانشگاه محل تحصیل")]
         public int UniversityId { get; set; }
 
+        [ForeignKey(nameof(UniversityId))]
+        [Display(Name = "دانشگاه محل تحصیل")]
+        public virtual University.University University { get; set; } = null!;
+
         [Required(ErrorMessage = "دانشگاه محل آزمون الزامی است")]
         [Display(Name = "دانشگاه محل آزمون")]
         public int ExamVenueUniversityId { get; set; }
+
+        [ForeignKey(nameof(ExamVenueUniversityId))]
+        [Display(Name = "دانشگاه محل آزمون")]
+        public virtual University.University ExamVenueUniversity { get; set; } = null!;
 
         [Required(ErrorMessage = "شناسه تخصیص ظرفیت الزامی است")]
         [Display(Name = "تخصیص ظرفیت")]

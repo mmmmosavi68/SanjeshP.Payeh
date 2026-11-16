@@ -1,5 +1,8 @@
-﻿using SanjeshP.Payeh.Entities.Common;
+﻿
+using SanjeshP.Payeh.Entities.Common;
+using SanjeshP.Payeh.Entities.Menu;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SanjeshP.Payeh.Entities.Exam
 {
@@ -23,6 +26,10 @@ namespace SanjeshP.Payeh.Entities.Exam
         [Display(Name = "نوع فیلد")]
         public int FieldTypeId { get; set; }
 
+        [ForeignKey(nameof(FieldTypeId))]
+        [Display(Name = "نوع فیلد")]
+        public virtual Code FieldType { get; set; } = null!;
+
         [Required(ErrorMessage = "وضعیت اجباری بودن فیلد الزامی است")]
         [Display(Name = "اجباری")]
         public bool IsRequired { get; set; }
@@ -38,8 +45,9 @@ namespace SanjeshP.Payeh.Entities.Exam
         [Display(Name = "ترتیب نمایش")]
         public int DisplayOrder { get; set; }
 
+        [ForeignKey(nameof(ExamId))]
         [Display(Name = "آزمون")]
-        public virtual Exam Exam { get; set; }
+        public virtual Exam Exam { get; set; } = null!;
 
         [Display(Name = "مقادیر ثبت‌شده")]
         public virtual ICollection<ExamRegistrationCustomFieldValue> RegistrationValues { get; set; }
