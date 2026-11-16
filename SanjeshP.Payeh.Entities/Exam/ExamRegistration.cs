@@ -1,4 +1,6 @@
-﻿using SanjeshP.Payeh.Entities.Common;
+﻿
+using SanjeshP.Payeh.Entities.Common;
+using SanjeshP.Payeh.Entities.Menu;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -12,7 +14,7 @@ namespace SanjeshP.Payeh.Entities.Exam
 
         [ForeignKey(nameof(ExamId))]
         [Display(Name = "آزمون")]
-        public virtual Exam Exam { get; set; }
+        public virtual Exam Exam { get; set; } = null!;
 
         [Required(ErrorMessage = "دانشگاه داوطلب الزامی است")]
         [Display(Name = "دانشگاه محل تحصیل")]
@@ -36,7 +38,7 @@ namespace SanjeshP.Payeh.Entities.Exam
 
         [ForeignKey(nameof(UniversityExamCapacityId))]
         [Display(Name = "تخصیص ظرفیت")]
-        public virtual UniversityExamCapacity UniversityExamCapacity { get; set; }
+        public virtual UniversityExamCapacity UniversityExamCapacity { get; set; } = null!;
 
         [Display(Name = "ظرفیت دانشگاه مهمان")]
         public Guid? UniversityExamGuestCapacityId { get; set; }
@@ -66,6 +68,10 @@ namespace SanjeshP.Payeh.Entities.Exam
 
         [Display(Name = "جنسیت")]
         public int? GenderId { get; set; }
+
+        [ForeignKey(nameof(GenderId))]
+        [Display(Name = "جنسیت")]
+        public virtual Code? Gender { get; set; }
 
         [MaxLength(20, ErrorMessage = "شماره شناسنامه نباید بیش از 20 کاراکتر باشد")]
         [Display(Name = "شماره شناسنامه")]
