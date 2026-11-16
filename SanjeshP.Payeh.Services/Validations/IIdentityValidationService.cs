@@ -1,17 +1,27 @@
-﻿namespace SanjeshP.Payeh.Services.Validations;
+﻿
+namespace SanjeshP.Payeh.Services.Validations;
 
 public interface IIdentityValidationService
 {
-    Task ValidateNationalCodeAsync(
-        string nationalCode,
-        Guid? excludeId,
+    Task<string> ValidateUserNationalCodeAsync(
+        string? nationalCode,
+        int? excludeProfileId,
         CancellationToken cancellationToken);
 
-    Task ValidateMobileNumberAsync(
+    Task<string?> ValidateUserMobileNumberAsync(
         string? mobileNumber,
-        Guid? excludeId,
+        Guid? excludeUserId,
         CancellationToken cancellationToken);
 
-    Task<string?> NormalizeMobileNumberAsync(
-        string? mobileNumber);
+    Task<string> ValidateExamRegistrationNationalCodeAsync(
+        Guid examId,
+        string? nationalCode,
+        Guid? excludeRegistrationId,
+        CancellationToken cancellationToken);
+
+    Task<string?> ValidateExamRegistrationMobileNumberAsync(
+        Guid examId,
+        string? mobileNumber,
+        Guid? excludeRegistrationId,
+        CancellationToken cancellationToken);
 }

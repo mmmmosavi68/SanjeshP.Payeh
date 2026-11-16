@@ -12,36 +12,45 @@ public static class IranianMobileNumberNormalizer
         if (string.IsNullOrWhiteSpace(phoneNumber))
             return false;
 
-        var value = phoneNumber
-            .Fa2En()
-            .Trim();
+        var value = phoneNumber.Fa2En().Trim();
 
         // حذف جداکننده‌های رایج
         value = value
             .Replace(" ", "")
             .Replace("-", "")
             .Replace("(", "")
-            .Replace(")", "")
-            .Replace("+", "");
+            .Replace(")", "");
 
-        // تبدیل پیش‌شماره بین‌المللی به صفر
-        if (value.StartsWith("0098"))
+        // پذیرش پیش‌شماره بین‌المللی فقط در قالب +98
+        if (value.StartsWith("+"))
+        {
+            if (!value.StartsWith("+98"))
+                return false;
+
+            value = value[3..];
+        }
+        else if (value.StartsWith("0098"))
+        {
             value = value[4..];
+        }
         else if (value.StartsWith("98") && value.Length == 12)
+        {
             value = value[2..];
+        }
 
-        // شماره 9 رقمی بدون صفر ابتدایی
+        // تبدیل شماره بدون صفر ابتدایی
         if (value.Length == 10 && value.StartsWith("9"))
             value = "0" + value;
 
-        // شماره همراه ایران باید 11 رقم و با 09 شروع شود.
+        // کنترل ساختار شماره همراه ایران
         if (value.Length != 11 ||
             !value.StartsWith("09") ||
             !value.All(char.IsAsciiDigit))
+        {
             return false;
+        }
 
         normalizedNumber = value;
-
         return true;
     }
 }
