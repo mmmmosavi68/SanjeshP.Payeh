@@ -24,14 +24,6 @@ namespace SanjeshP.Payeh.Entities.Exam
         [Display(Name = "آزمون")]
         public virtual Exam Exam { get; set; } = null!;
 
-        [Required(ErrorMessage = "شناسه نوبت آزمون الزامی است")]
-        [Display(Name = "نوبت آزمون")]
-        public Guid ExamSessionId { get; set; }
-
-        [ForeignKey(nameof(ExamSessionId))]
-        [Display(Name = "نوبت آزمون")]
-        public virtual ExamSession ExamSession { get; set; } = null!;
-
         [Range(0, int.MaxValue, ErrorMessage = "ظرفیت تخصیص‌یافته نمی‌تواند منفی باشد")]
         [Display(Name = "ظرفیت تخصیص‌یافته")]
         public int? AllocatedCapacity { get; set; }

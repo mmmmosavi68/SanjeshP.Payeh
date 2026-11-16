@@ -1,9 +1,10 @@
-﻿using SanjeshP.Payeh.Entities.Common;
+﻿
+using SanjeshP.Payeh.Entities.Common;
 using System.ComponentModel.DataAnnotations;
 
 namespace SanjeshP.Payeh.Entities.Exam
 {
-    public class ExamSession : BaseEntity
+    public class ExamSession : BaseEntity, IValidatableObject
     {
         [Required(ErrorMessage = "عنوان نوبت الزامی است")]
         [MaxLength(100, ErrorMessage = "عنوان نوبت نباید بیش از 100 کاراکتر باشد")]
@@ -24,5 +25,15 @@ namespace SanjeshP.Payeh.Entities.Exam
 
         [Display(Name = "آزمون‌ها")]
         public virtual ICollection<Exam> Exams { get; set; } = new List<Exam>();
+
+        public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+        {
+            if (EndTime <= StartTime)
+            {
+                yield return new ValidationResult(
+                    "ساعت پایان باید بعد از ساعت شروع باشد",
+                    new[] { nameof(EndTime) });
+            }
+        }
     }
 }

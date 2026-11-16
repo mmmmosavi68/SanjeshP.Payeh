@@ -66,6 +66,41 @@ namespace SanjeshP.Payeh.Entities.Exam
         [Display(Name = "فیلدهای اختصاصی")]
         public virtual ICollection<ExamCustomField> CustomFields { get; set; }
             = new List<ExamCustomField>();
+
+        public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+        {
+            if (RegistrationEndDate < RegistrationStartDate)
+            {
+                yield return new ValidationResult(
+                    "تاریخ پایان ثبت‌نام نمی‌تواند قبل از تاریخ شروع ثبت‌نام باشد",
+                    new[] { nameof(RegistrationEndDate) });
+            }
+
+            if (EditStartDate.HasValue && !EditEndDate.HasValue)
+            {
+                yield return new ValidationResult(
+                    "با تعیین شروع ویرایش، تعیین پایان ویرایش نیز الزامی است",
+                    new[] { nameof(EditEndDate) });
+            }
+
+            if (!EditStartDate.HasValue && EditEndDate.HasValue)
+            {
+                yield return new ValidationResult(
+                    "برای تعیین پایان ویرایش، ابتدا باید شروع ویرایش مشخص شود",
+                    new[] { nameof(EditStartDate) });
+            }
+
+            if (EditStartDate.HasValue &&
+                EditEndDate.HasValue &&
+                EditEndDate.Value < EditStartDate.Value)
+            {
+                yield return new ValidationResult(
+                    "پایان ویرایش نمی‌تواند قبل از شروع ویرایش باشد",
+                    new[] { nameof(EditEndDate) });
+            }
+        }
     }
+
+
 }
     
