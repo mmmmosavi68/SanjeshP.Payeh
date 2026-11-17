@@ -53,7 +53,7 @@ namespace SanjeshP.Payeh.Services.DataInitializer
         private readonly IEFRepository<GroupAccessMenus> eFGroupAccessMenusRepository;
         private readonly IEFRepository<UserAccessMenus> eFUserAccessMenusRepository;
         private readonly IEFRepository<UserRole> eFUserRoleRepository;
-
+        private readonly IEFRepository<Code> eFCodeRepository;
         public UserDataInitializer(
               IEFRepository<Role> eFRoleRepository
             , IEFRepository<UserEntity> eFUserRepository
@@ -63,7 +63,8 @@ namespace SanjeshP.Payeh.Services.DataInitializer
             , IEFRepository<GroupUsers> eFGroupUsersRepository
             , IEFRepository<GroupAccessMenus> eFGroupAccessMenusRepository
             , IEFRepository<UserAccessMenus> eFUserAccessMenusRepository
-            , IEFRepository<UserRole> eFUserRoleRepository)
+            , IEFRepository<UserRole> eFUserRoleRepository
+            , IEFRepository<Code> eFCodeRepository)
         {
             this.eFRoleRepository = eFRoleRepository;
             this.eFUserRepository = eFUserRepository;
@@ -74,6 +75,7 @@ namespace SanjeshP.Payeh.Services.DataInitializer
             this.eFGroupAccessMenusRepository = eFGroupAccessMenusRepository;
             this.eFUserAccessMenusRepository = eFUserAccessMenusRepository;
             this.eFUserRoleRepository = eFUserRoleRepository;
+            this.eFCodeRepository = eFCodeRepository;
         }
 
         public void InitializeData()
@@ -95,6 +97,7 @@ namespace SanjeshP.Payeh.Services.DataInitializer
             SeedGroupAccessMenus(path, admin.Id);
             SeedUserAccessMenus(path, admin.Id);
             SeedRolesAndAdminRole(path, admin.Id);
+            SeedCodes(path, admin.Id);
         }
 
         // ───────────────────────────── User ─────────────────────────────
@@ -299,6 +302,97 @@ namespace SanjeshP.Payeh.Services.DataInitializer
                 eFUserRoleRepository.Add(userRole);
             }
         }
+
+
+
+        // ─────────────────────────────── Code ───────────────────────────────
+
+        private void SeedCodes(string path, Guid adminId)
+        {
+            var existingCodes = eFCodeRepository.Table
+                .IgnoreQueryFilters()
+                .ToList();
+
+            var codeItems = ReadJson<CodeSeedItem>(path, "Code.json");
+
+            foreach (var item in codeItems)
+            {
+                SeedCodeItem(item, null, adminId, existingCodes);
+            }
+        }
+
+        private void SeedCodeItem(
+            CodeSeedItem item,
+            int? parentId,
+            Guid adminId,
+            List<Code> existingCodes)           
+        {
+            // شناسایی رکورد بر اساس ساختار والد و کدهای اصلی و فرعی
+            var code = existingCodes.FirstOrDefault(p =>
+                p.ParentId == parentId &&
+                p.PrimaryCode == item.PrimaryCode &&
+                p.SubCode == item.SubCode);
+
+            var isNew = code == null;
+
+            if (isNew)
+            {
+                code = new Code();
+            }
+
+            code.Title = item.Title;
+            code.ParentId = parentId;
+            code.StandardCode = item.StandardCode;
+            code.PrimaryCode = item.PrimaryCode;
+            code.SubCode = item.SubCode;
+            code.AdditionalInformation = item.AdditionalInformation;
+
+            code.IsActive = true;
+            code.IsDeleted = false;
+
+            if (isNew)
+            {
+                Stamp(code!, adminId);
+                eFCodeRepository.Add(code!);
+
+                existingCodes.Add(code!);
+            }
+            else
+            {
+                code!.UpdatedDate = DateTime.UtcNow;
+                eFCodeRepository.Update(code);
+            }
+
+            // ابتدا والد ذخیره شده تا شناسه آن برای فرزندان موجود باشد.
+            if (item.Children == null)
+                return;
+
+            foreach (var child in item.Children)
+            {
+                SeedCodeItem(
+                    child,
+                    code!.Id,
+                    adminId,
+                    existingCodes);
+            }
+        }
+
+        // مدل فایل JSON
+        private sealed class CodeSeedItem
+        {
+            public string Title { get; set; } = string.Empty;
+
+            public int? StandardCode { get; set; }
+
+            public int? PrimaryCode { get; set; }
+
+            public int? SubCode { get; set; }
+
+            public string? AdditionalInformation { get; set; }
+
+            public List<CodeSeedItem>? Children { get; set; }
+        }
+
 
         // ─────────────────────────────── کمکی ───────────────────────────────
 
