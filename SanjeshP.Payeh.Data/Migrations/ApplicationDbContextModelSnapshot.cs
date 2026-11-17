@@ -136,6 +136,435 @@ namespace SanjeshP.Payeh.Data.Migrations
                     b.ToTable("IntBaseEntities");
                 });
 
+            modelBuilder.Entity("SanjeshP.Payeh.Entities.Exam.Exam", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasDefaultValueSql("NEWSEQUENTIALID()");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateTime?>("EditEndDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("EditStartDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("ExamModeId")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("ExamSessionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("ExamTypeId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("HostIp")
+                        .HasMaxLength(45)
+                        .HasColumnType("nvarchar(45)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("RegistrationEndDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("RegistrationStartDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime?>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExamModeId");
+
+                    b.HasIndex("ExamSessionId");
+
+                    b.HasIndex("ExamTypeId");
+
+                    b.ToTable("Exams", (string)null);
+                });
+
+            modelBuilder.Entity("SanjeshP.Payeh.Entities.Exam.ExamCustomField", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasDefaultValueSql("NEWSEQUENTIALID()");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("ExamId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("FieldTypeId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("HostIp")
+                        .HasMaxLength(45)
+                        .HasColumnType("nvarchar(45)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsRequired")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Label")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("OptionsJson")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ValidationJson")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FieldTypeId");
+
+                    b.HasIndex("ExamId", "DisplayOrder");
+
+                    b.HasIndex("ExamId", "Name")
+                        .IsUnique();
+
+                    b.ToTable("ExamCustomFields", (string)null);
+                });
+
+            modelBuilder.Entity("SanjeshP.Payeh.Entities.Exam.ExamRegistration", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasDefaultValueSql("NEWSEQUENTIALID()");
+
+                    b.Property<string>("BirthCertificateNumber")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTime?>("BirthDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("EmergencyPhoneNumber")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<int?>("EntryYear")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("ExamId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("ExamVenueUniversityId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("FatherName")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("FirstName")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int?>("GenderId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("HostIp")
+                        .HasMaxLength(45)
+                        .HasColumnType("nvarchar(45)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("LastName")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("NationalCode")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<string>("PhoneNumber")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("StudentNumber")
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<Guid>("UniversityExamCapacityId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("UniversityExamGuestCapacityId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("UniversityId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExamVenueUniversityId");
+
+                    b.HasIndex("GenderId");
+
+                    b.HasIndex("UniversityExamCapacityId");
+
+                    b.HasIndex("UniversityExamGuestCapacityId");
+
+                    b.HasIndex("UniversityId");
+
+                    b.HasIndex("ExamId", "NationalCode")
+                        .IsUnique()
+                        .HasFilter("[IsDeleted] = 0");
+
+                    b.HasIndex("ExamId", "PhoneNumber")
+                        .IsUnique()
+                        .HasFilter("[IsDeleted] = 0 AND [PhoneNumber] IS NOT NULL");
+
+                    b.ToTable("ExamRegistrations", (string)null);
+                });
+
+            modelBuilder.Entity("SanjeshP.Payeh.Entities.Exam.ExamRegistrationCustomFieldValue", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasDefaultValueSql("NEWSEQUENTIALID()");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("ExamCustomFieldId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("HostIp")
+                        .HasMaxLength(45)
+                        .HasColumnType("nvarchar(45)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid>("RegistrationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Value")
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExamCustomFieldId");
+
+                    b.HasIndex("RegistrationId", "ExamCustomFieldId")
+                        .IsUnique();
+
+                    b.ToTable("ExamRegistrationCustomFieldValues", (string)null);
+                });
+
+            modelBuilder.Entity("SanjeshP.Payeh.Entities.Exam.ExamSession", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasDefaultValueSql("NEWSEQUENTIALID()");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<TimeOnly>("EndTime")
+                        .HasColumnType("time");
+
+                    b.Property<DateTime>("ExamDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("HostIp")
+                        .HasMaxLength(45)
+                        .HasColumnType("nvarchar(45)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<TimeOnly>("StartTime")
+                        .HasColumnType("time");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime?>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExamDate");
+
+                    b.HasIndex("ExamDate", "StartTime", "EndTime");
+
+                    b.ToTable("ExamSessions", (string)null);
+                });
+
+            modelBuilder.Entity("SanjeshP.Payeh.Entities.Exam.UniversityExamCapacity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasDefaultValueSql("NEWSEQUENTIALID()");
+
+                    b.Property<int?>("AllocatedCapacity")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("ExamId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("HostIp")
+                        .HasMaxLength(45)
+                        .HasColumnType("nvarchar(45)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<int?>("OwnCapacity")
+                        .HasColumnType("int");
+
+                    b.Property<int>("UniversityId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExamId");
+
+                    b.HasIndex("UniversityId", "ExamId")
+                        .IsUnique();
+
+                    b.ToTable("UniversityExamCapacities", (string)null);
+                });
+
+            modelBuilder.Entity("SanjeshP.Payeh.Entities.Exam.UniversityExamGuestCapacity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasDefaultValueSql("NEWSEQUENTIALID()");
+
+                    b.Property<int>("Capacity")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("GuestUniversityId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("HostIp")
+                        .HasMaxLength(45)
+                        .HasColumnType("nvarchar(45)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid>("UniversityExamCapacityId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GuestUniversityId");
+
+                    b.HasIndex("UniversityExamCapacityId", "GuestUniversityId")
+                        .IsUnique();
+
+                    b.ToTable("UniversityExamGuestCapacities", (string)null);
+                });
+
             modelBuilder.Entity("SanjeshP.Payeh.Entities.Group.Group", b =>
                 {
                     b.Property<Guid>("Id")
@@ -512,6 +941,59 @@ namespace SanjeshP.Payeh.Data.Migrations
                         {
                             t.ExcludeFromMigrations();
                         });
+                });
+
+            modelBuilder.Entity("SanjeshP.Payeh.Entities.University.University", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CapacityApproved")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("HostIp")
+                        .HasMaxLength(45)
+                        .HasColumnType("nvarchar(45)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<int?>("ParentUniversityId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Region")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("UniversityTypeId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ParentUniversityId");
+
+                    b.HasIndex("UniversityTypeId");
+
+                    b.ToTable("Universities", (string)null);
                 });
 
             modelBuilder.Entity("SanjeshP.Payeh.Entities.User.Role", b =>
@@ -1006,6 +1488,158 @@ namespace SanjeshP.Payeh.Data.Migrations
                     b.ToTable("UserVerificationCodes");
                 });
 
+            modelBuilder.Entity("SanjeshP.Payeh.Entities.Exam.Exam", b =>
+                {
+                    b.HasOne("SanjeshP.Payeh.Entities.Menu.Code", "ExamMode")
+                        .WithMany()
+                        .HasForeignKey("ExamModeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("SanjeshP.Payeh.Entities.Exam.ExamSession", "ExamSession")
+                        .WithMany("Exams")
+                        .HasForeignKey("ExamSessionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("SanjeshP.Payeh.Entities.Menu.Code", "ExamType")
+                        .WithMany()
+                        .HasForeignKey("ExamTypeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ExamMode");
+
+                    b.Navigation("ExamSession");
+
+                    b.Navigation("ExamType");
+                });
+
+            modelBuilder.Entity("SanjeshP.Payeh.Entities.Exam.ExamCustomField", b =>
+                {
+                    b.HasOne("SanjeshP.Payeh.Entities.Exam.Exam", "Exam")
+                        .WithMany("CustomFields")
+                        .HasForeignKey("ExamId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("SanjeshP.Payeh.Entities.Menu.Code", "FieldType")
+                        .WithMany()
+                        .HasForeignKey("FieldTypeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Exam");
+
+                    b.Navigation("FieldType");
+                });
+
+            modelBuilder.Entity("SanjeshP.Payeh.Entities.Exam.ExamRegistration", b =>
+                {
+                    b.HasOne("SanjeshP.Payeh.Entities.Exam.Exam", "Exam")
+                        .WithMany("Registrations")
+                        .HasForeignKey("ExamId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("SanjeshP.Payeh.Entities.University.University", "ExamVenueUniversity")
+                        .WithMany()
+                        .HasForeignKey("ExamVenueUniversityId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("SanjeshP.Payeh.Entities.Menu.Code", "Gender")
+                        .WithMany()
+                        .HasForeignKey("GenderId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("SanjeshP.Payeh.Entities.Exam.UniversityExamCapacity", "UniversityExamCapacity")
+                        .WithMany()
+                        .HasForeignKey("UniversityExamCapacityId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("SanjeshP.Payeh.Entities.Exam.UniversityExamGuestCapacity", "UniversityExamGuestCapacity")
+                        .WithMany()
+                        .HasForeignKey("UniversityExamGuestCapacityId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("SanjeshP.Payeh.Entities.University.University", "University")
+                        .WithMany()
+                        .HasForeignKey("UniversityId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Exam");
+
+                    b.Navigation("ExamVenueUniversity");
+
+                    b.Navigation("Gender");
+
+                    b.Navigation("University");
+
+                    b.Navigation("UniversityExamCapacity");
+
+                    b.Navigation("UniversityExamGuestCapacity");
+                });
+
+            modelBuilder.Entity("SanjeshP.Payeh.Entities.Exam.ExamRegistrationCustomFieldValue", b =>
+                {
+                    b.HasOne("SanjeshP.Payeh.Entities.Exam.ExamCustomField", "ExamCustomField")
+                        .WithMany("RegistrationValues")
+                        .HasForeignKey("ExamCustomFieldId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("SanjeshP.Payeh.Entities.Exam.ExamRegistration", "Registration")
+                        .WithMany("CustomFieldValues")
+                        .HasForeignKey("RegistrationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ExamCustomField");
+
+                    b.Navigation("Registration");
+                });
+
+            modelBuilder.Entity("SanjeshP.Payeh.Entities.Exam.UniversityExamCapacity", b =>
+                {
+                    b.HasOne("SanjeshP.Payeh.Entities.Exam.Exam", "Exam")
+                        .WithMany("UniversityExamCapacities")
+                        .HasForeignKey("ExamId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("SanjeshP.Payeh.Entities.University.University", "University")
+                        .WithMany()
+                        .HasForeignKey("UniversityId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Exam");
+
+                    b.Navigation("University");
+                });
+
+            modelBuilder.Entity("SanjeshP.Payeh.Entities.Exam.UniversityExamGuestCapacity", b =>
+                {
+                    b.HasOne("SanjeshP.Payeh.Entities.University.University", "GuestUniversity")
+                        .WithMany()
+                        .HasForeignKey("GuestUniversityId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("SanjeshP.Payeh.Entities.Exam.UniversityExamCapacity", "UniversityExamCapacity")
+                        .WithMany("GuestCapacities")
+                        .HasForeignKey("UniversityExamCapacityId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("GuestUniversity");
+
+                    b.Navigation("UniversityExamCapacity");
+                });
+
             modelBuilder.Entity("SanjeshP.Payeh.Entities.Group.Group", b =>
                 {
                     b.HasOne("SanjeshP.Payeh.Entities.User.User", null)
@@ -1092,6 +1726,24 @@ namespace SanjeshP.Payeh.Data.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("SanjeshP.Payeh.Entities.University.University", b =>
+                {
+                    b.HasOne("SanjeshP.Payeh.Entities.University.University", "ParentUniversity")
+                        .WithMany("ChildUniversities")
+                        .HasForeignKey("ParentUniversityId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("SanjeshP.Payeh.Entities.Menu.Code", "UniversityType")
+                        .WithMany()
+                        .HasForeignKey("UniversityTypeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ParentUniversity");
+
+                    b.Navigation("UniversityType");
+                });
+
             modelBuilder.Entity("SanjeshP.Payeh.Entities.User.UserOtp", b =>
                 {
                     b.HasOne("SanjeshP.Payeh.Entities.User.User", "User")
@@ -1166,6 +1818,35 @@ namespace SanjeshP.Payeh.Data.Migrations
                     b.Navigation("UserToken");
                 });
 
+            modelBuilder.Entity("SanjeshP.Payeh.Entities.Exam.Exam", b =>
+                {
+                    b.Navigation("CustomFields");
+
+                    b.Navigation("Registrations");
+
+                    b.Navigation("UniversityExamCapacities");
+                });
+
+            modelBuilder.Entity("SanjeshP.Payeh.Entities.Exam.ExamCustomField", b =>
+                {
+                    b.Navigation("RegistrationValues");
+                });
+
+            modelBuilder.Entity("SanjeshP.Payeh.Entities.Exam.ExamRegistration", b =>
+                {
+                    b.Navigation("CustomFieldValues");
+                });
+
+            modelBuilder.Entity("SanjeshP.Payeh.Entities.Exam.ExamSession", b =>
+                {
+                    b.Navigation("Exams");
+                });
+
+            modelBuilder.Entity("SanjeshP.Payeh.Entities.Exam.UniversityExamCapacity", b =>
+                {
+                    b.Navigation("GuestCapacities");
+                });
+
             modelBuilder.Entity("SanjeshP.Payeh.Entities.Group.Group", b =>
                 {
                     b.Navigation("GroupUsers");
@@ -1188,6 +1869,11 @@ namespace SanjeshP.Payeh.Data.Migrations
                     b.Navigation("MenusAccesses");
 
                     b.Navigation("MenusGroupAccesses");
+                });
+
+            modelBuilder.Entity("SanjeshP.Payeh.Entities.University.University", b =>
+                {
+                    b.Navigation("ChildUniversities");
                 });
 
             modelBuilder.Entity("SanjeshP.Payeh.Entities.User.Role", b =>
