@@ -15,6 +15,6 @@ public class UserUniversity : BaseEntity
     public int UniversityId { get; set; }
 
     [ForeignKey(nameof(UniversityId))]
-    public virtual University University { get; set; } = null!;
+    public virtual University.University University { get; set; } = null!;
 }
     

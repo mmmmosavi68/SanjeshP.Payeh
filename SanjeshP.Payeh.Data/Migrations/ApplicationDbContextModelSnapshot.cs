@@ -1376,7 +1376,7 @@ namespace SanjeshP.Payeh.Data.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("UserSessions");
+                    b.ToTable("UserSessions", (string)null);
                 });
 
             modelBuilder.Entity("SanjeshP.Payeh.Entities.User.UserToken", b =>
@@ -1434,6 +1434,50 @@ namespace SanjeshP.Payeh.Data.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("UserTokens");
+                });
+
+            modelBuilder.Entity("SanjeshP.Payeh.Entities.User.UserUniversity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasDefaultValueSql("NEWSEQUENTIALID()");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("HostIp")
+                        .HasMaxLength(45)
+                        .HasColumnType("nvarchar(45)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("UniversityId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UniversityId");
+
+                    b.HasIndex("UserId", "IsActive");
+
+                    b.HasIndex("UserId", "UniversityId")
+                        .IsUnique();
+
+                    b.ToTable("UserUniversities", (string)null);
                 });
 
             modelBuilder.Entity("SanjeshP.Payeh.Entities.User.UserVerificationCode", b =>
@@ -1807,6 +1851,25 @@ namespace SanjeshP.Payeh.Data.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("SanjeshP.Payeh.Entities.User.UserUniversity", b =>
+                {
+                    b.HasOne("SanjeshP.Payeh.Entities.University.University", "University")
+                        .WithMany()
+                        .HasForeignKey("UniversityId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("SanjeshP.Payeh.Entities.User.User", "User")
+                        .WithMany("UniversityAccesses")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("University");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("SanjeshP.Payeh.Entities.User.UserVerificationCode", b =>
                 {
                     b.HasOne("SanjeshP.Payeh.Entities.User.UserToken", "UserToken")
@@ -1886,6 +1949,8 @@ namespace SanjeshP.Payeh.Data.Migrations
                     b.Navigation("Groups");
 
                     b.Navigation("MenusAccesses");
+
+                    b.Navigation("UniversityAccesses");
 
                     b.Navigation("UserProfile");
 

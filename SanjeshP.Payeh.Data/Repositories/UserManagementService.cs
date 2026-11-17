@@ -6,6 +6,8 @@ using SanjeshP.Payeh.Data;
 using SanjeshP.Payeh.Entities.Menu;
 using SanjeshP.Payeh.Entities.User;
 using SanjeshP.Payeh.Services.Permissions;
+using SanjeshP.Payeh.Entities.University;
+using SanjeshP.Payeh.Entities.User;
 
 namespace SanjeshP.Payeh.Services.Users;
 
