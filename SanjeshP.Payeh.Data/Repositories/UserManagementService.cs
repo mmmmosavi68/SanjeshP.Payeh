@@ -272,4 +272,134 @@ public sealed class UserManagementService : IUserManagementService, IScopedDepen
         foreach (var session in sessions)
             session.RevocationDate = now;
     }
+
+
+
+    public async Task<List<UniversityOption>> GetAvailableUniversitiesAsync(
+    CancellationToken cancellationToken)
+    {
+        return await _db.Set<University>()
+            .AsNoTracking()
+            .Where(x => x.IsActive && !x.IsDeleted)
+            .OrderBy(x => x.Title)
+            .Select(x => new UniversityOption(
+                x.Id,
+                x.Title,
+                x.ParentUniversityId))
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<List<int>> GetAssignedUniversityIdsAsync(
+        Guid userId,
+        CancellationToken cancellationToken)
+    {
+        var userExists = await _db.Set<User>()
+            .AnyAsync(
+                x => x.Id == userId && !x.IsDeleted,
+                cancellationToken);
+
+        if (!userExists)
+            throw new NotFoundException("کاربر مورد نظر یافت نشد.");
+
+        return await _db.Set<UserUniversity>()
+            .AsNoTracking()
+            .Where(x =>
+                x.UserId == userId &&
+                x.IsActive &&
+                !x.IsDeleted)
+            .Select(x => x.UniversityId)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task UpdateUniversityAccessAsync(
+        Guid userId,
+        List<int> universityIds,
+        Guid updatedBy,
+        CancellationToken cancellationToken)
+    {
+        var userExists = await _db.Set<User>()
+            .AnyAsync(
+                x => x.Id == userId && !x.IsDeleted,
+                cancellationToken);
+
+        if (!userExists)
+            throw new NotFoundException("کاربر مورد نظر یافت نشد.");
+
+        if (universityIds is null)
+            throw new BadRequestException("فهرست دانشگاه‌ها معتبر نیست.");
+
+        var selectedUniversityIds = universityIds
+            .Distinct()
+            .ToHashSet();
+
+        if (selectedUniversityIds.Any(x => x <= 0))
+            throw new BadRequestException(
+                "شناسه یک یا چند دانشگاه نامعتبر است.");
+
+        if (selectedUniversityIds.Count > 500)
+            throw new BadRequestException(
+                "حداکثر ۵۰۰ دانشگاه قابل انتخاب است.");
+
+        if (selectedUniversityIds.Count > 0)
+        {
+            var validUniversityIds = await _db.Set<University>()
+                .Where(x =>
+                    selectedUniversityIds.Contains(x.Id) &&
+                    x.IsActive &&
+                    !x.IsDeleted)
+                .Select(x => x.Id)
+                .ToListAsync(cancellationToken);
+
+            if (validUniversityIds.Count != selectedUniversityIds.Count)
+                throw new BadRequestException(
+                    "یک یا چند دانشگاه انتخاب‌شده نامعتبر یا غیرفعال هستند.");
+        }
+
+        // تمام ارتباط‌های قبلی کاربر، حتی رکوردهای حذف نرم‌شده
+        // دریافت می‌شوند تا رکورد تکراری ایجاد نشود.
+        var existingAccesses = await _db.Set<UserUniversity>()
+            .IgnoreQueryFilters()
+            .Where(x => x.UserId == userId)
+            .ToListAsync(cancellationToken);
+
+        var now = DateTime.UtcNow;
+
+        // ابتدا تمام ارتباط‌های قبلی غیرفعال می‌شوند.
+        foreach (var access in existingAccesses)
+        {
+            access.IsActive = false;
+            access.IsDeleted = true;
+            access.UpdatedDate = now;
+        }
+
+        // دانشگاه‌های انتخاب‌شده فعال یا در صورت نیاز ایجاد می‌شوند.
+        foreach (var universityId in selectedUniversityIds)
+        {
+            var existingAccess = existingAccesses
+                .FirstOrDefault(x => x.UniversityId == universityId);
+
+            if (existingAccess is not null)
+            {
+                existingAccess.IsActive = true;
+                existingAccess.IsDeleted = false;
+                existingAccess.UpdatedDate = now;
+            }
+            else
+            {
+                await _db.Set<UserUniversity>().AddAsync(
+                    new UserUniversity
+                    {
+                        UserId = userId,
+                        UniversityId = universityId,
+                        IsActive = true,
+                        IsDeleted = false,
+                        CreatedBy = updatedBy
+                    },
+                    cancellationToken);
+            }
+        }
+
+        await _db.SaveChangesAsync(cancellationToken);
+    }
 }

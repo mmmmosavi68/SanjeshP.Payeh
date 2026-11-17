@@ -86,6 +86,62 @@ public sealed class UserManagementController : BaseController
             "دسترسی اختصاصی کاربر با موفقیت ذخیره شد.");
     }
 
+
+    /// <summary>
+    /// دریافت فهرست دانشگاه‌های فعال و قابل تخصیص
+    /// </summary>
+    [HttpGet("available-universities")]
+    public async Task<ApiResult<List<UniversityOption>>> GetAvailableUniversities(
+        CancellationToken cancellationToken)
+    {
+        var universities = await _service.GetAvailableUniversitiesAsync(
+            cancellationToken);
+
+        return new ApiResult<List<UniversityOption>>(
+            true,
+            ApiResultStatusCode.Success,
+            universities);
+    }
+
+    /// <summary>
+    /// دریافت شناسه دانشگاه‌های تخصیص‌یافته به کاربر
+    /// </summary>
+    [HttpGet("{id:guid}/university-access")]
+    public async Task<ApiResult<List<int>>> GetUniversityAccess(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        var universityIds = await _service.GetAssignedUniversityIdsAsync(
+            id,
+            cancellationToken);
+
+        return new ApiResult<List<int>>(
+            true,
+            ApiResultStatusCode.Success,
+            universityIds);
+    }
+
+    /// <summary>
+    /// ثبت یا جایگزینی دانشگاه‌های قابل دسترس کاربر
+    /// </summary>
+    [HttpPut("{id:guid}/university-access")]
+    public async Task<ApiResult> UpdateUniversityAccess(
+        Guid id,
+        [FromBody] UpdateUserUniversityAccessDto dto,
+        CancellationToken cancellationToken)
+    {
+        await _service.UpdateUniversityAccessAsync(
+            id,
+            dto.UniversityIds,
+            CurrentUserId,
+            cancellationToken);
+
+        return new ApiResult(
+            true,
+            ApiResultStatusCode.Success,
+            "دسترسی دانشگاهی کاربر با موفقیت ذخیره شد.");
+    }
+
     /// <summary>
     /// غیرفعال‌سازی گروهی کاربران و ابطال نشست‌های فعال
     /// </summary>
