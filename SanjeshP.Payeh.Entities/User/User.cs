@@ -77,6 +77,7 @@ namespace SanjeshP.Payeh.Entities.User
         [Display(Name = "تاریخ انقضاء")]
         public DateTime ExpireDate { get; set; }
 
+        public virtual ICollection<UserUniversity> UniversityAccesses { get; set; } = new List<UserUniversity>();
         public virtual ICollection<UserProfile> UserProfile { get; set; } = new List<UserProfile>();
         public virtual ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
         public virtual ICollection<UserSession> UserSessions { get; set; } = new List<UserSession>();
