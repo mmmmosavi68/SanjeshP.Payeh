@@ -1,4 +1,5 @@
 ﻿
+using Microsoft.EntityFrameworkCore;
 using SanjeshP.Payeh.Common;
 using SanjeshP.Payeh.Common.Exceptions;
 using SanjeshP.Payeh.Data.Contracts.Exams;
@@ -150,10 +151,16 @@ public sealed class UniversityExamCapacityService
         {
             capacity.AllocatedCapacity = allocatedCapacity;
             capacity.OwnCapacity = ownCapacity;
+
+            // بازیابی رکورد حذف نرم‌شده
+            capacity.IsDeleted = false;
             capacity.IsActive = true;
+
             capacity.UpdatedDate = DateTime.UtcNow;
 
-            await _repository.UpdateAsync(capacity, cancellationToken);
+            await _repository.UpdateAsync(
+                capacity,
+                cancellationToken);
         }
 
         return await _repository.GetByUniversityAndExamAsync(
@@ -215,6 +222,193 @@ public sealed class UniversityExamCapacityService
 
         return await _repository.GetDefinedExamsForUniversityAsync(
             universityId,
+            cancellationToken);
+    }
+
+    public async Task<UniversityExamGuestCapacity> SaveGuestCapacityAsync(
+    int universityId,
+    Guid examId,
+    int guestUniversityId,
+    int capacity,
+    Guid createdBy,
+    CancellationToken cancellationToken)
+    {
+        if (createdBy == Guid.Empty)
+            throw new BadRequestException("شناسه کاربر ثبت‌کننده معتبر نیست.");
+
+        if (examId == Guid.Empty)
+            throw new BadRequestException("آزمون را انتخاب کنید.");
+
+        if (guestUniversityId <= 0)
+            throw new BadRequestException("دانشگاه مهمان را انتخاب کنید.");
+
+        if (capacity <= 0)
+            throw new BadRequestException("ظرفیت مهمان باید حداقل ۱ باشد.");
+
+        // بررسی دسترسی کاربر به دانشگاه میزبان
+        await ValidateUniversityAsync(
+            createdBy,
+            universityId,
+            cancellationToken);
+
+        if (universityId == guestUniversityId)
+        {
+            throw new BadRequestException(
+                "دانشگاه میزبان نمی‌تواند به‌عنوان دانشگاه مهمان انتخاب شود.");
+        }
+
+        // بررسی فعال بودن دانشگاه مهمان
+        var guestUniversity = await _repository.GetActiveUniversityAsync(
+            guestUniversityId,
+            cancellationToken);
+
+        if (guestUniversity is null)
+        {
+            throw new NotFoundException(
+                "دانشگاه مهمان وجود ندارد یا غیرفعال است.");
+        }
+
+        // دریافت ظرفیت اصلی آزمون
+        var universityExamCapacity =
+            await _repository.GetByUniversityAndExamAsync(
+                universityId,
+                examId,
+                cancellationToken);
+
+        if (universityExamCapacity is null ||
+            !universityExamCapacity.IsActive ||
+            universityExamCapacity.IsDeleted)
+        {
+            throw new BadRequestException(
+                "ابتدا باید ظرفیت فعال آزمون برای دانشگاه میزبان تعریف شود.");
+        }
+
+        var allocatedCapacity =
+            universityExamCapacity.AllocatedCapacity ?? 0;
+
+        var ownCapacity =
+            universityExamCapacity.OwnCapacity ?? 0;
+
+        // ظرفیت قابل تخصیص به دانشگاه‌های مهمان
+        var guestCapacityLimit = allocatedCapacity - ownCapacity;
+
+        if (guestCapacityLimit <= 0)
+        {
+            throw new BadRequestException(
+                "ظرفیتی برای تخصیص به دانشگاه‌های مهمان باقی نمانده است.");
+        }
+
+        // دریافت رکورد قبلی؛ حتی اگر حذف نرم شده باشد
+        var guestCapacity =
+            await _repository.GetGuestCapacityByUniversityAsync(
+                universityExamCapacity.Id,
+                guestUniversityId,
+                cancellationToken);
+
+        var registeredCount = 0;
+
+        if (guestCapacity is not null)
+        {
+            registeredCount =
+                await _repository.CountGuestRegistrationsAsync(
+                    guestCapacity.Id,
+                    cancellationToken);
+
+            if (capacity < registeredCount)
+            {
+                throw new BadRequestException(
+                    $"ظرفیت مهمان نمی‌تواند کمتر از تعداد ثبت‌نام‌های موجود ({registeredCount}) باشد.");
+            }
+        }
+
+        // مجموع ظرفیت مهمان‌های فعلی
+        var totalGuestCapacity =
+            await _repository.GetTotalGuestCapacityAsync(
+                universityExamCapacity.Id,
+                cancellationToken);
+
+        // در صورت ویرایش، ظرفیت قبلی این دانشگاه از مجموع کم می‌شود
+        var previousCapacity = 0;
+
+        if (guestCapacity is not null &&
+            guestCapacity.IsActive &&
+            !guestCapacity.IsDeleted)
+        {
+            previousCapacity = guestCapacity.Capacity;
+        }
+
+        var newTotalGuestCapacity =
+            totalGuestCapacity - previousCapacity + capacity;
+
+        if (newTotalGuestCapacity > guestCapacityLimit)
+        {
+            throw new BadRequestException(
+                $"مجموع ظرفیت دانشگاه‌های مهمان ({newTotalGuestCapacity}) " +
+                $"از ظرفیت مجاز مهمان ({guestCapacityLimit}) بیشتر است.");
+        }
+
+        if (guestCapacity is null)
+        {
+            guestCapacity = new UniversityExamGuestCapacity
+            {
+                UniversityExamCapacityId = universityExamCapacity.Id,
+                GuestUniversityId = guestUniversityId,
+                Capacity = capacity,
+                CreatedBy = createdBy,
+                CreatedDate = DateTime.UtcNow,
+                IsActive = true,
+                IsDeleted = false
+            };
+
+            await _repository.AddGuestCapacityAsync(
+                guestCapacity,
+                cancellationToken);
+        }
+        else
+        {
+            guestCapacity.Capacity = capacity;
+            guestCapacity.IsActive = true;
+            guestCapacity.IsDeleted = false;
+            guestCapacity.UpdatedDate = DateTime.UtcNow;
+
+            await _repository.UpdateGuestCapacityAsync(
+                guestCapacity,
+                cancellationToken);
+        }
+
+        return guestCapacity;
+    }
+
+    public async Task<List<UniversityExamGuestCapacity>> GetGuestCapacitiesAsync(
+    Guid userId,
+    int universityId,
+    Guid examId,
+    CancellationToken cancellationToken)
+    {
+        await ValidateUniversityAsync(
+            userId,
+            universityId,
+            cancellationToken);
+
+        if (examId == Guid.Empty)
+            throw new BadRequestException("آزمون را انتخاب کنید.");
+
+        var universityExamCapacity =
+            await _repository.GetByUniversityAndExamAsync(
+                universityId,
+                examId,
+                cancellationToken);
+
+        if (universityExamCapacity is null ||
+            !universityExamCapacity.IsActive ||
+            universityExamCapacity.IsDeleted)
+        {
+            throw new NotFoundException(
+                "ظرفیت فعال این آزمون برای دانشگاه پیدا نشد.");
+        }
+
+        return await _repository.GetGuestCapacitiesAsync(
+            universityExamCapacity.Id,
             cancellationToken);
     }
 }

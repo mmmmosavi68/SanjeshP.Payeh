@@ -27,4 +27,18 @@ public interface IUniversityExamCapacityService
     int universityId,
     CancellationToken cancellationToken);
 
+    Task<UniversityExamGuestCapacity> SaveGuestCapacityAsync(
+    int universityId,
+    Guid examId,
+    int guestUniversityId,
+    int capacity,
+    Guid createdBy,
+    CancellationToken cancellationToken);
+
+    Task<List<UniversityExamGuestCapacity>> GetGuestCapacitiesAsync(
+        Guid userId,
+        int universityId,
+        Guid examId,
+        CancellationToken cancellationToken);
+
 }

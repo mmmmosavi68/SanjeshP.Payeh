@@ -54,4 +54,29 @@ public interface IUniversityExamCapacityRepository
     Task<List<Exam>> GetDefinedExamsForUniversityAsync(
     int universityId,
     CancellationToken cancellationToken);
+
+    Task<List<UniversityExamGuestCapacity>> GetGuestCapacitiesAsync(
+    Guid universityExamCapacityId,
+    CancellationToken cancellationToken);
+
+    Task<UniversityExamGuestCapacity?> GetGuestCapacityByUniversityAsync(
+        Guid universityExamCapacityId,
+        int guestUniversityId,
+        CancellationToken cancellationToken);
+
+    Task<int> CountGuestRegistrationsAsync(
+        Guid guestCapacityId,
+        CancellationToken cancellationToken);
+
+    Task AddGuestCapacityAsync(
+        UniversityExamGuestCapacity guestCapacity,
+        CancellationToken cancellationToken);
+
+    Task UpdateGuestCapacityAsync(
+        UniversityExamGuestCapacity guestCapacity,
+        CancellationToken cancellationToken);
+
+    Task<int> GetTotalGuestCapacityAsync(
+    Guid universityExamCapacityId,
+    CancellationToken cancellationToken);
 }
