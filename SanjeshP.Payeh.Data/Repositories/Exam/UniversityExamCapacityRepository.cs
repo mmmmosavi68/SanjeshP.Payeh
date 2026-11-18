@@ -4,6 +4,7 @@ using SanjeshP.Payeh.Common;
 using SanjeshP.Payeh.Data.Contracts.Exams;
 using SanjeshP.Payeh.Entities.Exam;
 using SanjeshP.Payeh.Entities.University;
+using SanjeshP.Payeh.Entities.User;
 
 namespace SanjeshP.Payeh.Data.Repositories.Exams;
 
@@ -122,5 +123,48 @@ public sealed class UniversityExamCapacityRepository
         CancellationToken cancellationToken)
     {
         await _dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task<List<University>> GetAccessibleUniversitiesAsync(
+    Guid userId,
+    CancellationToken cancellationToken)
+    {
+        return await _dbContext.Set<UserUniversity>()
+            .AsNoTracking()
+            .Where(x =>
+                x.UserId == userId &&
+                x.IsActive &&
+                !x.IsDeleted &&
+                x.User.IsActive &&
+                !x.User.IsDeleted &&
+                x.University.IsActive &&
+                !x.University.IsDeleted)
+            .Include(x => x.University)
+                .ThenInclude(x => x.UniversityType)
+            .Include(x => x.University)
+                .ThenInclude(x => x.ParentUniversity)
+            .OrderBy(x => x.University.Title)
+            .Select(x => x.University)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<University?> GetAccessibleUniversityAsync(
+    Guid userId,
+    int universityId,
+    CancellationToken cancellationToken)
+    {
+        return await _dbContext.Set<UserUniversity>()
+            .AsNoTracking()
+            .Where(x =>
+                x.UserId == userId &&
+                x.UniversityId == universityId &&
+                x.IsActive &&
+                !x.IsDeleted &&
+                x.User.IsActive &&
+                !x.User.IsDeleted &&
+                x.University.IsActive &&
+                !x.University.IsDeleted)
+            .Select(x => x.University)
+            .FirstOrDefaultAsync(cancellationToken);
     }
 }

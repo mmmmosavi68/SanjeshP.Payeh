@@ -29,6 +29,7 @@ public sealed class UniversityExamCapacitiesController : BaseController
         CancellationToken cancellationToken)
     {
         var exams = await _service.GetActiveExamsForUniversityAsync(
+            CurrentUserId,
             universityId,
             cancellationToken);
 
@@ -113,5 +114,39 @@ public sealed class UniversityExamCapacitiesController : BaseController
             CreatedDate = capacity.CreatedDate,
             UpdatedDate = capacity.UpdatedDate
         };
+    }
+
+
+    /// <summary>
+    /// دریافت دانشگاه‌های مجاز کاربر جاری برای مدیریت ظرفیت آزمون‌ها
+    /// </summary>
+    [HttpGet("my-universities")]
+    public async Task<ApiResult<List<UniversityExamCapacityUniversityDto>>> GetMyUniversities(
+        CancellationToken cancellationToken)
+    {
+        var universities = await _service.GetAccessibleUniversitiesAsync(
+            CurrentUserId,
+            cancellationToken);
+
+        var result = universities.Select(x =>
+            new UniversityExamCapacityUniversityDto
+            {
+                Id = x.Id,
+                Title = x.Title,
+
+                UniversityTypeId = x.UniversityTypeId,
+                UniversityTypeTitle = x.UniversityType?.Title,
+
+                Region = x.Region,
+                CapacityApproved = x.CapacityApproved,
+
+                ParentUniversityId = x.ParentUniversityId,
+                ParentUniversityTitle = x.ParentUniversity?.Title
+            }).ToList();
+
+        return new ApiResult<List<UniversityExamCapacityUniversityDto>>(
+            true,
+            ApiResultStatusCode.Success,
+            result);
     }
 }

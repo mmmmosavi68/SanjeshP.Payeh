@@ -19,10 +19,14 @@ public sealed class UniversityExamCapacityService
     }
 
     public async Task<List<Exam>> GetActiveExamsForUniversityAsync(
+        Guid userId,
         int universityId,
         CancellationToken cancellationToken)
     {
-        await ValidateUniversityAsync(universityId, cancellationToken);
+        await ValidateUniversityAsync(
+            userId,
+            universityId,
+            cancellationToken);
 
         return await _repository.GetActiveExamsForUniversityAsync(
             universityId,
@@ -56,6 +60,7 @@ public sealed class UniversityExamCapacityService
         }
 
         var university = await ValidateUniversityAsync(
+            createdBy,
             universityId,
             cancellationToken);
 
@@ -160,22 +165,43 @@ public sealed class UniversityExamCapacityService
     }
 
     private async Task<University> ValidateUniversityAsync(
+        Guid userId,
         int universityId,
         CancellationToken cancellationToken)
     {
+        if (userId == Guid.Empty)
+            throw new UnauthorizedException();
+
         if (universityId <= 0)
             throw new BadRequestException("شناسه دانشگاه معتبر نیست.");
 
-        var university = await _repository.GetActiveUniversityAsync(
+        var university = await _repository.GetAccessibleUniversityAsync(
+            userId,
             universityId,
             cancellationToken);
 
         if (university is null)
         {
-            throw new NotFoundException(
-                "دانشگاه موردنظر وجود ندارد یا غیرفعال است.");
+            throw new ForbiddenException(
+                "شما به این دانشگاه دسترسی ندارید یا دانشگاه غیرفعال است.");
         }
 
         return university;
     }
+
+
+    public async Task<List<University>> GetAccessibleUniversitiesAsync(
+    Guid userId,
+    CancellationToken cancellationToken)
+    {
+        if (userId == Guid.Empty)
+            throw new UnauthorizedAccessException(
+                "شناسه کاربر معتبر نیست.");
+
+        return await _repository.GetAccessibleUniversitiesAsync(
+            userId,
+            cancellationToken);
+    }
+
+
 }

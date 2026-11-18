@@ -41,4 +41,13 @@ public interface IUniversityExamCapacityRepository
     Task UpdateAsync(
         UniversityExamCapacity capacity,
         CancellationToken cancellationToken);
+
+    Task<List<University>> GetAccessibleUniversitiesAsync(
+    Guid userId,
+    CancellationToken cancellationToken);
+
+    Task<University?> GetAccessibleUniversityAsync(
+    Guid userId,
+    int universityId,
+    CancellationToken cancellationToken);
 }

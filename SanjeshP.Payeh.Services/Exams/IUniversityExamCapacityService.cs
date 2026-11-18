@@ -1,13 +1,15 @@
 ﻿
 using SanjeshP.Payeh.Entities.Exam;
+using SanjeshP.Payeh.Entities.University;
 
 namespace SanjeshP.Payeh.Services.Exams;
 
 public interface IUniversityExamCapacityService
 {
     Task<List<Exam>> GetActiveExamsForUniversityAsync(
-        int universityId,
-        CancellationToken cancellationToken);
+    Guid userId,
+    int universityId,
+    CancellationToken cancellationToken);
 
     Task<UniversityExamCapacity> SaveAsync(
         int universityId,
@@ -16,4 +18,10 @@ public interface IUniversityExamCapacityService
         int ownCapacity,
         Guid createdBy,
         CancellationToken cancellationToken);
+
+    Task<List<University>> GetAccessibleUniversitiesAsync(
+    Guid userId,
+    CancellationToken cancellationToken);
+
+
 }
