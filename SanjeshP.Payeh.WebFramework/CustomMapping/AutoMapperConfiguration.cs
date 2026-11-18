@@ -8,6 +8,7 @@ namespace SanjeshP.Payeh.WebFramework.CustomMapping
 {
     public static class AutoMapperConfiguration
     {
+
         public static void InitializeAutoMapper(
             this IServiceCollection services,
             IConfiguration configuration,
@@ -31,21 +32,33 @@ namespace SanjeshP.Payeh.WebFramework.CustomMapping
                     mappingType);
             }
 
-            // ثبت Profile به‌صورت مستقیم؛ از AddMaps استفاده نمی‌کنیم،
-            // چون CustomMappingProfile سازنده پارامتردار دارد.
+            // شناسایی Profileهای معمولی با سازنده بدون پارامتر
+            // CustomMappingProfile جداگانه ساخته می‌شود.
+            var profileTypes = assemblies
+                .SelectMany(assembly => assembly.GetTypes())
+                .Where(type =>
+                    type is { IsClass: true, IsAbstract: false } &&
+                    typeof(Profile).IsAssignableFrom(type) &&
+                    type != typeof(CustomMappingProfile) &&
+                    type.GetConstructor(Type.EmptyTypes) != null)
+                .Distinct()
+                .ToArray();
+
             services.AddAutoMapper(cfg =>
             {
                 if (!string.IsNullOrWhiteSpace(licenseKey))
-                {
                     cfg.LicenseKey = licenseKey;
-                }
 
+                // اول مپ‌های خودکار BaseDto
                 cfg.AddProfile(new CustomMappingProfile(
                     mappingTypes.Select(type =>
-                        (IHaveCustomMapping)Activator.CreateInstance(type)!)
-                ));
-            });
+                        (IHaveCustomMapping)Activator.CreateInstance(type)!)));
 
+                // بعد پروفایل‌های دستی، تا در تداخل برنده باشند
+                foreach (var profileType in profileTypes)
+                    cfg.AddProfile((Profile)Activator.CreateInstance(profileType)!);
+            });
         }
+
     }
 }

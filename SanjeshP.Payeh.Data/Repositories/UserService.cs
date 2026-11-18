@@ -169,7 +169,10 @@ namespace SanjeshP.Payeh.Services.Users
                 .Skip((query.PageNumber - 1) * query.PageSize)
                 .Take(query.PageSize)
                 .Include(x => x.UserProfile)
-                .Include(x => x.UserRoles).ThenInclude(ur => ur.Role)
+                .Include(x => x.UserRoles)
+                    .ThenInclude(ur => ur.Role)
+                .Include(x => x.UniversityAccesses)
+                    .ThenInclude(ua => ua.University)
                 .ToListAsync(cancellationToken);
 
             return new PagedUsers(items, totalCount, query.PageNumber, query.PageSize);

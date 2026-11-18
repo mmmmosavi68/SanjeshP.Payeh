@@ -58,7 +58,7 @@ namespace SanjeshP.Payeh.Api.Controllers.V1
                     query.SortDirection),
                 cancellationToken);
 
-            var items = _mapper.Map<IReadOnlyList<UserSelectDto>>(
+            var items = _mapper.Map<IReadOnlyList<UserSelectDto>>(  
                 result.Items);
 
             return new PagedResult<UserSelectDto>(

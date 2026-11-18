@@ -5,9 +5,15 @@ using System.ComponentModel.DataAnnotations;
 
 namespace SanjeshP.Payeh.Api.Models.Users
 {
-    /// <summary>
-    /// خروجی نمایش کاربر در فهرست و جزئیات.
-    /// </summary>
+    public class UserUniversityDto
+    {
+        public int Id { get; set; }
+
+        public string Title { get; set; } = string.Empty;
+    }
+
+
+
     public class UserSelectDto : BaseDto<UserSelectDto, User, Guid>
     {
         public string UserName { get; set; } = null!;
@@ -31,6 +37,8 @@ namespace SanjeshP.Payeh.Api.Models.Users
         public int? Nationality { get; set; }
 
         public List<RoleDto> Roles { get; set; } = new();
+        public List<UserUniversityDto> Universities { get; set; } = new();
+
     }
 
     /// <summary>
