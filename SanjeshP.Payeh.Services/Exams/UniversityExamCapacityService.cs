@@ -203,5 +203,18 @@ public sealed class UniversityExamCapacityService
             cancellationToken);
     }
 
+    public async Task<List<Exam>> GetDefinedExamsForUniversityAsync(
+    Guid userId,
+    int universityId,
+    CancellationToken cancellationToken)
+    {
+        await ValidateUniversityAsync(
+            userId,
+            universityId,
+            cancellationToken);
 
+        return await _repository.GetDefinedExamsForUniversityAsync(
+            universityId,
+            cancellationToken);
+    }
 }

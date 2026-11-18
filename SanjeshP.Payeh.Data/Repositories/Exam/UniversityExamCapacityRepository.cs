@@ -167,4 +167,31 @@ public sealed class UniversityExamCapacityRepository
             .Select(x => x.University)
             .FirstOrDefaultAsync(cancellationToken);
     }
+
+    public async Task<List<Exam>> GetDefinedExamsForUniversityAsync(
+    int universityId,
+    CancellationToken cancellationToken)
+    {
+        return await _dbContext.Set<Exam>()
+            .AsNoTracking()
+            .Include(x => x.ExamSession)
+            .Include(x => x.ExamType)
+            .Include(x => x.ExamMode)
+            .Include(x => x.UniversityExamCapacities
+                .Where(c =>
+                    c.UniversityId == universityId &&
+                    !c.IsDeleted))
+            .Where(x =>
+                x.IsActive &&
+                !x.IsDeleted &&
+                x.ExamSession.IsActive &&
+                !x.ExamSession.IsDeleted &&
+                x.UniversityExamCapacities.Any(c =>
+                    c.UniversityId == universityId &&
+                    !c.IsDeleted))
+            .OrderByDescending(x => x.ExamSession.ExamDate)
+            .ThenBy(x => x.ExamSession.StartTime)
+            .ThenBy(x => x.Title)
+            .ToListAsync(cancellationToken);
+    }
 }

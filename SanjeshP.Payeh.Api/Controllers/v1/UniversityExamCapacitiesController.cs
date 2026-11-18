@@ -91,6 +91,53 @@ public sealed class UniversityExamCapacitiesController : BaseController
             "ظرفیت دانشگاه برای آزمون با موفقیت ثبت شد.");
     }
 
+
+    /// <summary>
+    /// دریافت آزمون‌هایی که برای دانشگاه ظرفیت آن‌ها تعیین شده است
+    /// </summary>
+    [HttpGet("universities/{universityId:int}/defined-capacities")]
+    public async Task<ApiResult<List<UniversityExamCapacityExamDto>>> GetDefinedCapacities(
+        [FromRoute] int universityId,
+        CancellationToken cancellationToken)
+    {
+        var exams = await _service.GetDefinedExamsForUniversityAsync(
+            CurrentUserId,
+            universityId,
+            cancellationToken);
+
+        var result = exams.Select(exam =>
+        {
+            var capacity = exam.UniversityExamCapacities
+                .FirstOrDefault(x => x.UniversityId == universityId);
+
+            return new UniversityExamCapacityExamDto
+            {
+                ExamId = exam.Id,
+                ExamTitle = exam.Title,
+
+                ExamSessionId = exam.ExamSessionId,
+                ExamSessionTitle = exam.ExamSession?.Title,
+                ExamDate = exam.ExamSession?.ExamDate ?? default,
+
+                ExamModeId = exam.ExamModeId,
+                ExamModeTitle = exam.ExamMode?.Title,
+
+                IsCapacityDefined = capacity is not null,
+                CapacityId = capacity?.Id,
+
+                AllocatedCapacity = capacity?.AllocatedCapacity,
+                OwnCapacity = capacity?.OwnCapacity,
+
+                CapacityIsActive = capacity?.IsActive
+            };
+        }).ToList();
+
+        return new ApiResult<List<UniversityExamCapacityExamDto>>(
+            true,
+            ApiResultStatusCode.Success,
+            result);
+    }
+
     private static UniversityExamCapacityDto MapToDto(
         UniversityExamCapacity capacity)
     {

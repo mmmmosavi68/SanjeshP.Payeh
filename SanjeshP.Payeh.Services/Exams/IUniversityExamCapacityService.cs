@@ -22,6 +22,9 @@ public interface IUniversityExamCapacityService
     Task<List<University>> GetAccessibleUniversitiesAsync(
     Guid userId,
     CancellationToken cancellationToken);
-
+    Task<List<Exam>> GetDefinedExamsForUniversityAsync(
+    Guid userId,
+    int universityId,
+    CancellationToken cancellationToken);
 
 }

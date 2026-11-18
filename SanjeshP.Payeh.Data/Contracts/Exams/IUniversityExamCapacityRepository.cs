@@ -50,4 +50,8 @@ public interface IUniversityExamCapacityRepository
     Guid userId,
     int universityId,
     CancellationToken cancellationToken);
+
+    Task<List<Exam>> GetDefinedExamsForUniversityAsync(
+    int universityId,
+    CancellationToken cancellationToken);
 }
