@@ -20,6 +20,8 @@ public sealed class UniversityExamCapacitiesController : BaseController
         _service = service;
     }
 
+    #region Read
+
     /// <summary>
     /// دریافت آزمون‌های فعال و ظرفیت‌های ثبت‌شده دانشگاه
     /// </summary>
@@ -67,32 +69,6 @@ public sealed class UniversityExamCapacitiesController : BaseController
     }
 
     /// <summary>
-    /// ثبت یا ویرایش ظرفیت دانشگاه برای یک آزمون
-    /// </summary>
-    [HttpPut("universities/{universityId:int}/exams/{examId:guid}/capacity")]
-    public async Task<ApiResult<UniversityExamCapacityDto>> Save(
-        [FromRoute] int universityId,
-        [FromRoute] Guid examId,
-        [FromBody] SaveUniversityExamCapacityDto dto,
-        CancellationToken cancellationToken)
-    {
-        var capacity = await _service.SaveAsync(
-            universityId,
-            examId,
-            dto.AllocatedCapacity,
-            dto.OwnCapacity,
-            CurrentUserId,
-            cancellationToken);
-
-        return new ApiResult<UniversityExamCapacityDto>(
-            true,
-            ApiResultStatusCode.Success,
-            MapToDto(capacity),
-            "ظرفیت دانشگاه برای آزمون با موفقیت ثبت شد.");
-    }
-
-
-    /// <summary>
     /// دریافت آزمون‌هایی که برای دانشگاه ظرفیت آن‌ها تعیین شده است
     /// </summary>
     [HttpGet("universities/{universityId:int}/defined-capacities")]
@@ -138,34 +114,8 @@ public sealed class UniversityExamCapacitiesController : BaseController
             result);
     }
 
-    private static UniversityExamCapacityDto MapToDto(
-        UniversityExamCapacity capacity)
-    {
-        return new UniversityExamCapacityDto
-        {
-            Id = capacity.Id,
-
-            UniversityId = capacity.UniversityId,
-
-            ExamId = capacity.ExamId,
-            ExamTitle = capacity.Exam?.Title,
-
-            ExamSessionId = capacity.Exam?.ExamSessionId ?? Guid.Empty,
-            ExamSessionTitle = capacity.Exam?.ExamSession?.Title,
-
-            AllocatedCapacity = capacity.AllocatedCapacity ?? 0,
-            OwnCapacity = capacity.OwnCapacity ?? 0,
-
-            IsActive = capacity.IsActive,
-
-            CreatedDate = capacity.CreatedDate,
-            UpdatedDate = capacity.UpdatedDate
-        };
-    }
-
-
     /// <summary>
-    /// دریافت دانشگاه‌های مجاز کاربر جاری برای مدیریت ظرفیت آزمون‌ها
+    /// دریافت دانشگاه‌های مجاز کاربر جاری
     /// </summary>
     [HttpGet("my-universities")]
     public async Task<ApiResult<List<UniversityExamCapacityUniversityDto>>> GetMyUniversities(
@@ -196,4 +146,132 @@ public sealed class UniversityExamCapacitiesController : BaseController
             ApiResultStatusCode.Success,
             result);
     }
+
+    /// <summary>
+    /// دریافت ظرفیت دانشگاه‌های مهمان برای یک آزمون
+    /// </summary>
+    [HttpGet("universities/{universityId:int}/exams/{examId:guid}/guest-capacities")]
+    public async Task<ApiResult<List<UniversityExamGuestCapacityDto>>> GetGuestCapacities(
+        [FromRoute] int universityId,
+        [FromRoute] Guid examId,
+        CancellationToken cancellationToken)
+    {
+        var capacities = await _service.GetGuestCapacitiesAsync(
+            CurrentUserId,
+            universityId,
+            examId,
+            cancellationToken);
+
+        var result = capacities
+            .Select(MapGuestCapacityToDto)
+            .ToList();
+
+        return new ApiResult<List<UniversityExamGuestCapacityDto>>(
+            true,
+            ApiResultStatusCode.Success,
+            result);
+    }
+
+    #endregion
+
+    #region Save
+
+    /// <summary>
+    /// ثبت یا ویرایش ظرفیت دانشگاه میزبان برای یک آزمون
+    /// </summary>
+    [HttpPut("universities/{universityId:int}/exams/{examId:guid}/capacity")]
+    public async Task<ApiResult<UniversityExamCapacityDto>> Save(
+        [FromRoute] int universityId,
+        [FromRoute] Guid examId,
+        [FromBody] SaveUniversityExamCapacityDto dto,
+        CancellationToken cancellationToken)
+    {
+        var capacity = await _service.SaveAsync(
+            universityId,
+            examId,
+            dto.AllocatedCapacity,
+            dto.OwnCapacity,
+            CurrentUserId,
+            cancellationToken);
+
+        return new ApiResult<UniversityExamCapacityDto>(
+            true,
+            ApiResultStatusCode.Success,
+            MapToDto(capacity),
+            "ظرفیت دانشگاه برای آزمون با موفقیت ثبت شد.");
+    }
+
+    /// <summary>
+    /// ثبت یا ویرایش ظرفیت یک دانشگاه مهمان
+    /// </summary>
+    [HttpPut("universities/{universityId:int}/exams/{examId:guid}/guest-capacities/{guestUniversityId:int}")]
+    public async Task<ApiResult<UniversityExamGuestCapacityDto>> SaveGuestCapacity(
+        [FromRoute] int universityId,
+        [FromRoute] Guid examId,
+        [FromRoute] int guestUniversityId,
+        [FromBody] SaveUniversityExamGuestCapacityDto dto,
+        CancellationToken cancellationToken)
+    {
+        var capacity = await _service.SaveGuestCapacityAsync(
+            universityId,
+            examId,
+            guestUniversityId,
+            dto.Capacity,
+            CurrentUserId,
+            cancellationToken);
+
+        return new ApiResult<UniversityExamGuestCapacityDto>(
+            true,
+            ApiResultStatusCode.Success,
+            MapGuestCapacityToDto(capacity),
+            "ظرفیت دانشگاه مهمان با موفقیت ثبت شد.");
+    }
+
+    #endregion
+
+    #region Mapping
+
+    private static UniversityExamCapacityDto MapToDto(
+        UniversityExamCapacity capacity)
+    {
+        return new UniversityExamCapacityDto
+        {
+            Id = capacity.Id,
+
+            UniversityId = capacity.UniversityId,
+
+            ExamId = capacity.ExamId,
+            ExamTitle = capacity.Exam?.Title,
+
+            ExamSessionId = capacity.Exam?.ExamSessionId ?? Guid.Empty,
+            ExamSessionTitle = capacity.Exam?.ExamSession?.Title,
+
+            AllocatedCapacity = capacity.AllocatedCapacity ?? 0,
+            OwnCapacity = capacity.OwnCapacity ?? 0,
+
+            IsActive = capacity.IsActive,
+
+            CreatedDate = capacity.CreatedDate,
+            UpdatedDate = capacity.UpdatedDate
+        };
+    }
+
+    private static UniversityExamGuestCapacityDto MapGuestCapacityToDto(
+        UniversityExamGuestCapacity capacity)
+    {
+        return new UniversityExamGuestCapacityDto
+        {
+            Id = capacity.Id,
+            UniversityExamCapacityId = capacity.UniversityExamCapacityId,
+            GuestUniversityId = capacity.GuestUniversityId,
+            GuestUniversityTitle = capacity.GuestUniversity?.Title
+                ?? string.Empty,
+            Capacity = capacity.Capacity,
+            IsActive = capacity.IsActive,
+            CreatedDate = capacity.CreatedDate,
+            UpdatedDate = capacity.UpdatedDate
+        };
+    }
+
+    #endregion
 }

@@ -376,7 +376,15 @@ public sealed class UniversityExamCapacityService
                 cancellationToken);
         }
 
-        return guestCapacity;
+        var savedGuestCapacities =
+     await _repository.GetGuestCapacitiesAsync(
+         universityExamCapacity.Id,
+         cancellationToken);
+
+        return savedGuestCapacities.FirstOrDefault(
+            x => x.GuestUniversityId == guestUniversityId)
+            ?? throw new NotFoundException(
+                "ظرفیت دانشگاه مهمان پس از ثبت پیدا نشد.");
     }
 
     public async Task<List<UniversityExamGuestCapacity>> GetGuestCapacitiesAsync(
