@@ -35,32 +35,10 @@ public sealed class UniversityExamCapacitiesController : BaseController
             universityId,
             cancellationToken);
 
-        var result = exams.Select(exam =>
-        {
-            var capacity = exam.UniversityExamCapacities
-                .FirstOrDefault(x => x.UniversityId == universityId);
-
-            return new UniversityExamCapacityExamDto
-            {
-                ExamId = exam.Id,
-                ExamTitle = exam.Title,
-
-                ExamSessionId = exam.ExamSessionId,
-                ExamSessionTitle = exam.ExamSession?.Title,
-                ExamDate = exam.ExamSession?.ExamDate ?? default,
-
-                ExamModeId = exam.ExamModeId,
-                ExamModeTitle = exam.ExamMode?.Title,
-
-                IsCapacityDefined = capacity is not null,
-                CapacityId = capacity?.Id,
-
-                AllocatedCapacity = capacity?.AllocatedCapacity,
-                OwnCapacity = capacity?.OwnCapacity,
-
-                CapacityIsActive = capacity?.IsActive
-            };
-        }).ToList();
+        var result = await BuildExamDtosAsync(
+            exams,
+            universityId,
+            cancellationToken);
 
         return new ApiResult<List<UniversityExamCapacityExamDto>>(
             true,
@@ -81,32 +59,10 @@ public sealed class UniversityExamCapacitiesController : BaseController
             universityId,
             cancellationToken);
 
-        var result = exams.Select(exam =>
-        {
-            var capacity = exam.UniversityExamCapacities
-                .FirstOrDefault(x => x.UniversityId == universityId);
-
-            return new UniversityExamCapacityExamDto
-            {
-                ExamId = exam.Id,
-                ExamTitle = exam.Title,
-
-                ExamSessionId = exam.ExamSessionId,
-                ExamSessionTitle = exam.ExamSession?.Title,
-                ExamDate = exam.ExamSession?.ExamDate ?? default,
-
-                ExamModeId = exam.ExamModeId,
-                ExamModeTitle = exam.ExamMode?.Title,
-
-                IsCapacityDefined = capacity is not null,
-                CapacityId = capacity?.Id,
-
-                AllocatedCapacity = capacity?.AllocatedCapacity,
-                OwnCapacity = capacity?.OwnCapacity,
-
-                CapacityIsActive = capacity?.IsActive
-            };
-        }).ToList();
+        var result = await BuildExamDtosAsync(
+            exams,
+            universityId,
+            cancellationToken);
 
         return new ApiResult<List<UniversityExamCapacityExamDto>>(
             true,
@@ -162,8 +118,17 @@ public sealed class UniversityExamCapacitiesController : BaseController
             examId,
             cancellationToken);
 
+        var registeredCounts = await _service.GetGuestRegistrationCountsAsync(
+            capacities.Select(x => x.Id).ToList(),
+            cancellationToken);
+
         var result = capacities
-            .Select(MapGuestCapacityToDto)
+            .Select(x =>
+            {
+                var dto = MapGuestCapacityToDto(x);
+                dto.RegisteredCount = registeredCounts.GetValueOrDefault(x.Id);
+                return dto;
+            })
             .ToList();
 
         return new ApiResult<List<UniversityExamGuestCapacityDto>>(
@@ -220,16 +185,80 @@ public sealed class UniversityExamCapacitiesController : BaseController
             CurrentUserId,
             cancellationToken);
 
+        var guestDto = MapGuestCapacityToDto(capacity);
+
+        var registeredCounts = await _service.GetGuestRegistrationCountsAsync(
+            new[] { capacity.Id },
+            cancellationToken);
+
+        guestDto.RegisteredCount = registeredCounts.GetValueOrDefault(capacity.Id);
+
         return new ApiResult<UniversityExamGuestCapacityDto>(
             true,
             ApiResultStatusCode.Success,
-            MapGuestCapacityToDto(capacity),
+            guestDto,
             "ظرفیت دانشگاه مهمان با موفقیت ثبت شد.");
     }
 
     #endregion
 
     #region Mapping
+
+    private async Task<List<UniversityExamCapacityExamDto>> BuildExamDtosAsync(
+        List<Exam> exams,
+        int universityId,
+        CancellationToken cancellationToken)
+    {
+        var capacityIds = exams
+            .Select(exam => exam.UniversityExamCapacities
+                .FirstOrDefault(x => x.UniversityId == universityId)?.Id)
+            .Where(id => id.HasValue)
+            .Select(id => id!.Value)
+            .Distinct()
+            .ToList();
+
+        var usages = await _service.GetCapacityUsageAsync(
+            universityId,
+            capacityIds,
+            cancellationToken);
+
+        return exams.Select(exam =>
+        {
+            var capacity = exam.UniversityExamCapacities
+                .FirstOrDefault(x => x.UniversityId == universityId);
+
+            var usage = capacity is not null &&
+                        usages.TryGetValue(capacity.Id, out var found)
+                ? found
+                : null;
+
+            return new UniversityExamCapacityExamDto
+            {
+                ExamId = exam.Id,
+                ExamTitle = exam.Title,
+
+                ExamSessionId = exam.ExamSessionId,
+                ExamSessionTitle = exam.ExamSession?.Title,
+                ExamDate = exam.ExamSession?.ExamDate ?? default,
+
+                ExamModeId = exam.ExamModeId,
+                ExamModeTitle = exam.ExamMode?.Title,
+
+                IsCapacityDefined = capacity is not null,
+                CapacityId = capacity?.Id,
+
+                AllocatedCapacity = capacity?.AllocatedCapacity,
+                OwnCapacity = capacity?.OwnCapacity,
+
+                CapacityIsActive = capacity?.IsActive,
+
+                RegisteredCount = usage?.RegisteredCount ?? 0,
+                OwnRegisteredCount = usage?.OwnRegisteredCount ?? 0,
+                GuestRegisteredCount = usage?.GuestRegisteredCount ?? 0,
+                TotalGuestCapacity = usage?.TotalGuestCapacity ?? 0
+            };
+        }).ToList();
+    }
 
     private static UniversityExamCapacityDto MapToDto(
         UniversityExamCapacity capacity)

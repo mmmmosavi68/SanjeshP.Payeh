@@ -79,4 +79,25 @@ public interface IUniversityExamCapacityRepository
     Task<int> GetTotalGuestCapacityAsync(
     Guid universityExamCapacityId,
     CancellationToken cancellationToken);
+
+    /// <summary>
+    /// آمار ثبت‌نام و مجموع ظرفیت مهمان چند ظرفیت دانشگاه (بدون N+1)
+    /// </summary>
+    Task<Dictionary<Guid, UniversityExamCapacityUsage>> GetCapacityUsageAsync(
+        int universityId,
+        IReadOnlyCollection<Guid> capacityIds,
+        CancellationToken cancellationToken);
+
+    /// <summary>
+    /// تعداد ثبت‌نام‌های هر ظرفیت دانشگاه مهمان
+    /// </summary>
+    Task<Dictionary<Guid, int>> GetGuestRegistrationCountsAsync(
+        IReadOnlyCollection<Guid> guestCapacityIds,
+        CancellationToken cancellationToken);
 }
+
+public sealed record UniversityExamCapacityUsage(
+    int RegisteredCount,
+    int OwnRegisteredCount,
+    int GuestRegisteredCount,
+    int TotalGuestCapacity);

@@ -1,4 +1,5 @@
 ﻿
+using SanjeshP.Payeh.Data.Contracts.Exams;
 using SanjeshP.Payeh.Entities.Exam;
 using SanjeshP.Payeh.Entities.University;
 
@@ -39,6 +40,15 @@ public interface IUniversityExamCapacityService
         Guid userId,
         int universityId,
         Guid examId,
+        CancellationToken cancellationToken);
+
+    Task<Dictionary<Guid, UniversityExamCapacityUsage>> GetCapacityUsageAsync(
+        int universityId,
+        IReadOnlyCollection<Guid> capacityIds,
+        CancellationToken cancellationToken);
+
+    Task<Dictionary<Guid, int>> GetGuestRegistrationCountsAsync(
+        IReadOnlyCollection<Guid> guestCapacityIds,
         CancellationToken cancellationToken);
 
 }

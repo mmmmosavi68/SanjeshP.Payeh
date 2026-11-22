@@ -521,4 +521,24 @@ public sealed class UniversityExamCapacityService
             universityExamCapacity.Id,
             cancellationToken);
     }
+
+    public Task<Dictionary<Guid, UniversityExamCapacityUsage>> GetCapacityUsageAsync(
+        int universityId,
+        IReadOnlyCollection<Guid> capacityIds,
+        CancellationToken cancellationToken)
+    {
+        return _repository.GetCapacityUsageAsync(
+            universityId,
+            capacityIds,
+            cancellationToken);
+    }
+
+    public Task<Dictionary<Guid, int>> GetGuestRegistrationCountsAsync(
+        IReadOnlyCollection<Guid> guestCapacityIds,
+        CancellationToken cancellationToken)
+    {
+        return _repository.GetGuestRegistrationCountsAsync(
+            guestCapacityIds,
+            cancellationToken);
+    }
 }

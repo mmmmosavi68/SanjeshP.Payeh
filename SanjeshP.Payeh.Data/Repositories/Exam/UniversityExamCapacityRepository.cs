@@ -288,4 +288,82 @@ public sealed class UniversityExamCapacityRepository
                 !x.GuestUniversity.IsDeleted)
             .SumAsync(x => x.Capacity, cancellationToken);
     }
+
+    public async Task<Dictionary<Guid, UniversityExamCapacityUsage>> GetCapacityUsageAsync(
+        int universityId,
+        IReadOnlyCollection<Guid> capacityIds,
+        CancellationToken cancellationToken)
+    {
+        var result = new Dictionary<Guid, UniversityExamCapacityUsage>();
+
+        if (capacityIds.Count == 0)
+            return result;
+
+        var ids = capacityIds.Distinct().ToList();
+
+        var registrations = await _dbContext.Set<ExamRegistration>()
+            .AsNoTracking()
+            .Where(x =>
+                ids.Contains(x.UniversityExamCapacityId) &&
+                !x.IsDeleted)
+            .GroupBy(x => x.UniversityExamCapacityId)
+            .Select(g => new
+            {
+                CapacityId = g.Key,
+                Total = g.Count(),
+                Own = g.Count(x => x.UniversityId == universityId),
+                Guest = g.Count(x => x.UniversityExamGuestCapacityId != null)
+            })
+            .ToDictionaryAsync(x => x.CapacityId, cancellationToken);
+
+        var guestTotals = await _dbContext.Set<UniversityExamGuestCapacity>()
+            .AsNoTracking()
+            .Where(x =>
+                ids.Contains(x.UniversityExamCapacityId) &&
+                x.IsActive &&
+                !x.IsDeleted &&
+                x.GuestUniversity.IsActive &&
+                !x.GuestUniversity.IsDeleted)
+            .GroupBy(x => x.UniversityExamCapacityId)
+            .Select(g => new
+            {
+                CapacityId = g.Key,
+                Sum = g.Sum(x => x.Capacity)
+            })
+            .ToDictionaryAsync(x => x.CapacityId, x => x.Sum, cancellationToken);
+
+        foreach (var id in ids)
+        {
+            registrations.TryGetValue(id, out var reg);
+            guestTotals.TryGetValue(id, out var guestTotal);
+
+            result[id] = new UniversityExamCapacityUsage(
+                reg?.Total ?? 0,
+                reg?.Own ?? 0,
+                reg?.Guest ?? 0,
+                guestTotal);
+        }
+
+        return result;
+    }
+
+    public async Task<Dictionary<Guid, int>> GetGuestRegistrationCountsAsync(
+        IReadOnlyCollection<Guid> guestCapacityIds,
+        CancellationToken cancellationToken)
+    {
+        if (guestCapacityIds.Count == 0)
+            return new Dictionary<Guid, int>();
+
+        var ids = guestCapacityIds.Distinct().ToList();
+
+        return await _dbContext.Set<ExamRegistration>()
+            .AsNoTracking()
+            .Where(x =>
+                x.UniversityExamGuestCapacityId != null &&
+                ids.Contains(x.UniversityExamGuestCapacityId.Value) &&
+                !x.IsDeleted)
+            .GroupBy(x => x.UniversityExamGuestCapacityId!.Value)
+            .Select(g => new { GuestCapacityId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.GuestCapacityId, x => x.Count, cancellationToken);
+    }
 }

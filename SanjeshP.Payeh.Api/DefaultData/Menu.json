@@ -1520,6 +1520,47 @@
     "IsDeleted": false,
     "CreatedBy": "29F48A89-338F-4A3E-B971-EB15F525F920",
     "HostIp": "::2"
+  },
+  {
+    "Id": "00000000-0000-0000-0000-000000000090",
+    "MenuTitle": "دریافت ظرفیت دانشگاه‌های مهمان",
+    "ParentId": "00000000-0000-0000-0000-00000000008B",
+    "PageCode": 905,
+    "Path": null,
+    "version": "1",
+    "ControllerName": "UniversityExamCapacities",
+    "ActionName": "GetGuestCapacities",
+    "ShowMenu": false,
+    "CssClass": "",
+    "Icon": "",
+    "Link": "No Link",
+    "CreatedDate": "2026-11-18T00:00:00",
+    "UpdatedDate": null,
+    "IsActive": true,
+    "IsDeleted": false,
+    "CreatedBy": "29F48A89-338F-4A3E-B971-EB15F525F920",
+    "HostIp": "::2"
+  },
+  {
+    "Id": "00000000-0000-0000-0000-000000000091",
+    "MenuTitle": "ثبت و ویرایش ظرفیت دانشگاه مهمان",
+    "ParentId": "00000000-0000-0000-0000-00000000008B",
+    "PageCode": 906,
+    "Path": null,
+    "version": "1",
+    "ControllerName": "UniversityExamCapacities",
+    "ActionName": "SaveGuestCapacity",
+    "ShowMenu": false,
+    "CssClass": "",
+    "Icon": "",
+    "Link": "No Link",
+    "CreatedDate": "2026-11-18T00:00:00",
+    "UpdatedDate": null,
+    "IsActive": true,
+    "IsDeleted": false,
+    "CreatedBy": "29F48A89-338F-4A3E-B971-EB15F525F920",
+    "HostIp": "::2"
   }
+
 
 ]

@@ -3,6 +3,7 @@ using SanjeshP.Payeh.Data.Contracts;
 using SanjeshP.Payeh.Entities.Common;
 using SanjeshP.Payeh.Entities.Group;
 using SanjeshP.Payeh.Entities.Menu;
+using SanjeshP.Payeh.Entities.University;
 using SanjeshP.Payeh.Entities.User;
 using System;
 using System.Collections.Generic;
@@ -54,6 +55,8 @@ namespace SanjeshP.Payeh.Services.DataInitializer
         private readonly IEFRepository<UserAccessMenus> eFUserAccessMenusRepository;
         private readonly IEFRepository<UserRole> eFUserRoleRepository;
         private readonly IEFRepository<Code> eFCodeRepository;
+        private readonly IEFRepository<University> eFUniversityRepository;
+
         public UserDataInitializer(
               IEFRepository<Role> eFRoleRepository
             , IEFRepository<UserEntity> eFUserRepository
@@ -64,7 +67,8 @@ namespace SanjeshP.Payeh.Services.DataInitializer
             , IEFRepository<GroupAccessMenus> eFGroupAccessMenusRepository
             , IEFRepository<UserAccessMenus> eFUserAccessMenusRepository
             , IEFRepository<UserRole> eFUserRoleRepository
-            , IEFRepository<Code> eFCodeRepository)
+            , IEFRepository<Code> eFCodeRepository
+            , IEFRepository<University> eFUniversityRepository)
         {
             this.eFRoleRepository = eFRoleRepository;
             this.eFUserRepository = eFUserRepository;
@@ -76,6 +80,7 @@ namespace SanjeshP.Payeh.Services.DataInitializer
             this.eFUserAccessMenusRepository = eFUserAccessMenusRepository;
             this.eFUserRoleRepository = eFUserRoleRepository;
             this.eFCodeRepository = eFCodeRepository;
+            this.eFUniversityRepository = eFUniversityRepository;
         }
 
         public void InitializeData()
@@ -98,6 +103,7 @@ namespace SanjeshP.Payeh.Services.DataInitializer
             SeedUserAccessMenus(path, admin.Id);
             SeedRolesAndAdminRole(path, admin.Id);
             SeedCodes(path, admin.Id);
+            SeedUniversities(path, admin.Id);
         }
 
         // ───────────────────────────── User ─────────────────────────────
@@ -320,6 +326,153 @@ namespace SanjeshP.Payeh.Services.DataInitializer
                 SeedCodeItem(item, null, adminId, existingCodes);
             }
         }
+
+
+        private void SeedUniversities(string path, Guid adminId)
+        {
+            var items = ReadJson<UniversitySeedItem>(
+                path,
+                "Universities.json");
+
+            if (items.Count == 0)
+                return;
+
+            // رکوردهای فعلی دانشگاه‌ها
+            var existingUniversities = eFUniversityRepository.TableNoTracking
+                .IgnoreQueryFilters()
+                .ToList();
+
+            // نگاشت شناسه داخل JSON به شناسه واقعی دیتابیس
+            var idMap = new Dictionary<int, int>();
+
+            // برای جلوگیری از ایجاد رکورد تکراری بر اساس نام
+            var existingByTitle = existingUniversities
+                .GroupBy(p => NormalizeUniversityTitle(p.Title))
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.First());
+
+            // نام‌های قدیمی موجود در دیتابیس را با نام جدید تطبیق می‌دهیم
+            var aliases = new Dictionary<string, string>
+            {
+                ["دانشگاه ایران"] = "دانشگاه علوم پزشکی ایران",
+                ["دانشگاه تهران"] = "دانشگاه علوم پزشکی تهران",
+                ["داشنگاه تهران - پردیس کیش"] =
+                    "دانشگاه علوم پزشکی تهران - پردیس بین الملل کیش"
+            };
+
+            string CanonicalTitle(string title)
+            {
+                title = NormalizeUniversityTitle(title);
+
+                if (aliases.TryGetValue(title, out var canonical))
+                    return NormalizeUniversityTitle(canonical);
+
+                return title;
+            }
+
+            // ابتدا دانشگاه‌های اصلی و سپس پردیس‌ها
+            var orderedItems = items
+                .OrderBy(p => p.ParentUniversityId.HasValue)
+                .ThenBy(p => p.Id)
+                .ToList();
+
+            foreach (var item in orderedItems)
+            {
+                var titleKey = CanonicalTitle(item.Title);
+
+                // پیدا کردن دانشگاه موجود بر اساس نام
+                existingByTitle.TryGetValue(titleKey, out var university);
+
+                var isNew = university == null;
+
+                if (isNew)
+                {
+                    university = new University();
+                }
+
+                university!.Title = item.Title;
+                university.UniversityTypeId = item.UniversityTypeId;
+                university.Region = item.Region;
+                university.CapacityApproved = item.CapacityApproved;
+
+                // اتصال پردیس به دانشگاه اصلی
+                if (item.ParentUniversityId.HasValue)
+                {
+                    var sourceParentId = item.ParentUniversityId.Value;
+
+                    if (!idMap.TryGetValue(sourceParentId, out var actualParentId))
+                    {
+                        throw new InvalidOperationException(
+                            $"دانشگاه اصلی برای پردیس '{item.Title}' پیدا نشد. " +
+                            $"شناسه موقت والد در JSON: {sourceParentId}");
+                    }
+
+                    university.ParentUniversityId = actualParentId;
+                }
+                else
+                {
+                    university.ParentUniversityId = null;
+                }
+
+                if (isNew)
+                {
+                    // Id را تنظیم نمی‌کنیم؛ دیتابیس شناسه واقعی تولید می‌کند
+                    Stamp(university, adminId);
+
+                    eFUniversityRepository.Add(university);
+
+                    // Add باید رکورد را ذخیره کرده باشد تا Id واقعی تولید شود
+                    if (university.Id <= 0)
+                    {
+                        throw new InvalidOperationException(
+                            $"شناسه دانشگاه '{university.Title}' بعد از درج تولید نشد.");
+                    }
+
+                    existingByTitle[titleKey] = university;
+                }
+                else
+                {
+                    university.UpdatedDate = DateTime.UtcNow;
+
+                    eFUniversityRepository.Update(university);
+                }
+
+                // نگاشت شناسه موقت JSON به شناسه واقعی دیتابیس
+                idMap[item.Id] = university.Id;
+            }
+        }
+
+        private static string NormalizeUniversityTitle(string title)
+        {
+            if (string.IsNullOrWhiteSpace(title))
+                return string.Empty;
+
+            return title
+                .Trim()
+                .Replace("ي", "ی")
+                .Replace("ك", "ک")
+                .Replace("‌", "")
+                .ToLowerInvariant();
+        }
+
+        private sealed class UniversitySeedItem
+        {
+            // شناسه موقت داخل JSON؛ الزاماً Id دیتابیس نیست
+            public int Id { get; set; }
+
+            public string Title { get; set; } = string.Empty;
+
+            public int UniversityTypeId { get; set; }
+
+            public int Region { get; set; }
+
+            public int CapacityApproved { get; set; }
+
+            public int? ParentUniversityId { get; set; }
+        }
+
+
 
         private void SeedCodeItem(
             CodeSeedItem item,
