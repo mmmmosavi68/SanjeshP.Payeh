@@ -1574,7 +1574,7 @@
     "ShowMenu": true,
     "CssClass": "nav-item",
     "Icon": "clipboard-pen",
-    "Link": "/exam-registrations",
+    "Link": "/student-registrations",
     "CreatedDate": "2026-11-23T00:00:00",
     "UpdatedDate": null,
     "IsActive": true,
@@ -1721,7 +1721,25 @@
     "IsDeleted": false,
     "CreatedBy": "29F48A89-338F-4A3E-B971-EB15F525F920",
     "HostIp": "::2"
+  },
+  {
+    "Id": "00000000-0000-0000-0000-00000000009A",
+    "MenuTitle": "دریافت گزینه‌های فرم ثبت‌نام",
+    "ParentId": "00000000-0000-0000-0000-000000000092",
+    "PageCode": 1008,
+    "Path": null,
+    "version": "1",
+    "ControllerName": "ExamRegistrations",
+    "ActionName": "GetRegistrationOptions",
+    "ShowMenu": false,
+    "CssClass": "nav-item",
+    "Icon": "list",
+    "Link": "No Link",
+    "CreatedDate": "2026-11-23T00:00:00",
+    "UpdatedDate": null,
+    "IsActive": true,
+    "IsDeleted": false,
+    "CreatedBy": "29F48A89-338F-4A3E-B971-EB15F525F920",
+    "HostIp": "::2"
   }
-
-
 ]
