@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using SanjeshP.Payeh.Api.DTOs.ExamRegistrations;
 using SanjeshP.Payeh.Common;
 using SanjeshP.Payeh.Entities.Exam;
+using SanjeshP.Payeh.Entities.University;
 using SanjeshP.Payeh.Services.Exams;
 using SanjeshP.Payeh.WebFramework.Api;
 
@@ -18,6 +19,52 @@ public sealed class ExamRegistrationsController : BaseController
     public ExamRegistrationsController(IExamRegistrationService service)
     {
         _service = service;
+    }
+
+    /// <summary>
+    /// دریافت دانشگاه‌های مجاز کاربر واردشده
+    /// </summary>
+    [HttpGet("universities")]
+    [ProducesResponseType(typeof(ApiResult<List<ExamRegistrationUniversityDto>>), StatusCodes.Status200OK)]
+    public async Task<ApiResult<List<ExamRegistrationUniversityDto>>> GetAccessibleUniversities(
+        CancellationToken cancellationToken)
+    {
+        var universities = await _service.GetAccessibleUniversitiesAsync(
+            CurrentUserId,
+            cancellationToken);
+
+        var result = universities
+            .Select(MapToUniversityDto)
+            .ToList();
+
+        return new ApiResult<List<ExamRegistrationUniversityDto>>(
+            true,
+            ApiResultStatusCode.Success,
+            result);
+    }
+
+    /// <summary>
+    /// دریافت آزمون‌های قابل ثبت‌نام برای دانشگاه انتخاب‌شده
+    /// </summary>
+    [HttpGet("exams")]
+    [ProducesResponseType(typeof(ApiResult<List<ExamRegistrationExamDto>>), StatusCodes.Status200OK)]
+    public async Task<ApiResult<List<ExamRegistrationExamDto>>> GetAvailableExams(
+        [FromQuery] int universityId,
+        CancellationToken cancellationToken)
+    {
+        var exams = await _service.GetAvailableExamsAsync(
+            universityId,
+            CurrentUserId,
+            cancellationToken);
+
+        var result = exams
+            .Select(MapToExamDto)
+            .ToList();
+
+        return new ApiResult<List<ExamRegistrationExamDto>>(
+            true,
+            ApiResultStatusCode.Success,
+            result);
     }
 
     /// <summary>
@@ -49,13 +96,13 @@ public sealed class ExamRegistrationsController : BaseController
             EmergencyPhoneNumber = dto.EmergencyPhoneNumber
         };
 
-        var customValues = dto.CustomFieldValues
+        var customValues = dto.CustomFieldValues?
             .Select(x => new ExamRegistrationCustomFieldValue
             {
                 ExamCustomFieldId = x.ExamCustomFieldId,
                 Value = x.Value
             })
-            .ToList();
+            .ToList() ?? [];
 
         var created = await _service.CreateAsync(
             registration,
@@ -71,15 +118,19 @@ public sealed class ExamRegistrationsController : BaseController
     }
 
     /// <summary>
-    /// دریافت ثبت‌نام‌های یک آزمون
+    /// دریافت ثبت‌نام‌های یک آزمون در دانشگاه انتخاب‌شده
     /// </summary>
     [HttpGet]
+    [ProducesResponseType(typeof(ApiResult<List<ExamRegistrationDto>>), StatusCodes.Status200OK)]
     public async Task<ApiResult<List<ExamRegistrationDto>>> GetByExam(
         [FromQuery] Guid examId,
+        [FromQuery] int universityId,
         CancellationToken cancellationToken)
     {
         var registrations = await _service.GetByExamAsync(
             examId,
+            universityId,
+            CurrentUserId,
             cancellationToken);
 
         return new ApiResult<List<ExamRegistrationDto>>(
@@ -92,12 +143,14 @@ public sealed class ExamRegistrationsController : BaseController
     /// دریافت جزئیات یک ثبت‌نام
     /// </summary>
     [HttpGet("{id:guid}")]
+    [ProducesResponseType(typeof(ApiResult<ExamRegistrationDto>), StatusCodes.Status200OK)]
     public async Task<ApiResult<ExamRegistrationDto>> GetById(
         [FromRoute] Guid id,
         CancellationToken cancellationToken)
     {
         var registration = await _service.GetByIdAsync(
             id,
+            CurrentUserId,
             cancellationToken);
 
         return new ApiResult<ExamRegistrationDto>(
@@ -107,19 +160,92 @@ public sealed class ExamRegistrationsController : BaseController
     }
 
     /// <summary>
+    /// ویرایش اطلاعات داوطلب
+    /// </summary>
+    [HttpPut("{id:guid}")]
+    [ProducesResponseType(typeof(ApiResult<ExamRegistrationDto>), StatusCodes.Status200OK)]
+    public async Task<ApiResult<ExamRegistrationDto>> Update(
+        [FromRoute] Guid id,
+        [FromBody] UpdateExamRegistrationDto dto,
+        CancellationToken cancellationToken)
+    {
+        var registration = new ExamRegistration
+        {
+            UniversityId = dto.UniversityId,
+            ExamVenueUniversityId = dto.ExamVenueUniversityId,
+            UniversityExamCapacityId = dto.UniversityExamCapacityId,
+            UniversityExamGuestCapacityId = dto.UniversityExamGuestCapacityId,
+            FirstName = dto.FirstName,
+            LastName = dto.LastName,
+            FatherName = dto.FatherName,
+            NationalCode = dto.NationalCode,
+            GenderId = dto.GenderId,
+            BirthCertificateNumber = dto.BirthCertificateNumber,
+            BirthDate = dto.BirthDate,
+            StudentNumber = dto.StudentNumber,
+            EntryYear = dto.EntryYear,
+            PhoneNumber = dto.PhoneNumber,
+            EmergencyPhoneNumber = dto.EmergencyPhoneNumber
+        };
+
+        var customValues = dto.CustomFieldValues?
+            .Select(x => new ExamRegistrationCustomFieldValue
+            {
+                ExamCustomFieldId = x.ExamCustomFieldId,
+                Value = x.Value
+            })
+            .ToList() ?? [];
+
+        var updated = await _service.UpdateAsync(
+            id,
+            registration,
+            customValues,
+            CurrentUserId,
+            cancellationToken);
+
+        return new ApiResult<ExamRegistrationDto>(
+            true,
+            ApiResultStatusCode.Success,
+            MapToDto(updated),
+            "اطلاعات داوطلب با موفقیت ویرایش شد.");
+    }
+
+    /// <summary>
     /// حذف نرم ثبت‌نام
     /// </summary>
     [HttpDelete("{id:guid}")]
+    [ProducesResponseType(typeof(ApiResult), StatusCodes.Status200OK)]
     public async Task<ApiResult> Delete(
         [FromRoute] Guid id,
         CancellationToken cancellationToken)
     {
-        await _service.SoftDeleteAsync(id, cancellationToken);
+        await _service.SoftDeleteAsync(
+            id,
+            CurrentUserId,
+            cancellationToken);
 
         return new ApiResult(
             true,
             ApiResultStatusCode.Success,
             "ثبت‌نام با موفقیت حذف شد.");
+    }
+
+    private static ExamRegistrationUniversityDto MapToUniversityDto(University university)
+    {
+        return new ExamRegistrationUniversityDto
+        {
+            UniversityId = university.Id,
+            UniversityTitle = university.Title
+        };
+    }
+
+    private static ExamRegistrationExamDto MapToExamDto(Exam exam)
+    {
+        return new ExamRegistrationExamDto
+        {
+            ExamId = exam.Id,
+            ExamTitle = exam.Title
+        };
     }
 
     private static ExamRegistrationDto MapToDto(ExamRegistration item)

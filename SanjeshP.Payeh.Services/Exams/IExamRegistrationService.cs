@@ -1,15 +1,16 @@
 ﻿
 using SanjeshP.Payeh.Entities.Exam;
+using SanjeshP.Payeh.Entities.University;
 
 namespace SanjeshP.Payeh.Services.Exams;
 
 public interface IExamRegistrationService
 {
-    Task<List<ExamRegistrationUniversityDto>> GetAccessibleUniversitiesAsync(
+    Task<List<University>> GetAccessibleUniversitiesAsync(
         Guid userId,
         CancellationToken cancellationToken);
 
-    Task<List<ExamRegistrationExamDto>> GetAvailableExamsAsync(
+    Task<List<Exam>> GetAvailableExamsAsync(
         int universityId,
         Guid userId,
         CancellationToken cancellationToken);
