@@ -67,6 +67,68 @@ public sealed class ExamRegistrationsController : BaseController
             result);
     }
 
+
+
+
+    /// <summary>
+    /// دریافت ظرفیت‌های قابل انتخاب و فیلدهای اختصاصی فرم ثبت‌نام
+    /// </summary>
+    [HttpGet("options")]
+    [ProducesResponseType(typeof(ApiResult<ExamRegistrationOptionsDto>), StatusCodes.Status200OK)]
+    public async Task<ApiResult<ExamRegistrationOptionsDto>> GetRegistrationOptions(
+        [FromQuery] Guid examId,
+        [FromQuery] int universityId,
+        CancellationToken cancellationToken)
+    {
+        var options = await _service.GetRegistrationOptionsAsync(
+            examId,
+            universityId,
+            CurrentUserId,
+            cancellationToken);
+
+        var result = new ExamRegistrationOptionsDto
+        {
+            Capacities = options.Capacities.Select(x =>
+            {
+                var isOwnUniversity = x.UniversityId == universityId;
+                var guestCapacity = x.GuestCapacities.FirstOrDefault();
+
+                return new ExamRegistrationCapacityOptionDto
+                {
+                    UniversityExamCapacityId = x.Id,
+                    ExamVenueUniversityId = x.UniversityId,
+                    ExamVenueUniversityTitle = x.University.Title,
+                    AllocatedCapacity = x.AllocatedCapacity,
+                    OwnCapacity = x.OwnCapacity,
+                    IsOwnUniversity = isOwnUniversity,
+                    UniversityExamGuestCapacityId = isOwnUniversity
+                        ? null
+                        : guestCapacity?.Id,
+                    GuestCapacity = isOwnUniversity
+                        ? null
+                        : guestCapacity?.Capacity
+                };
+            }).ToList(),
+
+            CustomFields = options.CustomFields.Select(x =>
+                new ExamRegistrationCustomFieldDto
+                {
+                    Id = x.Id,
+                    Name = x.Name,
+                    Label = x.Label,
+                    FieldTypeId = x.FieldTypeId,
+                    IsRequired = x.IsRequired,
+                    OptionsJson = x.OptionsJson,
+                    ValidationJson = x.ValidationJson,
+                    DisplayOrder = x.DisplayOrder
+                }).ToList()
+        };
+
+        return new ApiResult<ExamRegistrationOptionsDto>(
+            true,
+            ApiResultStatusCode.Success,
+            result);
+    }
     /// <summary>
     /// ثبت اطلاعات داوطلب توسط کارشناس واردشده به سامانه
     /// </summary>

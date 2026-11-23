@@ -43,4 +43,11 @@ public interface IExamRegistrationService
         Guid id,
         Guid userId,
         CancellationToken cancellationToken);
+
+    Task<(List<UniversityExamCapacity> Capacities, List<ExamCustomField> CustomFields)>
+    GetRegistrationOptionsAsync(
+        Guid examId,
+        int universityId,
+        Guid userId,
+        CancellationToken cancellationToken);
 }

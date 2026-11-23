@@ -49,7 +49,10 @@ public sealed class ExamRegistrationService : IExamRegistrationService, IScopedD
         if (universityId <= 0)
             throw new BadRequestException("دانشگاه انتخاب‌شده معتبر نیست.");
 
-        await EnsureUniversityAccessAsync(userId, universityId, cancellationToken);
+        await EnsureUniversityAccessAsync(
+            userId,
+            universityId,
+            cancellationToken);
 
         var now = DateTime.UtcNow;
 
@@ -62,9 +65,12 @@ public sealed class ExamRegistrationService : IExamRegistrationService, IScopedD
                 x.UniversityExamCapacities.Any(c =>
                     c.IsActive &&
                     c.University.IsActive &&
-                    c.GuestCapacities.Any(g =>
-                        g.IsActive &&
-                        g.GuestUniversityId == universityId)))
+                    (
+                        c.UniversityId == universityId ||
+                        c.GuestCapacities.Any(g =>
+                            g.IsActive &&
+                            g.GuestUniversityId == universityId)
+                    )))
             .OrderByDescending(x => x.RegistrationStartDate)
             .ToListAsync(cancellationToken);
     }
@@ -631,6 +637,68 @@ public sealed class ExamRegistrationService : IExamRegistrationService, IScopedD
         }
 
         return false;
+    }
+
+
+    public async Task<(List<UniversityExamCapacity> Capacities, List<ExamCustomField> CustomFields)>
+    GetRegistrationOptionsAsync(
+        Guid examId,
+        int universityId,
+        Guid userId,
+        CancellationToken cancellationToken)
+    {
+        if (examId == Guid.Empty)
+            throw new BadRequestException("آزمون انتخاب‌شده معتبر نیست.");
+
+        if (universityId <= 0)
+            throw new BadRequestException("دانشگاه انتخاب‌شده معتبر نیست.");
+
+        await EnsureUniversityAccessAsync(
+            userId,
+            universityId,
+            cancellationToken);
+
+        var now = DateTime.UtcNow;
+
+        var examExists = await _db.Set<Exam>()
+            .AnyAsync(x =>
+                x.Id == examId &&
+                x.IsActive &&
+                x.RegistrationStartDate <= now &&
+                x.RegistrationEndDate >= now,
+                cancellationToken);
+
+        if (!examExists)
+            throw new BadRequestException("آزمون فعال یا در بازه ثبت‌نام نیست.");
+
+        var capacities = await _db.Set<UniversityExamCapacity>()
+            .AsNoTracking()
+            .Where(x =>
+                x.ExamId == examId &&
+                x.IsActive &&
+                x.University.IsActive &&
+                (
+                    x.UniversityId == universityId ||
+                    x.GuestCapacities.Any(g =>
+                        g.IsActive &&
+                        g.GuestUniversityId == universityId)
+                ))
+            .Include(x => x.University)
+            .Include(x => x.GuestCapacities
+                .Where(g =>
+                    g.IsActive &&
+                    g.GuestUniversityId == universityId))
+                .ThenInclude(x => x.GuestUniversity)
+            .OrderBy(x => x.University.Title)
+            .ToListAsync(cancellationToken);
+
+        var customFields = await _db.Set<ExamCustomField>()
+            .AsNoTracking()
+            .Where(x => x.ExamId == examId && x.IsActive)
+            .OrderBy(x => x.DisplayOrder)
+            .ToListAsync(cancellationToken);
+
+        return (capacities, customFields);
     }
 }
     
