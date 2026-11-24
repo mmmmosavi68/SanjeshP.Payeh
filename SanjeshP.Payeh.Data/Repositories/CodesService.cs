@@ -422,4 +422,57 @@ public sealed class CodesService : ICodesService, IScopedDependency
     }
 
     #endregion
+
+
+    public async Task<List<Code>> GetManagementGroupsAsync(
+    CancellationToken cancellationToken)
+    {
+        var root = await GetRootAsync(cancellationToken);
+
+        if (root is null)
+            return [];
+
+        return await _repository.TableNoTracking
+            .Where(x =>
+                x.ParentId == root.Id &&
+                x.SubCode == 0)
+            .OrderBy(x => x.PrimaryCode)
+            .ThenBy(x => x.Title)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<List<Code>> GetManagementItemsAsync(
+        int groupId,
+        CancellationToken cancellationToken)
+    {
+        var root = await GetRootAsync(cancellationToken);
+
+        if (root is null)
+        {
+            throw new BadRequestException(
+                "ساختار اصلی کدها در سیستم پیدا نشد.");
+        }
+
+        var group = await GetByIdAsync(
+            groupId,
+            cancellationToken);
+
+        var isGroup =
+            group.ParentId == root.Id &&
+            group.SubCode == 0;
+
+        if (!isGroup)
+        {
+            throw new BadRequestException(
+                "گروه انتخاب‌شده معتبر نیست.");
+        }
+
+        return await _repository.TableNoTracking
+            .Where(x =>
+                x.ParentId == groupId &&
+                x.SubCode > 0)
+            .OrderBy(x => x.SubCode)
+            .ThenBy(x => x.Title)
+            .ToListAsync(cancellationToken);
+    }
 }

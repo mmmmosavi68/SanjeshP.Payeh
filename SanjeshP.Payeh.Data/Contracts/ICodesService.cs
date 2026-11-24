@@ -37,5 +37,12 @@ namespace SanjeshP.Payeh.Data.Contracts
         Task SoftDeleteAsync(
             int id,
             CancellationToken cancellationToken);
+
+        Task<List<Code>> GetManagementGroupsAsync(
+    CancellationToken cancellationToken);
+
+        Task<List<Code>> GetManagementItemsAsync(
+            int groupId,
+            CancellationToken cancellationToken);
     }
 }

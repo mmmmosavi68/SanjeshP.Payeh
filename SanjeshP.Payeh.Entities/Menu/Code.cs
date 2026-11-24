@@ -25,7 +25,7 @@ public class Code : BaseEntity<int>
     [Display(Name = "کد فرعی")]
     public int? SubCode { get; set; }
 
-    [MaxLength(400, ErrorMessage = "اطلاعات اضافی نباید بیش از 400 کاراکتر باشد")]
+    [MaxLength(2000, ErrorMessage = "اطلاعات اضافی نباید بیش از 2000 کاراکتر باشد")]
     [Display(Name = "اطلاعات اضافی")]
     public string? AdditionalInformation { get; set; }
 

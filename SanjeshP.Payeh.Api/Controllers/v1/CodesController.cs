@@ -77,7 +77,39 @@ public sealed class CodesController : BaseController
 
         return items.Select(MapToDto).ToList();
     }
+    /// <summary>
+    /// دریافت گروه‌های اصلی برای مدیریت
+    /// </summary>
+    [HttpGet("management/groups")]
+    [ProducesResponseType(
+        typeof(ApiResult<List<CodeDto>>),
+        StatusCodes.Status200OK)]
+    public async Task<ApiResult<List<CodeDto>>> GetManagementGroups(
+        CancellationToken cancellationToken)
+    {
+        var groups = await _codesService.GetManagementGroupsAsync(
+            cancellationToken);
 
+        return groups.Select(MapToDto).ToList();
+    }
+
+    /// <summary>
+    /// دریافت اعضای یک گروه برای مدیریت
+    /// </summary>
+    [HttpGet("management/groups/{groupId:int}/items")]
+    [ProducesResponseType(
+        typeof(ApiResult<List<CodeDto>>),
+        StatusCodes.Status200OK)]
+    public async Task<ApiResult<List<CodeDto>>> GetManagementItems(
+        [FromRoute] int groupId,
+        CancellationToken cancellationToken)
+    {
+        var items = await _codesService.GetManagementItemsAsync(
+            groupId,
+            cancellationToken);
+
+        return items.Select(MapToDto).ToList();
+    }
     #endregion
 
     #region Create

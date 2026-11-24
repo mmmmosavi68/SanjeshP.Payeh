@@ -103,7 +103,7 @@ namespace SanjeshP.Payeh.Services.DataInitializer
             SeedUserAccessMenus(path, admin.Id);
             SeedRolesAndAdminRole(path, admin.Id);
             SeedCodes(path, admin.Id);
-            SeedUniversities(path, admin.Id);
+            //SeedUniversities(path, admin.Id);
         }
 
         // ───────────────────────────── User ─────────────────────────────
