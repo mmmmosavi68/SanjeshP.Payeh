@@ -216,6 +216,9 @@ public sealed class GroupService : IGroupService, IScopedDependency
         Guid createdBy,
         CancellationToken cancellationToken)
     {
+        if (userId == createdBy)
+            throw new ForbiddenException(ApiMessages.Authorization.SelfAccessChange);
+
         var group = await _uow.Repository<UserGroup>().Entities
             .FirstOrDefaultAsync(
                 x => x.Id == groupId,
@@ -317,6 +320,9 @@ public sealed class GroupService : IGroupService, IScopedDependency
         Guid createdBy,
         CancellationToken cancellationToken)
     {
+        if (userIds is not null && userIds.Contains(createdBy))
+            throw new ForbiddenException(ApiMessages.Authorization.SelfAccessChange);
+
         if (userIds is null || userIds.Count == 0)
             throw new BadRequestException(
                 ApiMessages.Group.M008);
@@ -524,6 +530,16 @@ public sealed class GroupService : IGroupService, IScopedDependency
         Guid updatedBy,
         CancellationToken cancellationToken)
     {
+        if (menuIds is { Count: > 0 })
+        {
+            var alreadyAssigned = await _uow.Repository<GroupAccessMenus>().Entities
+                .Where(x => x.GroupId == groupId && x.IsActive && !x.IsDeleted)
+                .Select(x => x.MenuId)
+                .ToListAsync(cancellationToken);
+
+            await _permissionService.EnsureCanGrantMenusAsync(updatedBy, menuIds.Except(alreadyAssigned), cancellationToken);
+        }
+
         var groupExists = await _uow.Repository<UserGroup>().Entities
             .AnyAsync(x => x.Id == groupId, cancellationToken);
 

@@ -63,6 +63,15 @@ public sealed class UserManagementService : IUserManagementService, IScopedDepen
         Guid updatedBy,
         CancellationToken cancellationToken)
     {
+        if (userId == updatedBy)
+            throw new ForbiddenException(ApiMessages.Authorization.SelfAccessChange);
+
+        if (menuIds is { Count: > 0 })
+        {
+            var alreadyAssigned = await GetAssignedMenuIdsAsync(userId, cancellationToken);
+            await _permissionService.EnsureCanGrantMenusAsync(updatedBy, menuIds.Except(alreadyAssigned), cancellationToken);
+        }
+
         var userExists = await _uow.Repository<User>().Entities
             .AnyAsync(
                 x => x.Id == userId && !x.IsDeleted,
@@ -319,6 +328,9 @@ public sealed class UserManagementService : IUserManagementService, IScopedDepen
         Guid updatedBy,
         CancellationToken cancellationToken)
     {
+        if (userId == updatedBy)
+            throw new ForbiddenException(ApiMessages.Authorization.SelfAccessChange);
+
         var userExists = await _uow.Repository<User>().Entities
             .AnyAsync(
                 x => x.Id == userId && !x.IsDeleted,

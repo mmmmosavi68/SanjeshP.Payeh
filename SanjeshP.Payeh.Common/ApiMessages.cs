@@ -30,4 +30,10 @@ public static partial class ApiMessages
         public static readonly ApiMessage GenderInvalid = new("LOOKUP_006", "جنسیت انتخاب‌شده معتبر نیست.");
         public static readonly ApiMessage ParentCodeInvalid = new("LOOKUP_007", "والد انتخاب‌شده معتبر نیست.");
     }
+
+    public static class Authorization
+    {
+        public static readonly ApiMessage SelfAccessChange = new("AUTHZ_001", "تغییر دسترسی‌ها یا عضویت گروهی حساب کاربری خودتان مجاز نیست.");
+        public static readonly ApiMessage MenuNotGrantable = new("AUTHZ_002", "فقط می‌توانید منوهایی را اعطا کنید که خودتان به آن‌ها دسترسی دارید.");
+    }
 }

@@ -1,4 +1,4 @@
-﻿using SanjeshP.Payeh.Entities.Menu;
+using SanjeshP.Payeh.Entities.Menu;
 namespace SanjeshP.Payeh.Services.Contracts
 {
     /// <summary>
@@ -19,5 +19,9 @@ namespace SanjeshP.Payeh.Services.Contracts
 
         /// <summary>پاک‌کردن کش همه‌ی کاربران (بعد از تغییر دسترسی یک گروه یا تغییر جدول Menu).</summary>
         void InvalidateAll();
-    }
+
+        Task<HashSet<Guid>> GetEffectiveMenuIdsAsync(Guid userId, CancellationToken cancellationToken);
+
+        Task EnsureCanGrantMenusAsync(Guid granterId, IEnumerable<Guid> menuIds, CancellationToken cancellationToken);
+}
 }

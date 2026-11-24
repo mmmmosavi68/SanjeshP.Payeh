@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+using SanjeshP.Payeh.Common.Exceptions;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Primitives;
 using SanjeshP.Payeh.Common;
@@ -124,5 +125,32 @@ namespace SanjeshP.Payeh.Services.Implementations
 
         private static string BuildKey(string? version, string controller, string action)
             => $"{version?.Trim().ToLowerInvariant() ?? string.Empty}|{controller.Trim().ToLowerInvariant()}|{action.Trim().ToLowerInvariant()}";
-    }
+
+        /// <summary>شناسه‌ی همه‌ی منوهای فعال کاربر (مستقیم + از طریق گروه‌ها).</summary>
+        public async Task<HashSet<Guid>> GetEffectiveMenuIdsAsync(Guid userId, CancellationToken cancellationToken)
+        {
+            var direct = _uow.Repository<UserAccessMenus>().TableNoTracking
+                .Where(a => a.UserId == userId && a.IsActive && !a.IsDeleted)
+                .Select(a => a.MenuId);
+
+            var viaGroups = from gu in _uow.Repository<GroupUsers>().TableNoTracking
+                            join ga in _uow.Repository<GroupAccessMenus>().TableNoTracking on gu.GroupId equals ga.GroupId
+                            where gu.UserId == userId && gu.IsActive && !gu.IsDeleted && ga.IsActive && !ga.IsDeleted
+                            select ga.MenuId;
+
+            return (await direct.Union(viaGroups).ToListAsync(cancellationToken)).ToHashSet();
+        }
+
+        /// <summary>جلوگیری از افزایش سطح دسترسی: اعطای منو فقط در محدوده‌ی دسترسی خود اعطاکننده.</summary>
+        public async Task EnsureCanGrantMenusAsync(Guid granterId, IEnumerable<Guid> menuIds, CancellationToken cancellationToken)
+        {
+            var requested = menuIds.Distinct().ToList();
+            if (requested.Count == 0)
+                return;
+
+            var owned = await GetEffectiveMenuIdsAsync(granterId, cancellationToken);
+            if (requested.Any(id => !owned.Contains(id)))
+                throw new ForbiddenException(ApiMessages.Authorization.MenuNotGrantable);
+        }
+}
 }
