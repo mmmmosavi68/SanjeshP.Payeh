@@ -699,6 +699,11 @@ namespace SanjeshP.Payeh.Data.Migrations
 
                     b.HasIndex("ParentId");
 
+                    b.HasIndex("PrimaryCode", "SubCode")
+                        .IsUnique()
+                        .HasDatabaseName("UX_Codes_PrimaryCode_SubCode")
+                        .HasFilter("[PrimaryCode] IS NOT NULL AND [SubCode] IS NOT NULL AND [IsDeleted] = 0");
+
                     b.ToTable("Codes");
                 });
 
@@ -1379,63 +1384,6 @@ namespace SanjeshP.Payeh.Data.Migrations
                     b.ToTable("UserSessions", (string)null);
                 });
 
-            modelBuilder.Entity("SanjeshP.Payeh.Entities.User.UserToken", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier")
-                        .HasDefaultValueSql("NEWSEQUENTIALID()");
-
-                    b.Property<Guid>("CreatedBy")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("DeviceName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("HostIp")
-                        .HasMaxLength(45)
-                        .HasColumnType("nvarchar(45)");
-
-                    b.Property<string>("IpAddress")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Jti")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("RefreshTokenExpireDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("RevocationDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("TokenExpireDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("UpdatedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("UserTokens");
-                });
-
             modelBuilder.Entity("SanjeshP.Payeh.Entities.User.UserUniversity", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1478,58 +1426,6 @@ namespace SanjeshP.Payeh.Data.Migrations
                         .IsUnique();
 
                     b.ToTable("UserUniversities", (string)null);
-                });
-
-            modelBuilder.Entity("SanjeshP.Payeh.Entities.User.UserVerificationCode", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier")
-                        .HasDefaultValueSql("NEWSEQUENTIALID()");
-
-                    b.Property<Guid>("CreatedBy")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("ExpirationDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("HostIp")
-                        .HasMaxLength(45)
-                        .HasColumnType("nvarchar(45)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
-                    b.Property<Guid>("TokenId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime?>("UpdatedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("VerificationCode")
-                        .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)");
-
-                    b.Property<string>("VerificationCodeDesc")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<int>("VerificationType")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TokenId");
-
-                    b.ToTable("UserVerificationCodes");
                 });
 
             modelBuilder.Entity("SanjeshP.Payeh.Entities.Exam.Exam", b =>
@@ -1840,17 +1736,6 @@ namespace SanjeshP.Payeh.Data.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("SanjeshP.Payeh.Entities.User.UserToken", b =>
-                {
-                    b.HasOne("SanjeshP.Payeh.Entities.User.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("SanjeshP.Payeh.Entities.User.UserUniversity", b =>
                 {
                     b.HasOne("SanjeshP.Payeh.Entities.University.University", "University")
@@ -1868,17 +1753,6 @@ namespace SanjeshP.Payeh.Data.Migrations
                     b.Navigation("University");
 
                     b.Navigation("User");
-                });
-
-            modelBuilder.Entity("SanjeshP.Payeh.Entities.User.UserVerificationCode", b =>
-                {
-                    b.HasOne("SanjeshP.Payeh.Entities.User.UserToken", "UserToken")
-                        .WithMany()
-                        .HasForeignKey("TokenId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("UserToken");
                 });
 
             modelBuilder.Entity("SanjeshP.Payeh.Entities.Exam.Exam", b =>
