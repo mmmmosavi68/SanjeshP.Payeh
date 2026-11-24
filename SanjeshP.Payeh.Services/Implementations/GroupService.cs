@@ -1,4 +1,4 @@
-﻿
+
 using Microsoft.EntityFrameworkCore;
 using SanjeshP.Payeh.Common;
 using SanjeshP.Payeh.Common.Exceptions;
@@ -54,7 +54,7 @@ public sealed class GroupService : IGroupService, IScopedDependency
                 cancellationToken);
 
         return group ?? throw new NotFoundException(
-            "گروه مورد نظر یافت نشد.");
+            ApiMessages.Group.M001);
     }
 
     /// <summary>
@@ -71,7 +71,7 @@ public sealed class GroupService : IGroupService, IScopedDependency
 
         if (!exists)
             throw new NotFoundException(
-                "گروه مورد نظر یافت نشد.");
+                ApiMessages.Group.M001);
 
         return await _uow.Repository<GroupUsers>().Entities
             .AsNoTracking()
@@ -98,7 +98,7 @@ public sealed class GroupService : IGroupService, IScopedDependency
 
         if (string.IsNullOrWhiteSpace(groupName))
             throw new BadRequestException(
-                "عنوان گروه الزامی است.");
+                ApiMessages.Group.M002);
 
         var normalizedName = groupName.ToUpperInvariant();
 
@@ -109,7 +109,7 @@ public sealed class GroupService : IGroupService, IScopedDependency
 
         if (exists)
             throw new ConflictException(
-                "گروهی با این عنوان قبلاً ثبت شده است.");
+                ApiMessages.Group.M003);
 
         var group = new UserGroup
         {
@@ -145,13 +145,13 @@ public sealed class GroupService : IGroupService, IScopedDependency
 
         if (group is null)
             throw new NotFoundException(
-                "گروه مورد نظر یافت نشد.");
+                ApiMessages.Group.M001);
 
         groupName = groupName.Trim();
 
         if (string.IsNullOrWhiteSpace(groupName))
             throw new BadRequestException(
-                "عنوان گروه الزامی است.");
+                ApiMessages.Group.M002);
 
         var normalizedName = groupName.ToUpperInvariant();
 
@@ -163,7 +163,7 @@ public sealed class GroupService : IGroupService, IScopedDependency
 
         if (exists)
             throw new ConflictException(
-                "گروهی با این عنوان قبلاً ثبت شده است.");
+                ApiMessages.Group.M003);
 
         var activeChanged = group.IsActive != isActive;
 
@@ -195,7 +195,7 @@ public sealed class GroupService : IGroupService, IScopedDependency
 
         if (group is null)
             throw new NotFoundException(
-                "گروه مورد نظر یافت نشد.");
+                ApiMessages.Group.M001);
 
         group.IsDeleted = true;
         group.IsActive = false;
@@ -223,11 +223,11 @@ public sealed class GroupService : IGroupService, IScopedDependency
 
         if (group is null)
             throw new NotFoundException(
-                "گروه مورد نظر یافت نشد.");
+                ApiMessages.Group.M001);
 
         if (!group.IsActive)
             throw new BadRequestException(
-                "امکان افزودن کاربر به گروه غیرفعال وجود ندارد.");
+                ApiMessages.Group.M004);
 
         var userExists = await _uow.Repository<User>().Entities
             .AnyAsync(
@@ -236,7 +236,7 @@ public sealed class GroupService : IGroupService, IScopedDependency
 
         if (!userExists)
             throw new NotFoundException(
-                "کاربر مورد نظر یافت نشد یا غیرفعال است.");
+                ApiMessages.Group.M005);
 
         // بررسی عضویت فعلی یا عضویت حذف‌شده قبلی
         var membership = await _uow.Repository<GroupUsers>().Entities
@@ -250,7 +250,7 @@ public sealed class GroupService : IGroupService, IScopedDependency
         {
             if (!membership.IsDeleted && membership.IsActive)
                 throw new ConflictException(
-                    "این کاربر در حال حاضر عضو گروه است.");
+                    ApiMessages.Group.M006);
 
             // فعال‌سازی مجدد عضویت قبلی
             membership.IsDeleted = false;
@@ -295,7 +295,7 @@ public sealed class GroupService : IGroupService, IScopedDependency
 
         if (membership is null)
             throw new NotFoundException(
-                "عضویت مورد نظر یافت نشد.");
+                ApiMessages.Group.M007);
 
         membership.IsActive = false;
         membership.IsDeleted = true;
@@ -319,7 +319,7 @@ public sealed class GroupService : IGroupService, IScopedDependency
     {
         if (userIds is null || userIds.Count == 0)
             throw new BadRequestException(
-                "حداقل یک کاربر باید انتخاب شود.");
+                ApiMessages.Group.M008);
 
         var distinctUserIds = userIds
             .Distinct()
@@ -327,11 +327,11 @@ public sealed class GroupService : IGroupService, IScopedDependency
 
         if (distinctUserIds.Any(x => x == Guid.Empty))
             throw new BadRequestException(
-                "شناسه یک یا چند کاربر نامعتبر است.");
+                ApiMessages.Group.M009);
 
         if (distinctUserIds.Count > 200)
             throw new BadRequestException(
-                "حداکثر ۲۰۰ کاربر در هر درخواست قابل انتخاب است.");
+                ApiMessages.Group.M010);
 
         var group = await _uow.Repository<UserGroup>().Entities
             .FirstOrDefaultAsync(
@@ -340,11 +340,11 @@ public sealed class GroupService : IGroupService, IScopedDependency
 
         if (group is null)
             throw new NotFoundException(
-                "گروه مورد نظر یافت نشد.");
+                ApiMessages.Group.M001);
 
         if (!group.IsActive)
             throw new BadRequestException(
-                "امکان افزودن کاربر به گروه غیرفعال وجود ندارد.");
+                ApiMessages.Group.M004);
 
         // اعتبارسنجی تمام کاربران قبل از هرگونه تغییر
         var validUserIds = await _uow.Repository<User>().Entities
@@ -357,7 +357,7 @@ public sealed class GroupService : IGroupService, IScopedDependency
 
         if (validUserIds.Count != distinctUserIds.Count)
             throw new NotFoundException(
-                "یک یا چند کاربر یافت نشدند یا غیرفعال هستند.");
+                ApiMessages.Group.M011);
 
         // دریافت عضویت‌های قبلی، شامل رکوردهای حذف نرم‌شده
         var existingMemberships = await _uow.Repository<GroupUsers>().Entities
@@ -374,7 +374,7 @@ public sealed class GroupService : IGroupService, IScopedDependency
 
         if (alreadyMember)
             throw new ConflictException(
-                "یک یا چند کاربر در حال حاضر عضو گروه هستند.");
+                ApiMessages.Group.M012);
 
         var now = DateTime.UtcNow;
 
@@ -434,7 +434,7 @@ public sealed class GroupService : IGroupService, IScopedDependency
     {
         if (userIds is null || userIds.Count == 0)
             throw new BadRequestException(
-                "حداقل یک کاربر باید انتخاب شود.");
+                ApiMessages.Group.M008);
 
         var distinctUserIds = userIds
             .Distinct()
@@ -442,11 +442,11 @@ public sealed class GroupService : IGroupService, IScopedDependency
 
         if (distinctUserIds.Any(x => x == Guid.Empty))
             throw new BadRequestException(
-                "شناسه یک یا چند کاربر نامعتبر است.");
+                ApiMessages.Group.M009);
 
         if (distinctUserIds.Count > 200)
             throw new BadRequestException(
-                "حداکثر ۲۰۰ کاربر در هر درخواست قابل انتخاب است.");
+                ApiMessages.Group.M010);
 
         var groupExists = await _uow.Repository<UserGroup>().Entities
             .AnyAsync(
@@ -455,7 +455,7 @@ public sealed class GroupService : IGroupService, IScopedDependency
 
         if (!groupExists)
             throw new NotFoundException(
-                "گروه مورد نظر یافت نشد.");
+                ApiMessages.Group.M001);
 
         // دریافت تمام عضویت‌های فعال درخواستی
         var memberships = await _uow.Repository<GroupUsers>().Entities
@@ -469,7 +469,7 @@ public sealed class GroupService : IGroupService, IScopedDependency
         // اگر حتی یک عضویت معتبر نباشد، هیچ تغییری انجام نمی‌شود.
         if (memberships.Count != distinctUserIds.Count)
             throw new NotFoundException(
-                "یک یا چند مورد از عضویت‌های انتخاب‌شده یافت نشدند.");
+                ApiMessages.Group.M013);
 
         var now = DateTime.UtcNow;
 
@@ -505,7 +505,7 @@ public sealed class GroupService : IGroupService, IScopedDependency
             .AnyAsync(x => x.Id == groupId, cancellationToken);
 
         if (!groupExists)
-            throw new NotFoundException("گروه موردنظر یافت نشد.");
+            throw new NotFoundException(ApiMessages.Group.M014);
 
         return await _uow.Repository<GroupAccessMenus>().Entities
             .AsNoTracking()
@@ -528,7 +528,7 @@ public sealed class GroupService : IGroupService, IScopedDependency
             .AnyAsync(x => x.Id == groupId, cancellationToken);
 
         if (!groupExists)
-            throw new NotFoundException("گروه موردنظر یافت نشد.");
+            throw new NotFoundException(ApiMessages.Group.M014);
 
         // حذف شناسه‌های تکراری ارسالی
         var selectedMenuIds = menuIds
@@ -548,7 +548,7 @@ public sealed class GroupService : IGroupService, IScopedDependency
 
             if (validMenuIds.Count != selectedMenuIds.Count)
                 throw new BadRequestException(
-                    "یک یا چند منوی انتخاب‌شده نامعتبر یا غیرفعال هستند.");
+                    ApiMessages.Group.M015);
         }
 
         // دریافت تمام دسترسی‌های قبلی گروه، حتی رکوردهای حذف‌شده

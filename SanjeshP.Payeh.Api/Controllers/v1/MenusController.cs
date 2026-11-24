@@ -84,7 +84,7 @@ public class MenusController : BaseController
             true,
             ApiResultStatusCode.Success,
             _mapper.ToDto(created),
-            "منو با موفقیت ایجاد شد.");
+            ApiMessages.Menus.M001);
 
         return CreatedAtAction(
             nameof(GetById),
@@ -131,6 +131,6 @@ public class MenusController : BaseController
         return new ApiResult(
             true,
             ApiResultStatusCode.Success,
-            "منو با موفقیت حذف شد.");
+            ApiMessages.Menus.M002);
     }
 }

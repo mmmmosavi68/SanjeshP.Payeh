@@ -85,7 +85,7 @@ public sealed class UniversitiesController : BaseController
             true,
             ApiResultStatusCode.Success,
             _mapper.ToDto(created),
-            "دانشگاه با موفقیت ثبت شد.");
+            ApiMessages.Universities.M001);
     }
 
     #endregion
@@ -114,7 +114,7 @@ public sealed class UniversitiesController : BaseController
             true,
             ApiResultStatusCode.Success,
             _mapper.ToDto(updated),
-            "اطلاعات دانشگاه با موفقیت ویرایش شد.");
+            ApiMessages.Universities.M002);
     }
 
     #endregion
@@ -137,7 +137,7 @@ public sealed class UniversitiesController : BaseController
         return new ApiResult(
             true,
             ApiResultStatusCode.Success,
-            "دانشگاه با موفقیت حذف شد.");
+            ApiMessages.Universities.M003);
     }
 
     #endregion

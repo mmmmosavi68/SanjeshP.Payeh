@@ -44,7 +44,7 @@ public sealed class CodesService : ICodesService, IScopedDependency
                 cancellationToken);
 
         if (code is null)
-            throw new NotFoundException("کد موردنظر پیدا نشد.");
+            throw new NotFoundException(ApiMessages.Codes.M001);
 
         return code;
     }
@@ -112,13 +112,13 @@ public sealed class CodesService : ICodesService, IScopedDependency
         if (root is null)
         {
             throw new BadRequestException(
-                "ساختار اصلی کدها در سیستم پیدا نشد.");
+                ApiMessages.Codes.M002);
         }
 
         if (!code.ParentId.HasValue)
         {
             throw new BadRequestException(
-                "انتخاب والد برای ایجاد کد الزامی است.");
+                ApiMessages.Codes.M003);
         }
 
         var parent = await GetActiveCodeAsync(
@@ -131,7 +131,7 @@ public sealed class CodesService : ICodesService, IScopedDependency
             if (code.PrimaryCode is null or <= 0)
             {
                 throw new BadRequestException(
-                    "کد اصلی گروه باید بزرگ‌تر از صفر باشد.");
+                    ApiMessages.Codes.M004);
             }
 
             var duplicateGroup = await _repository.TableNoTracking
@@ -144,7 +144,7 @@ public sealed class CodesService : ICodesService, IScopedDependency
             if (duplicateGroup)
             {
                 throw new BadRequestException(
-                    "این کد اصلی قبلاً برای گروه دیگری ثبت شده است.");
+                    ApiMessages.Codes.M005);
             }
 
             code.SubCode = 0;
@@ -161,7 +161,7 @@ public sealed class CodesService : ICodesService, IScopedDependency
             if (!code.SubCode.HasValue || code.SubCode.Value < 1)
             {
                 throw new BadRequestException(
-                    "کد فرعی آیتم باید مشخص شود.");
+                    ApiMessages.Codes.M006);
             }
 
             var duplicateItem = await _repository.TableNoTracking
@@ -173,7 +173,7 @@ public sealed class CodesService : ICodesService, IScopedDependency
             if (duplicateItem)
             {
                 throw new BadRequestException(
-                    "این کد فرعی قبلاً در گروه انتخاب‌شده ثبت شده است.");
+                    ApiMessages.Codes.M007);
             }
 
             // کد اصلی آیتم از گروه والد گرفته می‌شود.
@@ -214,23 +214,23 @@ public sealed class CodesService : ICodesService, IScopedDependency
         var root = await GetRootAsync(cancellationToken);
 
         if (root is null)
-            throw new BadRequestException("ساختار اصلی کدها در سیستم پیدا نشد.");
+            throw new BadRequestException(ApiMessages.Codes.M002);
 
         if (code.Id == root.Id)
-            throw new BadRequestException("ویرایش کد ریشه امکان‌پذیر نیست.");
+            throw new BadRequestException(ApiMessages.Codes.M008);
 
         ValidateTitle(updatedCode.Title);
         ValidateAdditionalInformation(updatedCode.AdditionalInformation);
 
         if (!updatedCode.ParentId.HasValue)
-            throw new BadRequestException("انتخاب والد الزامی است.");
+            throw new BadRequestException(ApiMessages.Codes.M009);
 
         // تشخیص نوع رکورد فعلی
         var isGroup = code.ParentId == root.Id && code.SubCode == 0;
         var isItem = code.ParentId != root.Id && code.SubCode > 0;
 
         if (!isGroup && !isItem)
-            throw new BadRequestException("ساختار فعلی کد معتبر نیست.");
+            throw new BadRequestException(ApiMessages.Codes.M010);
 
         var parent = await GetActiveCodeAsync(
             updatedCode.ParentId.Value,
@@ -240,10 +240,10 @@ public sealed class CodesService : ICodesService, IScopedDependency
         {
             // گروه باید همچنان مستقیماً زیرمجموعه ریشه باشد.
             if (parent.Id != root.Id)
-                throw new BadRequestException("گروه باید مستقیماً زیرمجموعه ریشه باشد.");
+                throw new BadRequestException(ApiMessages.Codes.M011);
 
             if (updatedCode.PrimaryCode is null or <= 0)
-                throw new BadRequestException("کد اصلی گروه باید بزرگ‌تر از صفر باشد.");
+                throw new BadRequestException(ApiMessages.Codes.M004);
 
             var hasChildren = await _repository.TableNoTracking
                 .AnyAsync(x => x.ParentId == id, cancellationToken);
@@ -251,7 +251,7 @@ public sealed class CodesService : ICodesService, IScopedDependency
             // تغییر PrimaryCode گروه دارای آیتم مجاز نیست.
             if (hasChildren && code.PrimaryCode != updatedCode.PrimaryCode)
                 throw new BadRequestException(
-                    "به دلیل وجود آیتم در این گروه، تغییر کد اصلی امکان‌پذیر نیست.");
+                    ApiMessages.Codes.M012);
 
             var duplicateGroup = await _repository.TableNoTracking
                 .AnyAsync(x =>
@@ -263,7 +263,7 @@ public sealed class CodesService : ICodesService, IScopedDependency
 
             if (duplicateGroup)
                 throw new BadRequestException(
-                    "این کد اصلی قبلاً برای گروه دیگری ثبت شده است.");
+                    ApiMessages.Codes.M005);
 
             code.ParentId = root.Id;
             code.PrimaryCode = updatedCode.PrimaryCode;
@@ -276,7 +276,7 @@ public sealed class CodesService : ICodesService, IScopedDependency
             await ValidateGroupAsync(parent, root.Id, cancellationToken);
 
             if (!updatedCode.SubCode.HasValue || updatedCode.SubCode.Value < 1)
-                throw new BadRequestException("کد فرعی آیتم باید مشخص شود.");
+                throw new BadRequestException(ApiMessages.Codes.M006);
 
             var duplicateItem = await _repository.TableNoTracking
                 .AnyAsync(x =>
@@ -287,7 +287,7 @@ public sealed class CodesService : ICodesService, IScopedDependency
 
             if (duplicateItem)
                 throw new BadRequestException(
-                    "این کد فرعی قبلاً در گروه انتخاب‌شده ثبت شده است.");
+                    ApiMessages.Codes.M007);
 
             code.ParentId = parent.Id;
             code.PrimaryCode = parent.PrimaryCode;
@@ -328,7 +328,7 @@ public sealed class CodesService : ICodesService, IScopedDependency
         if (root is not null && code.Id == root.Id)
         {
             throw new BadRequestException(
-                "حذف کد ریشه امکان‌پذیر نیست.");
+                ApiMessages.Codes.M013);
         }
 
         var hasChildren = await _repository.TableNoTracking
@@ -339,7 +339,7 @@ public sealed class CodesService : ICodesService, IScopedDependency
         if (hasChildren)
         {
             throw new BadRequestException(
-                "این کد دارای زیرمجموعه است. ابتدا زیرمجموعه‌های آن را حذف کنید.");
+                ApiMessages.Codes.M014);
         }
 
         code.IsDeleted = true;
@@ -377,7 +377,7 @@ public sealed class CodesService : ICodesService, IScopedDependency
         if (code is null)
         {
             throw new BadRequestException(
-                "کد والد انتخاب‌شده معتبر نیست یا غیرفعال شده است.");
+                ApiMessages.Codes.M015);
         }
 
         return code;
@@ -394,7 +394,7 @@ public sealed class CodesService : ICodesService, IScopedDependency
         if (!isGroup)
         {
             throw new BadRequestException(
-                "آیتم باید مستقیماً زیرمجموعه یک گروه باشد.");
+                ApiMessages.Codes.M016);
         }
 
         await Task.CompletedTask;
@@ -405,13 +405,13 @@ public sealed class CodesService : ICodesService, IScopedDependency
         if (string.IsNullOrWhiteSpace(title))
         {
             throw new BadRequestException(
-                "عنوان الزامی است.");
+                ApiMessages.Codes.M017);
         }
 
         if (title.Trim().Length > 200)
         {
             throw new BadRequestException(
-                "عنوان نباید بیشتر از ۲۰۰ کاراکتر باشد.");
+                ApiMessages.Codes.M018);
         }
     }
 
@@ -421,7 +421,7 @@ public sealed class CodesService : ICodesService, IScopedDependency
         if (additionalInformation?.Length > 400)
         {
             throw new BadRequestException(
-                "اطلاعات اضافی نباید بیشتر از ۴۰۰ کاراکتر باشد.");
+                ApiMessages.Codes.M019);
         }
     }
 
@@ -455,7 +455,7 @@ public sealed class CodesService : ICodesService, IScopedDependency
         if (root is null)
         {
             throw new BadRequestException(
-                "ساختار اصلی کدها در سیستم پیدا نشد.");
+                ApiMessages.Codes.M002);
         }
 
         var group = await GetByIdAsync(
@@ -469,7 +469,7 @@ public sealed class CodesService : ICodesService, IScopedDependency
         if (!isGroup)
         {
             throw new BadRequestException(
-                "گروه انتخاب‌شده معتبر نیست.");
+                ApiMessages.Codes.M020);
         }
 
         return await _repository.TableNoTracking

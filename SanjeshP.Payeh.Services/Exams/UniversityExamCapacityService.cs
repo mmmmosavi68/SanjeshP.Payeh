@@ -1,4 +1,4 @@
-﻿
+
 using Microsoft.EntityFrameworkCore;
 using SanjeshP.Payeh.Common;
 using SanjeshP.Payeh.Common.Exceptions;
@@ -44,21 +44,21 @@ public sealed class UniversityExamCapacityService
         CancellationToken cancellationToken)
     {
         if (createdBy == Guid.Empty)
-            throw new BadRequestException("شناسه کاربر ثبت‌کننده معتبر نیست.");
+            throw new BadRequestException(ApiMessages.UniversityExamCapacity.M001);
 
         if (examId == Guid.Empty)
-            throw new BadRequestException("آزمون را انتخاب کنید.");
+            throw new BadRequestException(ApiMessages.UniversityExamCapacity.M002);
 
         if (allocatedCapacity <= 0)
-            throw new BadRequestException("ظرفیت تخصیص‌یافته باید حداقل ۱ باشد.");
+            throw new BadRequestException(ApiMessages.UniversityExamCapacity.M003);
 
         if (ownCapacity < 0)
-            throw new BadRequestException("ظرفیت داوطلبان دانشگاه معتبر نیست.");
+            throw new BadRequestException(ApiMessages.UniversityExamCapacity.M004);
 
         if (ownCapacity > allocatedCapacity)
         {
             throw new BadRequestException(
-                "ظرفیت داوطلبان دانشگاه نمی‌تواند بیشتر از ظرفیت کل تخصیص‌یافته باشد.");
+                ApiMessages.UniversityExamCapacity.M005);
         }
 
         // بررسی دسترسی کاربر به دانشگاه
@@ -78,7 +78,7 @@ public sealed class UniversityExamCapacityService
         if (selectedExam is null)
         {
             throw new NotFoundException(
-                "آزمون موردنظر وجود ندارد یا غیرفعال است.");
+                ApiMessages.UniversityExamCapacity.M006);
         }
 
         // دریافت ظرفیت قبلی
@@ -221,7 +221,7 @@ public sealed class UniversityExamCapacityService
             examId,
             cancellationToken)
             ?? throw new NotFoundException(
-                "اطلاعات ظرفیت پس از ثبت پیدا نشد.");
+                ApiMessages.UniversityExamCapacity.M007);
     }
 
 
@@ -234,7 +234,7 @@ public sealed class UniversityExamCapacityService
             throw new UnauthorizedException();
 
         if (universityId <= 0)
-            throw new BadRequestException("شناسه دانشگاه معتبر نیست.");
+            throw new BadRequestException(ApiMessages.UniversityExamCapacity.M008);
 
         var university = await _repository.GetAccessibleUniversityAsync(
             userId,
@@ -244,7 +244,7 @@ public sealed class UniversityExamCapacityService
         if (university is null)
         {
             throw new ForbiddenException(
-                "شما به این دانشگاه دسترسی ندارید یا دانشگاه غیرفعال است.");
+                ApiMessages.UniversityExamCapacity.M009);
         }
 
         return university;
@@ -257,7 +257,7 @@ public sealed class UniversityExamCapacityService
     {
         if (userId == Guid.Empty)
             throw new UnauthorizedAccessException(
-                "شناسه کاربر معتبر نیست.");
+                ApiMessages.UniversityExamCapacity.M010);
 
         return await _repository.GetAccessibleUniversitiesAsync(
             userId,
@@ -289,16 +289,16 @@ public sealed class UniversityExamCapacityService
         CancellationToken cancellationToken)
     {
         if (createdBy == Guid.Empty)
-            throw new BadRequestException("شناسه کاربر ثبت‌کننده معتبر نیست.");
+            throw new BadRequestException(ApiMessages.UniversityExamCapacity.M001);
 
         if (examId == Guid.Empty)
-            throw new BadRequestException("آزمون را انتخاب کنید.");
+            throw new BadRequestException(ApiMessages.UniversityExamCapacity.M002);
 
         if (guestUniversityId <= 0)
-            throw new BadRequestException("دانشگاه مهمان را انتخاب کنید.");
+            throw new BadRequestException(ApiMessages.UniversityExamCapacity.M011);
 
         if (capacity <= 0)
-            throw new BadRequestException("ظرفیت مهمان باید حداقل ۱ باشد.");
+            throw new BadRequestException(ApiMessages.UniversityExamCapacity.M012);
 
         // بررسی دسترسی کاربر به دانشگاه میزبان
         await ValidateUniversityAsync(
@@ -309,7 +309,7 @@ public sealed class UniversityExamCapacityService
         if (universityId == guestUniversityId)
         {
             throw new BadRequestException(
-                "دانشگاه میزبان نمی‌تواند به‌عنوان دانشگاه مهمان انتخاب شود.");
+                ApiMessages.UniversityExamCapacity.M013);
         }
 
         // بررسی فعال بودن دانشگاه مهمان
@@ -320,7 +320,7 @@ public sealed class UniversityExamCapacityService
         if (guestUniversity is null)
         {
             throw new NotFoundException(
-                "دانشگاه مهمان وجود ندارد یا غیرفعال است.");
+                ApiMessages.UniversityExamCapacity.M014);
         }
 
         // دریافت آزمون‌های فعال دانشگاه میزبان
@@ -335,7 +335,7 @@ public sealed class UniversityExamCapacityService
         if (selectedExam is null)
         {
             throw new NotFoundException(
-                "آزمون موردنظر وجود ندارد یا غیرفعال است.");
+                ApiMessages.UniversityExamCapacity.M006);
         }
 
         // دریافت ظرفیت اصلی آزمون دانشگاه میزبان
@@ -350,7 +350,7 @@ public sealed class UniversityExamCapacityService
             universityExamCapacity.IsDeleted)
         {
             throw new BadRequestException(
-                "ابتدا باید ظرفیت فعال آزمون برای دانشگاه میزبان تعریف شود.");
+                ApiMessages.UniversityExamCapacity.M015);
         }
 
         var allocatedCapacity =
@@ -411,7 +411,7 @@ public sealed class UniversityExamCapacityService
             if (guestCapacityLimit <= 0)
             {
                 throw new BadRequestException(
-                    "ظرفیتی برای تخصیص به دانشگاه‌های مهمان باقی نمانده است.");
+                    ApiMessages.UniversityExamCapacity.M016);
             }
 
             // مجموع ظرفیت مهمان‌های فعال فعلی
@@ -486,7 +486,7 @@ public sealed class UniversityExamCapacityService
         return savedGuestCapacities.FirstOrDefault(
             x => x.GuestUniversityId == guestUniversityId)
             ?? throw new NotFoundException(
-                "ظرفیت دانشگاه مهمان پس از ثبت پیدا نشد.");
+                ApiMessages.UniversityExamCapacity.M017);
     }
 
     public async Task<List<UniversityExamGuestCapacity>> GetGuestCapacitiesAsync(
@@ -501,7 +501,7 @@ public sealed class UniversityExamCapacityService
             cancellationToken);
 
         if (examId == Guid.Empty)
-            throw new BadRequestException("آزمون را انتخاب کنید.");
+            throw new BadRequestException(ApiMessages.UniversityExamCapacity.M002);
 
         var universityExamCapacity =
             await _repository.GetByUniversityAndExamAsync(
@@ -514,7 +514,7 @@ public sealed class UniversityExamCapacityService
             universityExamCapacity.IsDeleted)
         {
             throw new NotFoundException(
-                "ظرفیت فعال این آزمون برای دانشگاه پیدا نشد.");
+                ApiMessages.UniversityExamCapacity.M018);
         }
 
         return await _repository.GetGuestCapacitiesAsync(

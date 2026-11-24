@@ -1,3 +1,4 @@
+using SanjeshP.Payeh.Common;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -33,7 +34,7 @@ namespace SanjeshP.Payeh.WebFramework.Api
                 return Guid.TryParse(userId, out var id)
                     ? id
                     : throw new UnauthorizedAccessException(
-                        "شناسه کاربر معتبر نیست.");
+                        ApiMessages.Base.M001);
             }
         }
 

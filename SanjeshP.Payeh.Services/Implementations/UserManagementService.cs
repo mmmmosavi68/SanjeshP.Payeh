@@ -1,4 +1,4 @@
-﻿
+
 using Microsoft.EntityFrameworkCore;
 using SanjeshP.Payeh.Common;
 using SanjeshP.Payeh.Common.Exceptions;
@@ -44,7 +44,7 @@ public sealed class UserManagementService : IUserManagementService, IScopedDepen
                 cancellationToken);
 
         if (!userExists)
-            throw new NotFoundException("کاربر مورد نظر یافت نشد.");
+            throw new NotFoundException(ApiMessages.UserManagement.M003);
 
         return await _uow.Repository<UserAccessMenus>().Entities
             .AsNoTracking()
@@ -69,20 +69,20 @@ public sealed class UserManagementService : IUserManagementService, IScopedDepen
                 cancellationToken);
 
         if (!userExists)
-            throw new NotFoundException("کاربر مورد نظر یافت نشد.");
+            throw new NotFoundException(ApiMessages.UserManagement.M003);
 
         if (menuIds is null)
-            throw new BadRequestException("فهرست منوها معتبر نیست.");
+            throw new BadRequestException(ApiMessages.UserManagement.M004);
 
         var selectedMenuIds = menuIds
             .Distinct()
             .ToHashSet();
 
         if (selectedMenuIds.Contains(Guid.Empty))
-            throw new BadRequestException("شناسه یک یا چند منو نامعتبر است.");
+            throw new BadRequestException(ApiMessages.UserManagement.M005);
 
         if (selectedMenuIds.Count > 500)
-            throw new BadRequestException("حداکثر ۵۰۰ منو قابل انتخاب است.");
+            throw new BadRequestException(ApiMessages.UserManagement.M006);
 
         if (selectedMenuIds.Count > 0)
         {
@@ -96,7 +96,7 @@ public sealed class UserManagementService : IUserManagementService, IScopedDepen
 
             if (validMenuIds.Count != selectedMenuIds.Count)
                 throw new BadRequestException(
-                    "یک یا چند منوی انتخاب‌شده نامعتبر یا غیرفعال هستند.");
+                    ApiMessages.UserManagement.M007);
         }
 
         // رکوردهای حذف‌شده قبلی نیز باید بررسی شوند تا
@@ -227,7 +227,7 @@ public sealed class UserManagementService : IUserManagementService, IScopedDepen
     {
         if (userIds is null || userIds.Count == 0)
             throw new BadRequestException(
-                "حداقل یک کاربر باید انتخاب شود.");
+                ApiMessages.UserManagement.M008);
 
         var distinctIds = userIds
             .Distinct()
@@ -235,15 +235,15 @@ public sealed class UserManagementService : IUserManagementService, IScopedDepen
 
         if (distinctIds.Any(x => x == Guid.Empty))
             throw new BadRequestException(
-                "شناسه یک یا چند کاربر نامعتبر است.");
+                ApiMessages.UserManagement.M009);
 
         if (distinctIds.Count > 200)
             throw new BadRequestException(
-                "حداکثر ۲۰۰ کاربر در هر درخواست قابل انتخاب است.");
+                ApiMessages.UserManagement.M010);
 
         if (distinctIds.Contains(currentUserId))
             throw new BadRequestException(
-                "امکان حذف یا غیرفعال‌سازی حساب کاربری خودتان وجود ندارد.");
+                ApiMessages.UserManagement.M011);
 
         var users = await _uow.Repository<User>().Entities
             .Where(x =>
@@ -253,7 +253,7 @@ public sealed class UserManagementService : IUserManagementService, IScopedDepen
 
         if (users.Count != distinctIds.Count)
             throw new NotFoundException(
-                "یک یا چند کاربر یافت نشدند یا قبلاً حذف شده‌اند.");
+                ApiMessages.UserManagement.M012);
 
         return users;
     }
@@ -300,7 +300,7 @@ public sealed class UserManagementService : IUserManagementService, IScopedDepen
                 cancellationToken);
 
         if (!userExists)
-            throw new NotFoundException("کاربر مورد نظر یافت نشد.");
+            throw new NotFoundException(ApiMessages.UserManagement.M003);
 
         return await _uow.Repository<UserUniversity>().Entities
             .AsNoTracking()
@@ -325,10 +325,10 @@ public sealed class UserManagementService : IUserManagementService, IScopedDepen
                 cancellationToken);
 
         if (!userExists)
-            throw new NotFoundException("کاربر مورد نظر یافت نشد.");
+            throw new NotFoundException(ApiMessages.UserManagement.M003);
 
         if (universityIds is null)
-            throw new BadRequestException("فهرست دانشگاه‌ها معتبر نیست.");
+            throw new BadRequestException(ApiMessages.UserManagement.M013);
 
         var selectedUniversityIds = universityIds
             .Distinct()
@@ -336,11 +336,11 @@ public sealed class UserManagementService : IUserManagementService, IScopedDepen
 
         if (selectedUniversityIds.Any(x => x <= 0))
             throw new BadRequestException(
-                "شناسه یک یا چند دانشگاه نامعتبر است.");
+                ApiMessages.UserManagement.M014);
 
         if (selectedUniversityIds.Count > 500)
             throw new BadRequestException(
-                "حداکثر ۵۰۰ دانشگاه قابل انتخاب است.");
+                ApiMessages.UserManagement.M015);
 
         if (selectedUniversityIds.Count > 0)
         {
@@ -354,7 +354,7 @@ public sealed class UserManagementService : IUserManagementService, IScopedDepen
 
             if (validUniversityIds.Count != selectedUniversityIds.Count)
                 throw new BadRequestException(
-                    "یک یا چند دانشگاه انتخاب‌شده نامعتبر یا غیرفعال هستند.");
+                    ApiMessages.UserManagement.M016);
         }
 
         // تمام ارتباط‌های قبلی کاربر، حتی رکوردهای حذف نرم‌شده

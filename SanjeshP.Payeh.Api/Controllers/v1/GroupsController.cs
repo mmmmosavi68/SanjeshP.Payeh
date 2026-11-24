@@ -1,4 +1,4 @@
-﻿
+
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -80,7 +80,7 @@ public sealed class GroupsController : BaseController
             true,
             ApiResultStatusCode.Success,
             result,
-            "گروه با موفقیت ایجاد شد.");
+            ApiMessages.Groups.M001);
 
         return CreatedAtAction(
             nameof(GetById),
@@ -109,7 +109,7 @@ public sealed class GroupsController : BaseController
             true,
             ApiResultStatusCode.Success,
             result,
-            "اطلاعات گروه با موفقیت ویرایش شد.");
+            ApiMessages.Groups.M002);
     }
 
     /// <summary>
@@ -127,7 +127,7 @@ public sealed class GroupsController : BaseController
         return new ApiResult(
             true,
             ApiResultStatusCode.Success,
-            "گروه با موفقیت حذف شد.");
+            ApiMessages.Groups.M003);
     }
 
     /// <summary>
@@ -170,7 +170,7 @@ public sealed class GroupsController : BaseController
         return new ApiResult(
             true,
             ApiResultStatusCode.Success,
-            "کاربر با موفقیت به گروه اضافه شد.");
+            ApiMessages.Groups.M004);
     }
 
     /// <summary>
@@ -190,7 +190,7 @@ public sealed class GroupsController : BaseController
         return new ApiResult(
             true,
             ApiResultStatusCode.Success,
-            "کاربر با موفقیت از گروه خارج شد.");
+            ApiMessages.Groups.M005);
     }
 
 
@@ -302,7 +302,7 @@ public sealed class GroupsController : BaseController
         return new ApiResult(
             true,
             ApiResultStatusCode.Success,
-            "دسترسی منوهای گروه با موفقیت ذخیره شد.");
+            ApiMessages.Groups.M006);
     }
 
     #endregion

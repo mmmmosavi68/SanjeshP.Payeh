@@ -172,7 +172,7 @@ namespace SanjeshP.Payeh.Api.Controllers.V1
                 true,
                 ApiResultStatusCode.Success,
                 _mapper.ToDto(created),
-                "کاربر با موفقیت ایجاد شد.");
+                ApiMessages.Users.M001);
 
             return CreatedAtAction(
                 nameof(GetById),
@@ -479,7 +479,7 @@ namespace SanjeshP.Payeh.Api.Controllers.V1
             return new ApiResult(
                 true,
                 ApiResultStatusCode.Success,
-                "کاربر با موفقیت حذف شد.");
+                ApiMessages.Users.M002);
         }
 
         #region Audit Helpers

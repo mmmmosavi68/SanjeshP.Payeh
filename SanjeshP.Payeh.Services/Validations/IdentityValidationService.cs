@@ -1,4 +1,4 @@
-﻿
+
 using Microsoft.EntityFrameworkCore;
 using SanjeshP.Payeh.Common;
 using SanjeshP.Payeh.Common.Exceptions;
@@ -71,7 +71,7 @@ public sealed class IdentityValidationService
         CancellationToken cancellationToken)
     {
         if (examId == Guid.Empty)
-            throw new BadRequestException("شناسه آزمون معتبر نیست.");
+            throw new BadRequestException(ApiMessages.IdentityValidation.M001);
 
         var normalizedCode = NormalizeNationalCode(nationalCode);
 
@@ -98,7 +98,7 @@ public sealed class IdentityValidationService
         CancellationToken cancellationToken)
     {
         if (examId == Guid.Empty)
-            throw new BadRequestException("شناسه آزمون معتبر نیست.");
+            throw new BadRequestException(ApiMessages.IdentityValidation.M001);
 
         var normalizedNumber = NormalizeMobileNumber(mobileNumber);
 
@@ -126,7 +126,7 @@ public sealed class IdentityValidationService
         var normalizedCode = nationalCode?.Fa2En().Trim();
 
         if (!IranianNationalCodeValidator.IsValid(normalizedCode))
-            throw new BadRequestException("کد ملی واردشده معتبر نیست.");
+            throw new BadRequestException(ApiMessages.IdentityValidation.M002);
 
         return normalizedCode!;
     }
@@ -140,7 +140,7 @@ public sealed class IdentityValidationService
                 mobileNumber,
                 out var normalizedNumber))
         {
-            throw new BadRequestException("شماره همراه واردشده معتبر نیست.");
+            throw new BadRequestException(ApiMessages.IdentityValidation.M003);
         }
 
         return normalizedNumber;

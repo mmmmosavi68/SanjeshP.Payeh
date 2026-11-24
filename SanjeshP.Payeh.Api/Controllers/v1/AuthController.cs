@@ -90,7 +90,7 @@ namespace SanjeshP.Payeh.Api.Controllers.V1
         public async Task<ApiResult<CaptchaImageDto>> GetCaptcha(CancellationToken cancellationToken)
         {
             if (!_captchaService.IsEnabled)
-                throw new ForbiddenException("کپچا در تنظیمات غیرفعال است.");
+                throw new ForbiddenException(ApiMessages.Auth.M001);
 
             Response.Headers["Cache-Control"] = "no-store, no-cache, must-revalidate";
             Response.Headers["Pragma"] = "no-cache";
@@ -324,7 +324,7 @@ namespace SanjeshP.Payeh.Api.Controllers.V1
                 eventType: "Security",
                 actorUserId: CurrentUserId,
                 cancellationToken: cancellationToken);
-            return new ApiResult(true, ApiResultStatusCode.Success, "با موفقیت از این دستگاه خارج شدید.");
+            return new ApiResult(true, ApiResultStatusCode.Success, ApiMessages.Auth.M002);
         }
 
         /// <summary>خروج از همه‌ی دستگاه‌ها؛ همه‌ی نشست‌های کاربر باطل می‌شوند.</summary>
@@ -349,7 +349,7 @@ namespace SanjeshP.Payeh.Api.Controllers.V1
             return new ApiResult(
                 true,
                 ApiResultStatusCode.Success,
-                "از تمام دستگاه‌های دیگر خارج شدید.");
+                ApiMessages.Auth.M003);
         }
 
         /// <summary>ابطال یک نشست مشخص با شناسه (مثلاً از صفحه‌ی دستگاه‌های من).</summary>
@@ -366,7 +366,7 @@ namespace SanjeshP.Payeh.Api.Controllers.V1
                 eventType: "Security",
                 actorUserId: CurrentUserId,
                 cancellationToken: cancellationToken);
-            return new ApiResult(true, ApiResultStatusCode.Success, "نشست مورد نظر باطل شد.");
+            return new ApiResult(true, ApiResultStatusCode.Success, ApiMessages.Auth.M004);
         }
 
         /// <summary>فهرست نشست‌های فعال من (دستگاه‌های واردشده).</summary>
@@ -397,13 +397,13 @@ namespace SanjeshP.Payeh.Api.Controllers.V1
         private void EnsureMobileLoginEnabled()
         {
             if (!_siteSettings.AuthSettings.MobileLoginEnabled)
-                throw new ForbiddenException("ورود با شماره موبایل غیرفعال است.");
+                throw new ForbiddenException(ApiMessages.Auth.M005);
         }
 
         private void EnsurePasswordLoginEnabled()
         {
             if (!_siteSettings.AuthSettings.PasswordLoginEnabled)
-                throw new ForbiddenException("ورود با نام کاربری و رمز عبور غیرفعال است.");
+                throw new ForbiddenException(ApiMessages.Auth.M006);
         }
 
         /// <summary>اعتبارسنجی کپچای تصویری؛ هر شناسه فقط یک‌بار قابل استفاده است.</summary>

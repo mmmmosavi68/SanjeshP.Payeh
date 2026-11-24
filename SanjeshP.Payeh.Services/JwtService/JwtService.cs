@@ -89,7 +89,7 @@ namespace SanjeshP.Payeh.Services.JwtService
         public async Task<AccessToken> RefreshAsync(string refreshToken, CancellationToken cancellationToken)
         {
             if (string.IsNullOrWhiteSpace(refreshToken))
-                throw new UnauthorizedException("توکن تازه‌سازی ارسال نشده است.");
+                throw new UnauthorizedException(ApiMessages.Jwt.M001);
 
             var hash = SecurityHelper.GetSha256Hash(refreshToken);
             var now = DateTime.UtcNow;
@@ -105,17 +105,17 @@ namespace SanjeshP.Payeh.Services.JwtService
                     reused.RevocationDate = now;
                     await _uow.SaveChangesAsync(cancellationToken);
                 }
-                throw new UnauthorizedException("توکن تازه‌سازی نامعتبر است. لطفاً دوباره وارد شوید.");
+                throw new UnauthorizedException(ApiMessages.Jwt.M002);
             }
 
             if (session.RevocationDate is not null || session.IsDeleted || !session.IsActive)
-                throw new UnauthorizedException("این نشست باطل شده است. لطفاً دوباره وارد شوید.");
+                throw new UnauthorizedException(ApiMessages.Jwt.M003);
 
             if (session.RefreshTokenExpireDate <= now)
-                throw new UnauthorizedException("نشست منقضی شده است. لطفاً دوباره وارد شوید.");
+                throw new UnauthorizedException(ApiMessages.Jwt.M004);
 
             if (session.User is null || session.User.IsDeleted || !session.User.IsActive)
-                throw new UnauthorizedException("حساب کاربری غیرفعال است.");
+                throw new UnauthorizedException(ApiMessages.Jwt.M005);
 
             // چرخش توکن: هش قبلی نگه داشته می‌شود و توکن جدید صادر می‌گردد.
             var newRefreshToken = GenerateRefreshToken();
@@ -148,7 +148,7 @@ namespace SanjeshP.Payeh.Services.JwtService
         public async Task RevokeSessionAsync(Guid sessionId, Guid userId, CancellationToken cancellationToken)
         {
             var session = await _sessionRepository.GetActiveByIdAsync(sessionId, userId, cancellationToken)
-                ?? throw new NotFoundException("نشست مورد نظر یافت نشد.");
+                ?? throw new NotFoundException(ApiMessages.Jwt.M006);
 
             session.RevocationDate = DateTime.UtcNow;
             session.IsActive = false;

@@ -62,7 +62,7 @@ public sealed class ExamSessionsController : BaseController
             true,
             ApiResultStatusCode.Success,
             _mapper.ToDto(created),
-            "نوبت آزمون با موفقیت ثبت شد.");
+            ApiMessages.ExamSessions.M001);
     }
 
     [HttpPut("{id:guid}")]
@@ -82,7 +82,7 @@ public sealed class ExamSessionsController : BaseController
             true,
             ApiResultStatusCode.Success,
             _mapper.ToDto(updated),
-            "نوبت آزمون با موفقیت ویرایش شد.");
+            ApiMessages.ExamSessions.M002);
     }
 
     [HttpDelete("{id:guid}")]
@@ -95,7 +95,7 @@ public sealed class ExamSessionsController : BaseController
         return new ApiResult(
             true,
             ApiResultStatusCode.Success,
-            "نوبت آزمون با موفقیت حذف شد.");
+            ApiMessages.ExamSessions.M003);
     }
 
 }

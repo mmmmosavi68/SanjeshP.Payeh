@@ -45,7 +45,7 @@ public sealed class UniversityService : IUniversityService, IScopedDependency
             cancellationToken);
 
         if (university is null)
-            throw new NotFoundException("دانشگاه موردنظر پیدا نشد.");
+            throw new NotFoundException(ApiMessages.University.M001);
 
         return university;
     }
@@ -60,7 +60,7 @@ public sealed class UniversityService : IUniversityService, IScopedDependency
         CancellationToken cancellationToken)
     {
         if (createdBy == Guid.Empty)
-            throw new BadRequestException("شناسه کاربر ثبت‌کننده معتبر نیست.");
+            throw new BadRequestException(ApiMessages.University.M002);
 
         ValidateFields(university);
 
@@ -150,7 +150,7 @@ public sealed class UniversityService : IUniversityService, IScopedDependency
         if (hasChildren)
         {
             throw new BadRequestException(
-                "این دانشگاه دارای دانشگاه یا پردیس زیرمجموعه است. ابتدا زیرمجموعه‌ها را تعیین تکلیف کنید.");
+                ApiMessages.University.M003);
         }
 
         var hasDependencies = await _repository.HasDependenciesAsync(
@@ -160,7 +160,7 @@ public sealed class UniversityService : IUniversityService, IScopedDependency
         if (hasDependencies)
         {
             throw new BadRequestException(
-                "برای این دانشگاه ظرفیت یا ثبت‌نام وابسته ثبت شده است و امکان حذف آن وجود ندارد.");
+                ApiMessages.University.M004);
         }
 
         university.IsDeleted = true;
@@ -179,19 +179,19 @@ public sealed class UniversityService : IUniversityService, IScopedDependency
     private static void ValidateFields(University university)
     {
         if (string.IsNullOrWhiteSpace(university.Title))
-            throw new BadRequestException("نام دانشگاه الزامی است.");
+            throw new BadRequestException(ApiMessages.University.M005);
 
         if (university.Title.Trim().Length > 200)
-            throw new BadRequestException("نام دانشگاه نباید بیش از ۲۰۰ کاراکتر باشد.");
+            throw new BadRequestException(ApiMessages.University.M006);
 
         if (university.UniversityTypeId <= 0)
-            throw new BadRequestException("نوع دانشگاه معتبر نیست.");
+            throw new BadRequestException(ApiMessages.University.M007);
 
         if (university.Region is < 1 or > 11)
-            throw new BadRequestException("منطقه دانشگاه باید بین ۱ تا ۱۱ باشد.");
+            throw new BadRequestException(ApiMessages.University.M008);
 
         if (university.CapacityApproved < 0)
-            throw new BadRequestException("ظرفیت مصوب نمی‌تواند منفی باشد.");
+            throw new BadRequestException(ApiMessages.University.M009);
     }
 
     private async Task ValidateUniversityTypeAsync(int universityTypeId, CancellationToken cancellationToken)
@@ -208,13 +208,13 @@ public sealed class UniversityService : IUniversityService, IScopedDependency
             return;
 
         if (parentUniversityId.Value <= 0)
-            throw new BadRequestException("دانشگاه مادر انتخاب‌شده معتبر نیست.");
+            throw new BadRequestException(ApiMessages.University.M010);
 
         if (currentUniversityId.HasValue &&
             parentUniversityId.Value == currentUniversityId.Value)
         {
             throw new BadRequestException(
-                "یک دانشگاه نمی‌تواند والد خودش باشد.");
+                ApiMessages.University.M011);
         }
 
         var parentExists = await _repository.ParentExistsAsync(
@@ -224,7 +224,7 @@ public sealed class UniversityService : IUniversityService, IScopedDependency
         if (!parentExists)
         {
             throw new BadRequestException(
-                "دانشگاه مادر انتخاب‌شده معتبر نیست یا غیرفعال شده است.");
+                ApiMessages.University.M012);
         }
 
         if (!currentUniversityId.HasValue)
@@ -245,13 +245,13 @@ public sealed class UniversityService : IUniversityService, IScopedDependency
             if (ancestorId.Value == currentUniversityId.Value)
             {
                 throw new BadRequestException(
-                    "امکان انتخاب یکی از زیرمجموعه‌های دانشگاه به‌عنوان دانشگاه مادر وجود ندارد.");
+                    ApiMessages.University.M013);
             }
 
             if (!visited.Add(ancestorId.Value))
             {
                 throw new BadRequestException(
-                    "ساختار والدین دانشگاه‌ها دارای چرخه نامعتبر است.");
+                    ApiMessages.University.M014);
             }
 
             if (!universitiesById.TryGetValue(

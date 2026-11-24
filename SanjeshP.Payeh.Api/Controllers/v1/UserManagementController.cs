@@ -1,4 +1,4 @@
-﻿
+
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -82,7 +82,7 @@ public sealed class UserManagementController : BaseController
         return new ApiResult(
             true,
             ApiResultStatusCode.Success,
-            "دسترسی اختصاصی کاربر با موفقیت ذخیره شد.");
+            ApiMessages.UserManagement.M001);
     }
 
 
@@ -138,7 +138,7 @@ public sealed class UserManagementController : BaseController
         return new ApiResult(
             true,
             ApiResultStatusCode.Success,
-            "دسترسی دانشگاهی کاربر با موفقیت ذخیره شد.");
+            ApiMessages.UserManagement.M002);
     }
 
     /// <summary>

@@ -1,4 +1,4 @@
-﻿using Asp.Versioning;
+using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SanjeshP.Payeh.Api.DTOs.ExamRegistrations;
@@ -176,7 +176,7 @@ public sealed class ExamRegistrationsController : BaseController
             true,
             ApiResultStatusCode.Success,
             MapToDto(created),
-            "اطلاعات داوطلب با موفقیت ثبت شد.");
+            ApiMessages.ExamRegistrations.M001);
     }
 
     /// <summary>
@@ -269,7 +269,7 @@ public sealed class ExamRegistrationsController : BaseController
             true,
             ApiResultStatusCode.Success,
             MapToDto(updated),
-            "اطلاعات داوطلب با موفقیت ویرایش شد.");
+            ApiMessages.ExamRegistrations.M002);
     }
 
     /// <summary>
@@ -289,7 +289,7 @@ public sealed class ExamRegistrationsController : BaseController
         return new ApiResult(
             true,
             ApiResultStatusCode.Success,
-            "ثبت‌نام با موفقیت حذف شد.");
+            ApiMessages.ExamRegistrations.M003);
     }
 
     private static ExamRegistrationUniversityDto MapToUniversityDto(University university)

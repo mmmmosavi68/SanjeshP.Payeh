@@ -1,4 +1,4 @@
-﻿
+
 using Asp.Versioning;
 using Microsoft.AspNetCore.Mvc;
 using SanjeshP.Payeh.Api.DTOs.ExamCapacities;
@@ -163,7 +163,7 @@ public sealed class UniversityExamCapacitiesController : BaseController
             true,
             ApiResultStatusCode.Success,
             MapToDto(capacity),
-            "ظرفیت دانشگاه برای آزمون با موفقیت ثبت شد.");
+            ApiMessages.UniversityExamCapacities.M001);
     }
 
     /// <summary>
@@ -197,7 +197,7 @@ public sealed class UniversityExamCapacitiesController : BaseController
             true,
             ApiResultStatusCode.Success,
             guestDto,
-            "ظرفیت دانشگاه مهمان با موفقیت ثبت شد.");
+            ApiMessages.UniversityExamCapacities.M002);
     }
 
     #endregion

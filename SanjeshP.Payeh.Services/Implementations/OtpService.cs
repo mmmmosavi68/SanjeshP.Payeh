@@ -104,7 +104,7 @@ namespace SanjeshP.Payeh.Services.Implementations
         public async Task<LoginChallengeResult> RequestPasswordLoginCodeAsync(User user, CancellationToken cancellationToken)
         {
             if (string.IsNullOrWhiteSpace(user.PhoneNumber))
-                throw new BadRequestException("برای این حساب شماره موبایل ثبت نشده است؛ با مدیر سیستم تماس بگیرید.");
+                throw new BadRequestException(ApiMessages.Otp.M001);
 
             var mobile = NormalizeMobile(user.PhoneNumber);
             var now = DateTime.UtcNow;
@@ -230,7 +230,7 @@ namespace SanjeshP.Payeh.Services.Implementations
             var now = DateTime.UtcNow;
 
             if (otp.ExpireAt <= now)
-                throw new InvalidOtpException("کد وارد شده منقضی شده است؛ کد جدید درخواست کنید.");
+                throw new InvalidOtpException(ApiMessages.Otp.M002);
 
             var otps = _uow.Repository<UserOtp>().Entities;
 
@@ -240,7 +240,7 @@ namespace SanjeshP.Payeh.Services.Implementations
                 .ExecuteUpdateAsync(s => s.SetProperty(x => x.FailedAttempts, x => x.FailedAttempts + 1), cancellationToken);
 
             if (reserved == 0)
-                throw new InvalidOtpException("تعداد تلاش‌ها بیش از حد مجاز است؛ کد جدید درخواست کنید.");
+                throw new InvalidOtpException(ApiMessages.Otp.M003);
 
             // ۲) مقایسه‌ی زمان‌ثابت هش‌ها
             var expected = Convert.FromBase64String(otp.CodeHash);

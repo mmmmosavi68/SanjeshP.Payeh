@@ -40,7 +40,7 @@ public sealed class ExamService : IExamService, IScopedDependency
         var exam = await _repository.GetByIdAsync(id, cancellationToken);
 
         if (exam is null)
-            throw new NotFoundException("آزمون موردنظر پیدا نشد.");
+            throw new NotFoundException(ApiMessages.Exam.M001);
 
         return exam;
     }
@@ -51,7 +51,7 @@ public sealed class ExamService : IExamService, IScopedDependency
         CancellationToken cancellationToken)
     {
         if (createdBy == Guid.Empty)
-            throw new BadRequestException("شناسه کاربر ثبت‌کننده معتبر نیست.");
+            throw new BadRequestException(ApiMessages.Exam.M002);
 
         ValidateFields(exam);
 
@@ -106,7 +106,7 @@ public sealed class ExamService : IExamService, IScopedDependency
         if (await _repository.HasDependenciesAsync(id, cancellationToken))
         {
             throw new BadRequestException(
-                "برای این آزمون ظرفیت، فیلد اختصاصی یا ثبت‌نام ثبت شده است و امکان حذف آن وجود ندارد.");
+                ApiMessages.Exam.M003);
         }
 
         exam.IsDeleted = true;
@@ -119,32 +119,32 @@ public sealed class ExamService : IExamService, IScopedDependency
     private static void ValidateFields(Exam exam)
     {
         if (string.IsNullOrWhiteSpace(exam.Title))
-            throw new BadRequestException("عنوان آزمون الزامی است.");
+            throw new BadRequestException(ApiMessages.Exam.M004);
 
         if (exam.Title.Trim().Length > 200)
-            throw new BadRequestException("عنوان آزمون نباید بیش از ۲۰۰ کاراکتر باشد.");
+            throw new BadRequestException(ApiMessages.Exam.M005);
 
         if (exam.ExamSessionId == Guid.Empty)
-            throw new BadRequestException("نوبت آزمون را انتخاب کنید.");
+            throw new BadRequestException(ApiMessages.Exam.M006);
 
         if (exam.ExamTypeId <= 0)
-            throw new BadRequestException("نوع آزمون معتبر نیست.");
+            throw new BadRequestException(ApiMessages.Exam.M007);
 
         if (exam.ExamModeId <= 0)
-            throw new BadRequestException("نحوه برگزاری آزمون معتبر نیست.");
+            throw new BadRequestException(ApiMessages.Exam.M008);
 
         if (exam.RegistrationEndDate < exam.RegistrationStartDate)
-            throw new BadRequestException("پایان ثبت‌نام نمی‌تواند قبل از شروع ثبت‌نام باشد.");
+            throw new BadRequestException(ApiMessages.Exam.M009);
 
         if (exam.EditStartDate.HasValue != exam.EditEndDate.HasValue)
-            throw new BadRequestException("برای بازه ویرایش، هر دو تاریخ شروع و پایان باید مشخص شوند.");
+            throw new BadRequestException(ApiMessages.Exam.M010);
 
         if (exam.EditStartDate.HasValue &&
             exam.EditEndDate!.Value < exam.EditStartDate.Value)
-            throw new BadRequestException("پایان ویرایش نمی‌تواند قبل از شروع ویرایش باشد.");
+            throw new BadRequestException(ApiMessages.Exam.M011);
 
         if (exam.Description?.Length > 1000)
-            throw new BadRequestException("توضیحات نباید بیش از ۱۰۰۰ کاراکتر باشد.");
+            throw new BadRequestException(ApiMessages.Exam.M012);
     }
 
     private async Task ValidateReferencesAsync(
@@ -155,7 +155,7 @@ public sealed class ExamService : IExamService, IScopedDependency
                 exam.ExamSessionId, cancellationToken))
         {
             throw new BadRequestException(
-                "نوبت انتخاب‌شده وجود ندارد یا غیرفعال است.");
+                ApiMessages.Exam.M013);
         }
 
         await _codes.ResolveIdAsync(exam.ExamTypeId, null, null, CodeGroupTitles.ExamType, ApiMessages.Lookup.ExamTypeInvalid, cancellationToken);

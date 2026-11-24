@@ -34,7 +34,7 @@ public class MenusService : IMenusService, IScopedDependency
             cancellationToken);
 
         if (menu is null)
-            throw new NotFoundException("منوی موردنظر پیدا نشد.");
+            throw new NotFoundException(ApiMessages.Menus.M003);
 
         return menu;
     }
@@ -118,7 +118,7 @@ public class MenusService : IMenusService, IScopedDependency
         if (hasChildren)
         {
             throw new BadRequestException(
-                "این منو دارای زیرمنو است و ابتدا باید زیرمنوهای آن حذف شوند.");
+                ApiMessages.Menus.M004);
         }
 
         await _menuRepository.SoftDeleteAsync(
@@ -139,7 +139,7 @@ public class MenusService : IMenusService, IScopedDependency
         if (currentMenuId.HasValue && parentId.Value == currentMenuId.Value)
         {
             throw new BadRequestException(
-                "یک منو نمی‌تواند والد خودش باشد.");
+                ApiMessages.Menus.M005);
         }
 
         var parentExists = await _menuRepository.ParentExistsAsync(
@@ -149,7 +149,7 @@ public class MenusService : IMenusService, IScopedDependency
         if (!parentExists)
         {
             throw new BadRequestException(
-                "منوی والد انتخاب‌شده معتبر نیست یا حذف شده است.");
+                ApiMessages.Menus.M006);
         }
 
         // جلوگیری از ایجاد چرخه در ساختار درختی
@@ -168,7 +168,7 @@ public class MenusService : IMenusService, IScopedDependency
                 if (ancestorId == currentMenuId.Value)
                 {
                     throw new BadRequestException(
-                        "امکان انتخاب یکی از زیرمنوهای این منو به‌عنوان والد وجود ندارد.");
+                        ApiMessages.Menus.M007);
                 }
 
                 if (!menusById.TryGetValue(ancestorId, out var ancestor))
@@ -187,7 +187,7 @@ public class MenusService : IMenusService, IScopedDependency
         if (string.IsNullOrWhiteSpace(title))
         {
             throw new BadRequestException(
-                "عنوان منو الزامی است.");
+                ApiMessages.Menus.M008);
         }
     }
 

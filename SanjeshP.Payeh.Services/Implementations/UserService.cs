@@ -89,7 +89,7 @@ namespace SanjeshP.Payeh.Services.Implementations
                 .Include(x => x.UserRoles).ThenInclude(ur => ur.Role)
                 .FirstOrDefaultAsync(cancellationToken);
 
-            return user ?? throw new NotFoundException("کاربر مورد نظر یافت نشد.");
+            return user ?? throw new NotFoundException(ApiMessages.User.M001);
         }
 
         /// <inheritdoc />
@@ -98,7 +98,7 @@ namespace SanjeshP.Payeh.Services.Implementations
         public async Task SoftDeleteAsync(Guid id, CancellationToken cancellationToken)
         {
             var user = await _userRepository.Table.FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted, cancellationToken)
-                ?? throw new NotFoundException("کاربر مورد نظر یافت نشد.");
+                ?? throw new NotFoundException(ApiMessages.User.M001);
 
             user.IsDeleted = true;
             user.IsActive = false;
@@ -119,7 +119,7 @@ namespace SanjeshP.Payeh.Services.Implementations
         public async Task SetPasswordAsync(Guid id, string newPassword, CancellationToken cancellationToken)
         {
             var user = await _userRepository.Table.FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted, cancellationToken)
-                ?? throw new NotFoundException("کاربر مورد نظر یافت نشد.");
+                ?? throw new NotFoundException(ApiMessages.User.M001);
 
             user.PasswordHash = _passwordHasher.HashPassword(user, newPassword);
             user.SecurityStamp = Guid.NewGuid();
@@ -241,7 +241,7 @@ namespace SanjeshP.Payeh.Services.Implementations
 
             if (cancellationToken.IsCancellationRequested)
                 throw new OperationCanceledException(
-                    "درخواست قبل از اجرای کوئری لغو شده است.");
+                    ApiMessages.User.M002);
 
             await _userRepository.AddAsync(user, cancellationToken);
 
@@ -261,7 +261,7 @@ namespace SanjeshP.Payeh.Services.Implementations
                 .FirstOrDefaultAsync(
                     x => x.Id == id && !x.IsDeleted,
                     cancellationToken)
-                ?? throw new NotFoundException("کاربر مورد نظر یافت نشد.");
+                ?? throw new NotFoundException(ApiMessages.User.M001);
 
             // تغییر اطلاعات اصلی کاربر
             applyChanges(user);
@@ -387,7 +387,7 @@ namespace SanjeshP.Payeh.Services.Implementations
                 cancellationToken);
 
             if (userNameExists)
-                throw new ConflictException("این نام کاربری قبلاً ثبت شده است.");
+                throw new ConflictException(ApiMessages.User.M003);
 
             // بررسی تکراری بودن شماره موبایل
             if (!string.IsNullOrWhiteSpace(phoneNumber))
@@ -397,7 +397,7 @@ namespace SanjeshP.Payeh.Services.Implementations
                     cancellationToken);
 
                 if (phoneExists)
-                    throw new ConflictException("این شماره موبایل قبلاً ثبت شده است.");
+                    throw new ConflictException(ApiMessages.User.M004);
             }
 
             var userProfile = _userRepository.TableNoTracking
@@ -411,7 +411,7 @@ namespace SanjeshP.Payeh.Services.Implementations
             if (roleIds.Count == 0) return;
             var existingCount = await _uow.Repository<Role>().Entities.CountAsync(r => roleIds.Contains(r.Id) && !r.IsDeleted, cancellationToken);
             if (existingCount != roleIds.Count)
-                throw new BadRequestException("یک یا چند نقش ارسالی معتبر نیستند.");
+                throw new BadRequestException(ApiMessages.User.M005);
         }
 
         /// <summary>بررسی تکراری نبودن کد ملی کاربران در ایجاد و ویرایش.</summary>
@@ -429,7 +429,7 @@ namespace SanjeshP.Payeh.Services.Implementations
                 cancellationToken);
 
             if (exists)
-                throw new ConflictException("این کد ملی قبلاً ثبت شده است.");
+                throw new ConflictException(ApiMessages.User.M006);
         }
 
         /// <summary>بررسی تکراری نبودن ایمیل کاربران در ایجاد و ویرایش.</summary>
@@ -445,7 +445,7 @@ namespace SanjeshP.Payeh.Services.Implementations
                 cancellationToken);
 
             if (exists)
-                throw new ConflictException("این ایمیل قبلاً ثبت شده است.");
+                throw new ConflictException(ApiMessages.User.M007);
         }
     }
 }

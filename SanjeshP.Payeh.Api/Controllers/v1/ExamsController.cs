@@ -67,7 +67,7 @@ public sealed class ExamsController : BaseController
             true,
             ApiResultStatusCode.Success,
             _mapper.ToDto(created),
-            "آزمون با موفقیت ثبت شد.");
+            ApiMessages.Exams.M001);
     }
 
     [HttpPut("{id:guid}")]
@@ -89,7 +89,7 @@ public sealed class ExamsController : BaseController
             true,
             ApiResultStatusCode.Success,
             _mapper.ToDto(updated),
-            "اطلاعات آزمون با موفقیت ویرایش شد.");
+            ApiMessages.Exams.M002);
     }
 
     [HttpDelete("{id:guid}")]
@@ -103,7 +103,7 @@ public sealed class ExamsController : BaseController
         return new ApiResult(
             true,
             ApiResultStatusCode.Success,
-            "آزمون با موفقیت حذف شد.");
+            ApiMessages.Exams.M003);
     }
 
     private async Task ResolveCodesAsync(Exam exam, int examTypeId, int? examTypePrimaryCode, int? examTypeSubCode, int examModeId, int? examModePrimaryCode, int? examModeSubCode, CancellationToken cancellationToken)

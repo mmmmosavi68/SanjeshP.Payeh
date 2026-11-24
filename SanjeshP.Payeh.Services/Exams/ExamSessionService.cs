@@ -35,7 +35,7 @@ public sealed class ExamSessionService : IExamSessionService, IScopedDependency
             cancellationToken);
 
         if (session is null)
-            throw new NotFoundException("نوبت آزمون موردنظر پیدا نشد.");
+            throw new NotFoundException(ApiMessages.ExamSession.M001);
 
         return session;
     }
@@ -48,7 +48,7 @@ public sealed class ExamSessionService : IExamSessionService, IScopedDependency
         Validate(session);
 
         if (createdBy == Guid.Empty)
-            throw new BadRequestException("شناسه کاربر ثبت‌کننده معتبر نیست.");
+            throw new BadRequestException(ApiMessages.ExamSession.M002);
 
         session.Title = session.Title.Trim();
         session.CreatedBy = createdBy;
@@ -92,7 +92,7 @@ public sealed class ExamSessionService : IExamSessionService, IScopedDependency
         if (await _repository.HasExamsAsync(id, cancellationToken))
         {
             throw new BadRequestException(
-                "برای این نوبت آزمون تعریف شده است و امکان حذف آن وجود ندارد.");
+                ApiMessages.ExamSession.M003);
         }
 
         session.IsDeleted = true;
@@ -105,13 +105,13 @@ public sealed class ExamSessionService : IExamSessionService, IScopedDependency
     private static void Validate(ExamSession session)
     {
         if (string.IsNullOrWhiteSpace(session.Title))
-            throw new BadRequestException("عنوان نوبت الزامی است.");
+            throw new BadRequestException(ApiMessages.ExamSession.M004);
 
         if (session.Title.Trim().Length > 100)
-            throw new BadRequestException("عنوان نوبت نباید بیشتر از ۱۰۰ کاراکتر باشد.");
+            throw new BadRequestException(ApiMessages.ExamSession.M005);
 
         if (session.EndTime <= session.StartTime)
-            throw new BadRequestException("ساعت پایان باید بعد از ساعت شروع باشد.");
+            throw new BadRequestException(ApiMessages.ExamSession.M006);
     }
 
     public Task<PagedItems<TDto>> GetPageAsync<TDto>(string? search, bool? isActive, int? page, int? pageSize, Func<IQueryable<ExamSession>, IQueryable<TDto>> project, CancellationToken cancellationToken)

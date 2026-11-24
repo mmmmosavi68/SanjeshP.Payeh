@@ -1,4 +1,4 @@
-﻿
+
 using System.Text.Json;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
@@ -30,7 +30,7 @@ public sealed class ExamRegistrationService : IExamRegistrationService, IScopedD
         CancellationToken cancellationToken)
     {
         if (userId == Guid.Empty)
-            throw new BadRequestException("شناسه کاربر معتبر نیست.");
+            throw new BadRequestException(ApiMessages.ExamRegistration.M001);
 
         return await _uow.Repository<SanjeshP.Payeh.Entities.User.UserUniversity>().Entities
             .AsNoTracking()
@@ -47,7 +47,7 @@ public sealed class ExamRegistrationService : IExamRegistrationService, IScopedD
         CancellationToken cancellationToken)
     {
         if (universityId <= 0)
-            throw new BadRequestException("دانشگاه انتخاب‌شده معتبر نیست.");
+            throw new BadRequestException(ApiMessages.ExamRegistration.M002);
 
         await EnsureUniversityAccessAsync(
             userId,
@@ -82,7 +82,7 @@ public sealed class ExamRegistrationService : IExamRegistrationService, IScopedD
         CancellationToken cancellationToken)
     {
         if (createdBy == Guid.Empty)
-            throw new BadRequestException("شناسه کارشناس ثبت‌کننده معتبر نیست.");
+            throw new BadRequestException(ApiMessages.ExamRegistration.M003);
 
         await EnsureUniversityAccessAsync(
             createdBy,
@@ -90,28 +90,28 @@ public sealed class ExamRegistrationService : IExamRegistrationService, IScopedD
             cancellationToken);
 
         if (registration.ExamId == Guid.Empty)
-            throw new BadRequestException("انتخاب آزمون الزامی است.");
+            throw new BadRequestException(ApiMessages.ExamRegistration.M004);
 
         if (string.IsNullOrWhiteSpace(registration.FirstName))
-            throw new BadRequestException("نام داوطلب الزامی است.");
+            throw new BadRequestException(ApiMessages.ExamRegistration.M005);
 
         if (string.IsNullOrWhiteSpace(registration.LastName))
-            throw new BadRequestException("نام خانوادگی داوطلب الزامی است.");
+            throw new BadRequestException(ApiMessages.ExamRegistration.M006);
 
         var exam = await _uow.Repository<Exam>().Entities
             .AsNoTracking()
             .FirstOrDefaultAsync(x => x.Id == registration.ExamId, cancellationToken);
 
         if (exam is null)
-            throw new NotFoundException("آزمون موردنظر پیدا نشد.");
+            throw new NotFoundException(ApiMessages.ExamRegistration.M007);
 
         if (!exam.IsActive)
-            throw new BadRequestException("ثبت‌نام در این آزمون غیرفعال است.");
+            throw new BadRequestException(ApiMessages.ExamRegistration.M008);
 
         var now = DateTime.UtcNow;
 
         if (now < exam.RegistrationStartDate || now > exam.RegistrationEndDate)
-            throw new BadRequestException("در حال حاضر بازه ثبت‌نام این آزمون فعال نیست.");
+            throw new BadRequestException(ApiMessages.ExamRegistration.M009);
 
         var candidateUniversity = await _uow.Repository<University>().Entities
             .AsNoTracking()
@@ -120,7 +120,7 @@ public sealed class ExamRegistrationService : IExamRegistrationService, IScopedD
                 cancellationToken);
 
         if (candidateUniversity is null)
-            throw new BadRequestException("دانشگاه محل تحصیل معتبر نیست یا غیرفعال شده است.");
+            throw new BadRequestException(ApiMessages.ExamRegistration.M010);
 
         var venueUniversity = await _uow.Repository<University>().Entities
             .AsNoTracking()
@@ -129,7 +129,7 @@ public sealed class ExamRegistrationService : IExamRegistrationService, IScopedD
                 cancellationToken);
 
         if (venueUniversity is null)
-            throw new BadRequestException("دانشگاه محل آزمون معتبر نیست یا غیرفعال شده است.");
+            throw new BadRequestException(ApiMessages.ExamRegistration.M011);
 
         var capacity = await _uow.Repository<UniversityExamCapacity>().Entities
             .Include(x => x.GuestCapacities)
@@ -141,7 +141,7 @@ public sealed class ExamRegistrationService : IExamRegistrationService, IScopedD
                 cancellationToken);
 
         if (capacity is null)
-            throw new BadRequestException("تخصیص ظرفیت انتخاب‌شده با آزمون و دانشگاه محل برگزاری مطابقت ندارد.");
+            throw new BadRequestException(ApiMessages.ExamRegistration.M012);
 
         registration.NationalCode = await _identityValidation
             .ValidateExamRegistrationNationalCodeAsync(
@@ -171,7 +171,7 @@ public sealed class ExamRegistrationService : IExamRegistrationService, IScopedD
         if (isOwnUniversity)
         {
             if (registration.UniversityExamGuestCapacityId.HasValue)
-                throw new BadRequestException("برای داوطلب دانشگاه برگزارکننده، انتخاب ظرفیت دانشگاه مهمان مجاز نیست.");
+                throw new BadRequestException(ApiMessages.ExamRegistration.M013);
 
             if (capacity.OwnCapacity.HasValue)
             {
@@ -182,13 +182,13 @@ public sealed class ExamRegistrationService : IExamRegistrationService, IScopedD
                         cancellationToken);
 
                 if (ownCount >= capacity.OwnCapacity.Value)
-                    throw new BadRequestException("ظرفیت داوطلبان دانشگاه برگزارکننده تکمیل شده است.");
+                    throw new BadRequestException(ApiMessages.ExamRegistration.M014);
             }
         }
         else
         {
             if (!registration.UniversityExamGuestCapacityId.HasValue)
-                throw new BadRequestException("برای داوطلب دانشگاه مهمان، انتخاب ظرفیت مهمان الزامی است.");
+                throw new BadRequestException(ApiMessages.ExamRegistration.M015);
 
             guestCapacity = capacity.GuestCapacities.FirstOrDefault(
                 x => x.Id == registration.UniversityExamGuestCapacityId.Value &&
@@ -196,7 +196,7 @@ public sealed class ExamRegistrationService : IExamRegistrationService, IScopedD
                      x.IsActive);
 
             if (guestCapacity is null)
-                throw new BadRequestException("ظرفیت مهمان انتخاب‌شده با دانشگاه داوطلب مطابقت ندارد.");
+                throw new BadRequestException(ApiMessages.ExamRegistration.M016);
 
             var guestCount = await _uow.Repository<ExamRegistration>().Entities
                 .CountAsync(
@@ -204,7 +204,7 @@ public sealed class ExamRegistrationService : IExamRegistrationService, IScopedD
                     cancellationToken);
 
             if (guestCount >= guestCapacity.Capacity)
-                throw new BadRequestException("ظرفیت دانشگاه مهمان تکمیل شده است.");
+                throw new BadRequestException(ApiMessages.ExamRegistration.M017);
         }
 
         if (capacity.AllocatedCapacity.HasValue)
@@ -215,7 +215,7 @@ public sealed class ExamRegistrationService : IExamRegistrationService, IScopedD
                     cancellationToken);
 
             if (totalCount >= capacity.AllocatedCapacity.Value)
-                throw new BadRequestException("ظرفیت کل تخصیص‌یافته به دانشگاه محل آزمون تکمیل شده است.");
+                throw new BadRequestException(ApiMessages.ExamRegistration.M018);
         }
 
         var values = await ValidateCustomFieldsAsync(
@@ -266,14 +266,14 @@ public sealed class ExamRegistrationService : IExamRegistrationService, IScopedD
         CancellationToken cancellationToken)
     {
         if (updatedBy == Guid.Empty)
-            throw new BadRequestException("شناسه کارشناس ویرایش‌کننده معتبر نیست.");
+            throw new BadRequestException(ApiMessages.ExamRegistration.M019);
 
         var item = await _uow.Repository<ExamRegistration>().Entities
             .Include(x => x.CustomFieldValues)
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
 
         if (item is null)
-            throw new NotFoundException("ثبت‌نام موردنظر پیدا نشد.");
+            throw new NotFoundException(ApiMessages.ExamRegistration.M020);
 
         await EnsureUniversityAccessAsync(
             updatedBy,
@@ -281,14 +281,14 @@ public sealed class ExamRegistrationService : IExamRegistrationService, IScopedD
             cancellationToken);
 
         if (updatedRegistration.UniversityId != item.UniversityId)
-            throw new BadRequestException("تغییر دانشگاه محل تحصیل در ویرایش ثبت‌نام مجاز نیست.");
+            throw new BadRequestException(ApiMessages.ExamRegistration.M021);
 
         var exam = await _uow.Repository<Exam>().Entities
             .AsNoTracking()
             .FirstOrDefaultAsync(x => x.Id == item.ExamId, cancellationToken);
 
         if (exam is null)
-            throw new NotFoundException("آزمون موردنظر پیدا نشد.");
+            throw new NotFoundException(ApiMessages.ExamRegistration.M007);
 
         var now = DateTime.UtcNow;
 
@@ -296,13 +296,13 @@ public sealed class ExamRegistrationService : IExamRegistrationService, IScopedD
             !exam.EditEndDate.HasValue ||
             now < exam.EditStartDate.Value ||
             now > exam.EditEndDate.Value)
-            throw new BadRequestException("در حال حاضر بازه ویرایش اطلاعات این آزمون فعال نیست.");
+            throw new BadRequestException(ApiMessages.ExamRegistration.M022);
 
         if (string.IsNullOrWhiteSpace(updatedRegistration.FirstName))
-            throw new BadRequestException("نام داوطلب الزامی است.");
+            throw new BadRequestException(ApiMessages.ExamRegistration.M005);
 
         if (string.IsNullOrWhiteSpace(updatedRegistration.LastName))
-            throw new BadRequestException("نام خانوادگی داوطلب الزامی است.");
+            throw new BadRequestException(ApiMessages.ExamRegistration.M006);
 
         var venueUniversity = await _uow.Repository<University>().Entities
             .AsNoTracking()
@@ -312,7 +312,7 @@ public sealed class ExamRegistrationService : IExamRegistrationService, IScopedD
                 cancellationToken);
 
         if (venueUniversity is null)
-            throw new BadRequestException("دانشگاه محل آزمون معتبر نیست یا غیرفعال شده است.");
+            throw new BadRequestException(ApiMessages.ExamRegistration.M011);
 
         var capacity = await _uow.Repository<UniversityExamCapacity>().Entities
             .Include(x => x.GuestCapacities)
@@ -324,7 +324,7 @@ public sealed class ExamRegistrationService : IExamRegistrationService, IScopedD
                 cancellationToken);
 
         if (capacity is null)
-            throw new BadRequestException("تخصیص ظرفیت انتخاب‌شده با آزمون و دانشگاه محل برگزاری مطابقت ندارد.");
+            throw new BadRequestException(ApiMessages.ExamRegistration.M012);
 
         var nationalCode = await _identityValidation
             .ValidateExamRegistrationNationalCodeAsync(
@@ -347,7 +347,7 @@ public sealed class ExamRegistrationService : IExamRegistrationService, IScopedD
         if (isOwnUniversity)
         {
             if (updatedRegistration.UniversityExamGuestCapacityId.HasValue)
-                throw new BadRequestException("برای داوطلب دانشگاه برگزارکننده، انتخاب ظرفیت دانشگاه مهمان مجاز نیست.");
+                throw new BadRequestException(ApiMessages.ExamRegistration.M013);
 
             if (capacity.OwnCapacity.HasValue)
             {
@@ -359,13 +359,13 @@ public sealed class ExamRegistrationService : IExamRegistrationService, IScopedD
                         cancellationToken);
 
                 if (ownCount >= capacity.OwnCapacity.Value)
-                    throw new BadRequestException("ظرفیت داوطلبان دانشگاه برگزارکننده تکمیل شده است.");
+                    throw new BadRequestException(ApiMessages.ExamRegistration.M014);
             }
         }
         else
         {
             if (!updatedRegistration.UniversityExamGuestCapacityId.HasValue)
-                throw new BadRequestException("برای داوطلب دانشگاه مهمان، انتخاب ظرفیت مهمان الزامی است.");
+                throw new BadRequestException(ApiMessages.ExamRegistration.M015);
 
             guestCapacity = capacity.GuestCapacities.FirstOrDefault(
                 x => x.Id == updatedRegistration.UniversityExamGuestCapacityId.Value &&
@@ -373,7 +373,7 @@ public sealed class ExamRegistrationService : IExamRegistrationService, IScopedD
                      x.IsActive);
 
             if (guestCapacity is null)
-                throw new BadRequestException("ظرفیت مهمان انتخاب‌شده با دانشگاه داوطلب مطابقت ندارد.");
+                throw new BadRequestException(ApiMessages.ExamRegistration.M016);
 
             var guestCount = await _uow.Repository<ExamRegistration>().Entities
                 .CountAsync(
@@ -382,7 +382,7 @@ public sealed class ExamRegistrationService : IExamRegistrationService, IScopedD
                     cancellationToken);
 
             if (guestCount >= guestCapacity.Capacity)
-                throw new BadRequestException("ظرفیت دانشگاه مهمان تکمیل شده است.");
+                throw new BadRequestException(ApiMessages.ExamRegistration.M017);
         }
 
         if (capacity.AllocatedCapacity.HasValue)
@@ -394,7 +394,7 @@ public sealed class ExamRegistrationService : IExamRegistrationService, IScopedD
                     cancellationToken);
 
             if (totalCount >= capacity.AllocatedCapacity.Value)
-                throw new BadRequestException("ظرفیت کل تخصیص‌یافته به دانشگاه محل آزمون تکمیل شده است.");
+                throw new BadRequestException(ApiMessages.ExamRegistration.M018);
         }
 
         var values = await ValidateCustomFieldsAsync(
@@ -466,7 +466,7 @@ public sealed class ExamRegistrationService : IExamRegistrationService, IScopedD
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
 
         if (item is null)
-            throw new NotFoundException("ثبت‌نام موردنظر پیدا نشد.");
+            throw new NotFoundException(ApiMessages.ExamRegistration.M020);
 
         await EnsureUniversityAccessAsync(
             userId,
@@ -483,7 +483,7 @@ public sealed class ExamRegistrationService : IExamRegistrationService, IScopedD
         CancellationToken cancellationToken)
     {
         if (examId == Guid.Empty)
-            throw new BadRequestException("شناسه آزمون معتبر نیست.");
+            throw new BadRequestException(ApiMessages.ExamRegistration.M023);
 
         await EnsureUniversityAccessAsync(
             userId,
@@ -494,7 +494,7 @@ public sealed class ExamRegistrationService : IExamRegistrationService, IScopedD
             .AnyAsync(x => x.Id == examId, cancellationToken);
 
         if (!examExists)
-            throw new NotFoundException("آزمون موردنظر پیدا نشد.");
+            throw new NotFoundException(ApiMessages.ExamRegistration.M007);
 
         return await _uow.Repository<ExamRegistration>().Entities
             .AsNoTracking()
@@ -518,7 +518,7 @@ public sealed class ExamRegistrationService : IExamRegistrationService, IScopedD
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
 
         if (item is null)
-            throw new NotFoundException("ثبت‌نام موردنظر پیدا نشد.");
+            throw new NotFoundException(ApiMessages.ExamRegistration.M020);
 
         await EnsureUniversityAccessAsync(
             userId,
@@ -540,10 +540,10 @@ public sealed class ExamRegistrationService : IExamRegistrationService, IScopedD
         var values = submittedValues?.ToList() ?? [];
 
         if (values.Any(x => x.ExamCustomFieldId == Guid.Empty))
-            throw new BadRequestException("شناسه یکی از فیلدهای اختصاصی معتبر نیست.");
+            throw new BadRequestException(ApiMessages.ExamRegistration.M024);
 
         if (values.Select(x => x.ExamCustomFieldId).Distinct().Count() != values.Count)
-            throw new BadRequestException("یک فیلد اختصاصی بیش از یک بار ارسال شده است.");
+            throw new BadRequestException(ApiMessages.ExamRegistration.M025);
 
         var fields = await _uow.Repository<ExamCustomField>().Entities
             .AsNoTracking()
@@ -555,10 +555,10 @@ public sealed class ExamRegistrationService : IExamRegistrationService, IScopedD
         foreach (var value in values)
         {
             if (!fieldsById.ContainsKey(value.ExamCustomFieldId))
-                throw new BadRequestException("یکی از فیلدهای اختصاصی متعلق به این آزمون نیست یا غیرفعال است.");
+                throw new BadRequestException(ApiMessages.ExamRegistration.M026);
 
             if (value.Value?.Length > 4000)
-                throw new BadRequestException("مقدار فیلد اختصاصی نباید بیش از ۴۰۰۰ کاراکتر باشد.");
+                throw new BadRequestException(ApiMessages.ExamRegistration.M027);
 
             value.Value = NullIfWhiteSpace(value.Value);
         }
@@ -609,7 +609,7 @@ public sealed class ExamRegistrationService : IExamRegistrationService, IScopedD
         CancellationToken cancellationToken)
     {
         if (userId == Guid.Empty)
-            throw new BadRequestException("شناسه کاربر معتبر نیست.");
+            throw new BadRequestException(ApiMessages.ExamRegistration.M001);
 
         var hasAccess = await _uow.Repository<SanjeshP.Payeh.Entities.User.UserUniversity>().Entities
             .AnyAsync(
@@ -648,10 +648,10 @@ public sealed class ExamRegistrationService : IExamRegistrationService, IScopedD
         CancellationToken cancellationToken)
     {
         if (examId == Guid.Empty)
-            throw new BadRequestException("آزمون انتخاب‌شده معتبر نیست.");
+            throw new BadRequestException(ApiMessages.ExamRegistration.M028);
 
         if (universityId <= 0)
-            throw new BadRequestException("دانشگاه انتخاب‌شده معتبر نیست.");
+            throw new BadRequestException(ApiMessages.ExamRegistration.M002);
 
         await EnsureUniversityAccessAsync(
             userId,
@@ -669,7 +669,7 @@ public sealed class ExamRegistrationService : IExamRegistrationService, IScopedD
                 cancellationToken);
 
         if (!examExists)
-            throw new BadRequestException("آزمون فعال یا در بازه ثبت‌نام نیست.");
+            throw new BadRequestException(ApiMessages.ExamRegistration.M029);
 
         var capacities = await _uow.Repository<UniversityExamCapacity>().Entities
             .AsNoTracking()
