@@ -5,29 +5,28 @@ using SanjeshP.Payeh.Common.Exceptions;
 using SanjeshP.Payeh.Data;
 using SanjeshP.Payeh.Entities.Menu;
 using SanjeshP.Payeh.Entities.User;
-using SanjeshP.Payeh.Services.Permissions;
 using SanjeshP.Payeh.Entities.University;
 using SanjeshP.Payeh.Entities.User;
 
-namespace SanjeshP.Payeh.Services.Users;
+namespace SanjeshP.Payeh.Services.Implementations;
 
 public sealed class UserManagementService : IUserManagementService, IScopedDependency
 {
-    private readonly ApplicationDbContext _db;
+    private readonly IUnitOfWork _uow;
     private readonly IPermissionService _permissionService;
 
     public UserManagementService(
-        ApplicationDbContext db,
+        IUnitOfWork uow,
         IPermissionService permissionService)
     {
-        _db = db;
+        _uow = uow;
         _permissionService = permissionService;
     }
 
     public async Task<List<Menu>> GetAvailableMenusAsync(
         CancellationToken cancellationToken)
     {
-        return await _db.Set<Menu>()
+        return await _uow.Repository<Menu>().Entities
             .AsNoTracking()
             .Where(x => x.IsActive && !x.IsDeleted)
             .OrderBy(x => x.PageCode)
@@ -39,7 +38,7 @@ public sealed class UserManagementService : IUserManagementService, IScopedDepen
         Guid userId,
         CancellationToken cancellationToken)
     {
-        var userExists = await _db.Set<User>()
+        var userExists = await _uow.Repository<User>().Entities
             .AnyAsync(
                 x => x.Id == userId && !x.IsDeleted,
                 cancellationToken);
@@ -47,7 +46,7 @@ public sealed class UserManagementService : IUserManagementService, IScopedDepen
         if (!userExists)
             throw new NotFoundException("کاربر مورد نظر یافت نشد.");
 
-        return await _db.Set<UserAccessMenus>()
+        return await _uow.Repository<UserAccessMenus>().Entities
             .AsNoTracking()
             .Where(x =>
                 x.UserId == userId &&
@@ -64,7 +63,7 @@ public sealed class UserManagementService : IUserManagementService, IScopedDepen
         Guid updatedBy,
         CancellationToken cancellationToken)
     {
-        var userExists = await _db.Set<User>()
+        var userExists = await _uow.Repository<User>().Entities
             .AnyAsync(
                 x => x.Id == userId && !x.IsDeleted,
                 cancellationToken);
@@ -87,7 +86,7 @@ public sealed class UserManagementService : IUserManagementService, IScopedDepen
 
         if (selectedMenuIds.Count > 0)
         {
-            var validMenuIds = await _db.Set<Menu>()
+            var validMenuIds = await _uow.Repository<Menu>().Entities
                 .Where(x =>
                     selectedMenuIds.Contains(x.Id) &&
                     x.IsActive &&
@@ -102,7 +101,7 @@ public sealed class UserManagementService : IUserManagementService, IScopedDepen
 
         // رکوردهای حذف‌شده قبلی نیز باید بررسی شوند تا
         // هنگام انتخاب مجدد، رکورد تکراری ساخته نشود.
-        var existingAccesses = await _db.Set<UserAccessMenus>()
+        var existingAccesses = await _uow.Repository<UserAccessMenus>().Entities
             .IgnoreQueryFilters()
             .Where(x => x.UserId == userId)
             .ToListAsync(cancellationToken);
@@ -144,7 +143,7 @@ public sealed class UserManagementService : IUserManagementService, IScopedDepen
             }
             else
             {
-                await _db.Set<UserAccessMenus>().AddAsync(
+                await _uow.Repository<UserAccessMenus>().Entities.AddAsync(
                     new UserAccessMenus
                     {
                         UserId = userId,
@@ -157,7 +156,7 @@ public sealed class UserManagementService : IUserManagementService, IScopedDepen
             }
         }
 
-        await _db.SaveChangesAsync(cancellationToken);
+        await _uow.SaveChangesAsync(cancellationToken);
 
         // فقط کش همین کاربر باید باطل شود.
         // دسترسی‌های گروهی او دست‌نخورده باقی می‌مانند.
@@ -186,7 +185,7 @@ public sealed class UserManagementService : IUserManagementService, IScopedDepen
             users.Select(x => x.Id).ToList(),
             cancellationToken);
 
-        await _db.SaveChangesAsync(cancellationToken);
+        await _uow.SaveChangesAsync(cancellationToken);
 
         foreach (var user in users)
             _permissionService.Invalidate(user.Id);
@@ -215,7 +214,7 @@ public sealed class UserManagementService : IUserManagementService, IScopedDepen
             users.Select(x => x.Id).ToList(),
             cancellationToken);
 
-        await _db.SaveChangesAsync(cancellationToken);
+        await _uow.SaveChangesAsync(cancellationToken);
 
         foreach (var user in users)
             _permissionService.Invalidate(user.Id);
@@ -246,7 +245,7 @@ public sealed class UserManagementService : IUserManagementService, IScopedDepen
             throw new BadRequestException(
                 "امکان حذف یا غیرفعال‌سازی حساب کاربری خودتان وجود ندارد.");
 
-        var users = await _db.Set<User>()
+        var users = await _uow.Repository<User>().Entities
             .Where(x =>
                 distinctIds.Contains(x.Id) &&
                 !x.IsDeleted)
@@ -263,7 +262,7 @@ public sealed class UserManagementService : IUserManagementService, IScopedDepen
         List<Guid> userIds,
         CancellationToken cancellationToken)
     {
-        var sessions = await _db.Set<UserSession>()
+        var sessions = await _uow.Repository<UserSession>().Entities
             .Where(x =>
                 userIds.Contains(x.UserId) &&
                 x.RevocationDate == null)
@@ -280,7 +279,7 @@ public sealed class UserManagementService : IUserManagementService, IScopedDepen
     public async Task<List<UniversityOption>> GetAvailableUniversitiesAsync(
     CancellationToken cancellationToken)
     {
-        return await _db.Set<University>()
+        return await _uow.Repository<University>().Entities
             .AsNoTracking()
             .Where(x => x.IsActive && !x.IsDeleted)
             .OrderBy(x => x.Title)
@@ -295,7 +294,7 @@ public sealed class UserManagementService : IUserManagementService, IScopedDepen
         Guid userId,
         CancellationToken cancellationToken)
     {
-        var userExists = await _db.Set<User>()
+        var userExists = await _uow.Repository<User>().Entities
             .AnyAsync(
                 x => x.Id == userId && !x.IsDeleted,
                 cancellationToken);
@@ -303,7 +302,7 @@ public sealed class UserManagementService : IUserManagementService, IScopedDepen
         if (!userExists)
             throw new NotFoundException("کاربر مورد نظر یافت نشد.");
 
-        return await _db.Set<UserUniversity>()
+        return await _uow.Repository<UserUniversity>().Entities
             .AsNoTracking()
             .Where(x =>
                 x.UserId == userId &&
@@ -320,7 +319,7 @@ public sealed class UserManagementService : IUserManagementService, IScopedDepen
         Guid updatedBy,
         CancellationToken cancellationToken)
     {
-        var userExists = await _db.Set<User>()
+        var userExists = await _uow.Repository<User>().Entities
             .AnyAsync(
                 x => x.Id == userId && !x.IsDeleted,
                 cancellationToken);
@@ -345,7 +344,7 @@ public sealed class UserManagementService : IUserManagementService, IScopedDepen
 
         if (selectedUniversityIds.Count > 0)
         {
-            var validUniversityIds = await _db.Set<University>()
+            var validUniversityIds = await _uow.Repository<University>().Entities
                 .Where(x =>
                     selectedUniversityIds.Contains(x.Id) &&
                     x.IsActive &&
@@ -360,7 +359,7 @@ public sealed class UserManagementService : IUserManagementService, IScopedDepen
 
         // تمام ارتباط‌های قبلی کاربر، حتی رکوردهای حذف نرم‌شده
         // دریافت می‌شوند تا رکورد تکراری ایجاد نشود.
-        var existingAccesses = await _db.Set<UserUniversity>()
+        var existingAccesses = await _uow.Repository<UserUniversity>().Entities
             .IgnoreQueryFilters()
             .Where(x => x.UserId == userId)
             .ToListAsync(cancellationToken);
@@ -389,7 +388,7 @@ public sealed class UserManagementService : IUserManagementService, IScopedDepen
             }
             else
             {
-                await _db.Set<UserUniversity>().AddAsync(
+                await _uow.Repository<UserUniversity>().Entities.AddAsync(
                     new UserUniversity
                     {
                         UserId = userId,
@@ -402,6 +401,6 @@ public sealed class UserManagementService : IUserManagementService, IScopedDepen
             }
         }
 
-        await _db.SaveChangesAsync(cancellationToken);
+        await _uow.SaveChangesAsync(cancellationToken);
     }
 }

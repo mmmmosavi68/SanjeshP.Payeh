@@ -5,7 +5,7 @@ using SanjeshP.Payeh.Common;
 using SanjeshP.Payeh.Data.Contracts;
 using SanjeshP.Payeh.Entities.Audit;
 
-namespace SanjeshP.Payeh.Data.Repositories;
+namespace SanjeshP.Payeh.Services.Implementations;
 
 /// <summary>
 /// سرویس ثبت ممیزی. خطای ثبت Audit نباید باعث شکست عملیات اصلی کاربر شود؛

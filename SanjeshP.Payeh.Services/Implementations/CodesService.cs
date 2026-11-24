@@ -5,7 +5,7 @@ using SanjeshP.Payeh.Common.Exceptions;
 using SanjeshP.Payeh.Data.Contracts;
 using SanjeshP.Payeh.Entities.Menu;
 
-namespace SanjeshP.Payeh.Data.Repositories;
+namespace SanjeshP.Payeh.Services.Implementations;
 
 public sealed class CodesService : ICodesService, IScopedDependency
 {

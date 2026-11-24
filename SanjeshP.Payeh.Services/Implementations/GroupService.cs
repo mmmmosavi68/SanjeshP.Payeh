@@ -6,23 +6,21 @@ using SanjeshP.Payeh.Data;
 using SanjeshP.Payeh.Entities.Group;
 using SanjeshP.Payeh.Entities.Menu;
 using SanjeshP.Payeh.Entities.User;
-using SanjeshP.Payeh.Services.Groups;
-using SanjeshP.Payeh.Services.Permissions;
 
 using UserGroup = SanjeshP.Payeh.Entities.Group.Group;
 
-namespace SanjeshP.Payeh.Data.Repositories;
+namespace SanjeshP.Payeh.Services.Implementations;
 
 public sealed class GroupService : IGroupService, IScopedDependency
 {
-    private readonly ApplicationDbContext _db;
+    private readonly IUnitOfWork _uow;
     private readonly IPermissionService _permissionService;
 
     public GroupService(
-        ApplicationDbContext db,
+        IUnitOfWork uow,
         IPermissionService permissionService)
     {
-        _db = db;
+        _uow = uow;
         _permissionService = permissionService;
     }
 
@@ -32,7 +30,7 @@ public sealed class GroupService : IGroupService, IScopedDependency
     public async Task<List<UserGroup>> GetAllAsync(
         CancellationToken cancellationToken)
     {
-        return await _db.Set<UserGroup>()
+        return await _uow.Repository<UserGroup>().Entities
             .AsNoTracking()
             .Include(x => x.GroupUsers.Where(
                 u => u.IsActive && !u.IsDeleted))
@@ -47,7 +45,7 @@ public sealed class GroupService : IGroupService, IScopedDependency
         Guid id,
         CancellationToken cancellationToken)
     {
-        var group = await _db.Set<UserGroup>()
+        var group = await _uow.Repository<UserGroup>().Entities
             .AsNoTracking()
             .Include(x => x.GroupUsers.Where(
                 u => u.IsActive && !u.IsDeleted))
@@ -66,7 +64,7 @@ public sealed class GroupService : IGroupService, IScopedDependency
         Guid groupId,
         CancellationToken cancellationToken)
     {
-        var exists = await _db.Set<UserGroup>()
+        var exists = await _uow.Repository<UserGroup>().Entities
             .AnyAsync(
                 x => x.Id == groupId,
                 cancellationToken);
@@ -75,7 +73,7 @@ public sealed class GroupService : IGroupService, IScopedDependency
             throw new NotFoundException(
                 "گروه مورد نظر یافت نشد.");
 
-        return await _db.Set<GroupUsers>()
+        return await _uow.Repository<GroupUsers>().Entities
             .AsNoTracking()
             .Where(x =>
                 x.GroupId == groupId &&
@@ -104,7 +102,7 @@ public sealed class GroupService : IGroupService, IScopedDependency
 
         var normalizedName = groupName.ToUpperInvariant();
 
-        var exists = await _db.Set<UserGroup>()
+        var exists = await _uow.Repository<UserGroup>().Entities
             .AnyAsync(
                 x => x.GroupName.ToUpper() == normalizedName,
                 cancellationToken);
@@ -120,11 +118,11 @@ public sealed class GroupService : IGroupService, IScopedDependency
             CreatedBy = createdBy
         };
 
-        await _db.Set<UserGroup>().AddAsync(
+        await _uow.Repository<UserGroup>().Entities.AddAsync(
             group,
             cancellationToken);
 
-        await _db.SaveChangesAsync(cancellationToken);
+        await _uow.SaveChangesAsync(cancellationToken);
 
         return await GetByIdAsync(
             group.Id,
@@ -140,7 +138,7 @@ public sealed class GroupService : IGroupService, IScopedDependency
         bool isActive,
         CancellationToken cancellationToken)
     {
-        var group = await _db.Set<UserGroup>()
+        var group = await _uow.Repository<UserGroup>().Entities
             .FirstOrDefaultAsync(
                 x => x.Id == id,
                 cancellationToken);
@@ -157,7 +155,7 @@ public sealed class GroupService : IGroupService, IScopedDependency
 
         var normalizedName = groupName.ToUpperInvariant();
 
-        var exists = await _db.Set<UserGroup>()
+        var exists = await _uow.Repository<UserGroup>().Entities
             .AnyAsync(
                 x => x.Id != id &&
                      x.GroupName.ToUpper() == normalizedName,
@@ -173,7 +171,7 @@ public sealed class GroupService : IGroupService, IScopedDependency
         group.IsActive = isActive;
         group.UpdatedDate = DateTime.UtcNow;
 
-        await _db.SaveChangesAsync(cancellationToken);
+        await _uow.SaveChangesAsync(cancellationToken);
 
         if (activeChanged)
             _permissionService.InvalidateAll();
@@ -190,7 +188,7 @@ public sealed class GroupService : IGroupService, IScopedDependency
         Guid id,
         CancellationToken cancellationToken)
     {
-        var group = await _db.Set<UserGroup>()
+        var group = await _uow.Repository<UserGroup>().Entities
             .FirstOrDefaultAsync(
                 x => x.Id == id,
                 cancellationToken);
@@ -203,7 +201,7 @@ public sealed class GroupService : IGroupService, IScopedDependency
         group.IsActive = false;
         group.UpdatedDate = DateTime.UtcNow;
 
-        await _db.SaveChangesAsync(cancellationToken);
+        await _uow.SaveChangesAsync(cancellationToken);
 
         // تغییر گروه روی دسترسی تمام اعضای آن اثر می‌گذارد.
         _permissionService.InvalidateAll();
@@ -218,7 +216,7 @@ public sealed class GroupService : IGroupService, IScopedDependency
         Guid createdBy,
         CancellationToken cancellationToken)
     {
-        var group = await _db.Set<UserGroup>()
+        var group = await _uow.Repository<UserGroup>().Entities
             .FirstOrDefaultAsync(
                 x => x.Id == groupId,
                 cancellationToken);
@@ -231,7 +229,7 @@ public sealed class GroupService : IGroupService, IScopedDependency
             throw new BadRequestException(
                 "امکان افزودن کاربر به گروه غیرفعال وجود ندارد.");
 
-        var userExists = await _db.Set<User>()
+        var userExists = await _uow.Repository<User>().Entities
             .AnyAsync(
                 x => x.Id == userId && x.IsActive,
                 cancellationToken);
@@ -241,7 +239,7 @@ public sealed class GroupService : IGroupService, IScopedDependency
                 "کاربر مورد نظر یافت نشد یا غیرفعال است.");
 
         // بررسی عضویت فعلی یا عضویت حذف‌شده قبلی
-        var membership = await _db.Set<GroupUsers>()
+        var membership = await _uow.Repository<GroupUsers>().Entities
             .IgnoreQueryFilters()
             .FirstOrDefaultAsync(
                 x => x.GroupId == groupId &&
@@ -269,12 +267,12 @@ public sealed class GroupService : IGroupService, IScopedDependency
                 CreatedBy = createdBy
             };
 
-            await _db.Set<GroupUsers>().AddAsync(
+            await _uow.Repository<GroupUsers>().Entities.AddAsync(
                 membership,
                 cancellationToken);
         }
 
-        await _db.SaveChangesAsync(cancellationToken);
+        await _uow.SaveChangesAsync(cancellationToken);
 
         // فقط کش دسترسی همین کاربر باطل می‌شود.
         _permissionService.Invalidate(userId);
@@ -288,7 +286,7 @@ public sealed class GroupService : IGroupService, IScopedDependency
         Guid userId,
         CancellationToken cancellationToken)
     {
-        var membership = await _db.Set<GroupUsers>()
+        var membership = await _uow.Repository<GroupUsers>().Entities
             .FirstOrDefaultAsync(
                 x => x.GroupId == groupId &&
                      x.UserId == userId &&
@@ -303,7 +301,7 @@ public sealed class GroupService : IGroupService, IScopedDependency
         membership.IsDeleted = true;
         membership.UpdatedDate = DateTime.UtcNow;
 
-        await _db.SaveChangesAsync(cancellationToken);
+        await _uow.SaveChangesAsync(cancellationToken);
 
         // دسترسی شخصی و عضویت‌های دیگر کاربر حفظ می‌شوند.
         _permissionService.Invalidate(userId);
@@ -335,7 +333,7 @@ public sealed class GroupService : IGroupService, IScopedDependency
             throw new BadRequestException(
                 "حداکثر ۲۰۰ کاربر در هر درخواست قابل انتخاب است.");
 
-        var group = await _db.Set<UserGroup>()
+        var group = await _uow.Repository<UserGroup>().Entities
             .FirstOrDefaultAsync(
                 x => x.Id == groupId,
                 cancellationToken);
@@ -349,7 +347,7 @@ public sealed class GroupService : IGroupService, IScopedDependency
                 "امکان افزودن کاربر به گروه غیرفعال وجود ندارد.");
 
         // اعتبارسنجی تمام کاربران قبل از هرگونه تغییر
-        var validUserIds = await _db.Set<User>()
+        var validUserIds = await _uow.Repository<User>().Entities
             .Where(x =>
                 distinctUserIds.Contains(x.Id) &&
                 x.IsActive &&
@@ -362,7 +360,7 @@ public sealed class GroupService : IGroupService, IScopedDependency
                 "یک یا چند کاربر یافت نشدند یا غیرفعال هستند.");
 
         // دریافت عضویت‌های قبلی، شامل رکوردهای حذف نرم‌شده
-        var existingMemberships = await _db.Set<GroupUsers>()
+        var existingMemberships = await _uow.Repository<GroupUsers>().Entities
             .IgnoreQueryFilters()
             .Where(x =>
                 x.GroupId == groupId &&
@@ -414,12 +412,12 @@ public sealed class GroupService : IGroupService, IScopedDependency
                     CreatedBy = createdBy
                 };
 
-                await _db.Set<GroupUsers>()
+                await _uow.Repository<GroupUsers>().Entities
                     .AddAsync(membership, cancellationToken);
             }
         }
 
-        await _db.SaveChangesAsync(cancellationToken);
+        await _uow.SaveChangesAsync(cancellationToken);
 
         // باطل کردن کش دسترسی تمام کاربران اضافه‌شده
         foreach (var userId in distinctUserIds)
@@ -450,7 +448,7 @@ public sealed class GroupService : IGroupService, IScopedDependency
             throw new BadRequestException(
                 "حداکثر ۲۰۰ کاربر در هر درخواست قابل انتخاب است.");
 
-        var groupExists = await _db.Set<UserGroup>()
+        var groupExists = await _uow.Repository<UserGroup>().Entities
             .AnyAsync(
                 x => x.Id == groupId,
                 cancellationToken);
@@ -460,7 +458,7 @@ public sealed class GroupService : IGroupService, IScopedDependency
                 "گروه مورد نظر یافت نشد.");
 
         // دریافت تمام عضویت‌های فعال درخواستی
-        var memberships = await _db.Set<GroupUsers>()
+        var memberships = await _uow.Repository<GroupUsers>().Entities
             .Where(x =>
                 x.GroupId == groupId &&
                 distinctUserIds.Contains(x.UserId) &&
@@ -482,7 +480,7 @@ public sealed class GroupService : IGroupService, IScopedDependency
             membership.UpdatedDate = now;
         }
 
-        await _db.SaveChangesAsync(cancellationToken);
+        await _uow.SaveChangesAsync(cancellationToken);
 
         // باطل کردن کش دسترسی تمام کاربران حذف‌شده
         foreach (var userId in distinctUserIds)
@@ -491,7 +489,7 @@ public sealed class GroupService : IGroupService, IScopedDependency
     public async Task<List<Menu>> GetAvailableMenusAsync(
         CancellationToken cancellationToken)
     {
-        return await _db.Set<Menu>()
+        return await _uow.Repository<Menu>().Entities
             .AsNoTracking()
             .Where(x => x.IsActive && !x.IsDeleted)
             .OrderBy(x => x.PageCode)
@@ -503,13 +501,13 @@ public sealed class GroupService : IGroupService, IScopedDependency
         Guid groupId,
         CancellationToken cancellationToken)
     {
-        var groupExists = await _db.Set<UserGroup>()
+        var groupExists = await _uow.Repository<UserGroup>().Entities
             .AnyAsync(x => x.Id == groupId, cancellationToken);
 
         if (!groupExists)
             throw new NotFoundException("گروه موردنظر یافت نشد.");
 
-        return await _db.Set<GroupAccessMenus>()
+        return await _uow.Repository<GroupAccessMenus>().Entities
             .AsNoTracking()
             .Where(x =>
                 x.GroupId == groupId &&
@@ -526,7 +524,7 @@ public sealed class GroupService : IGroupService, IScopedDependency
         Guid updatedBy,
         CancellationToken cancellationToken)
     {
-        var groupExists = await _db.Set<UserGroup>()
+        var groupExists = await _uow.Repository<UserGroup>().Entities
             .AnyAsync(x => x.Id == groupId, cancellationToken);
 
         if (!groupExists)
@@ -540,7 +538,7 @@ public sealed class GroupService : IGroupService, IScopedDependency
         // بررسی معتبر بودن تمام منوهای انتخاب‌شده
         if (selectedMenuIds.Count > 0)
         {
-            var validMenuIds = await _db.Set<Menu>()
+            var validMenuIds = await _uow.Repository<Menu>().Entities
                 .Where(x =>
                     selectedMenuIds.Contains(x.Id) &&
                     x.IsActive &&
@@ -554,7 +552,7 @@ public sealed class GroupService : IGroupService, IScopedDependency
         }
 
         // دریافت تمام دسترسی‌های قبلی گروه، حتی رکوردهای حذف‌شده
-        var existingAccesses = await _db.Set<GroupAccessMenus>()
+        var existingAccesses = await _uow.Repository<GroupAccessMenus>().Entities
             .IgnoreQueryFilters()
             .Where(x => x.GroupId == groupId)
             .ToListAsync(cancellationToken);
@@ -607,12 +605,12 @@ public sealed class GroupService : IGroupService, IScopedDependency
                     CreatedBy = updatedBy
                 };
 
-                await _db.Set<GroupAccessMenus>()
+                await _uow.Repository<GroupAccessMenus>().Entities
                     .AddAsync(newAccess, cancellationToken);
             }
         }
 
-        await _db.SaveChangesAsync(cancellationToken);
+        await _uow.SaveChangesAsync(cancellationToken);
 
         // تغییر دسترسی گروه باید کش تمام کاربران را باطل کند.
         _permissionService.InvalidateAll();

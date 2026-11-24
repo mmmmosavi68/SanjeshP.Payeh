@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Mvc;
 using SanjeshP.Payeh.Api.DTOs.Groups;
 using SanjeshP.Payeh.Common;
 using SanjeshP.Payeh.Entities.Group;
-using SanjeshP.Payeh.Services.Groups;
 using SanjeshP.Payeh.WebFramework.Api;
 
 namespace SanjeshP.Payeh.Api.Controllers.V1;

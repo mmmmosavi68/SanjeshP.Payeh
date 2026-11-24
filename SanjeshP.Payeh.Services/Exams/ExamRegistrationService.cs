@@ -14,14 +14,14 @@ namespace SanjeshP.Payeh.Services.Exams;
 
 public sealed class ExamRegistrationService : IExamRegistrationService, IScopedDependency
 {
-    private readonly ApplicationDbContext _db;
+    private readonly IUnitOfWork _uow;
     private readonly IIdentityValidationService _identityValidation;
 
     public ExamRegistrationService(
-        ApplicationDbContext db,
+        IUnitOfWork uow,
         IIdentityValidationService identityValidation)
     {
-        _db = db;
+        _uow = uow;
         _identityValidation = identityValidation;
     }
 
@@ -32,7 +32,7 @@ public sealed class ExamRegistrationService : IExamRegistrationService, IScopedD
         if (userId == Guid.Empty)
             throw new BadRequestException("شناسه کاربر معتبر نیست.");
 
-        return await _db.Set<SanjeshP.Payeh.Entities.User.UserUniversity>()
+        return await _uow.Repository<SanjeshP.Payeh.Entities.User.UserUniversity>().Entities
             .AsNoTracking()
             .Where(x => x.UserId == userId && x.IsActive)
             .Select(x => x.University)
@@ -56,7 +56,7 @@ public sealed class ExamRegistrationService : IExamRegistrationService, IScopedD
 
         var now = DateTime.UtcNow;
 
-        return await _db.Set<Exam>()
+        return await _uow.Repository<Exam>().Entities
             .AsNoTracking()
             .Where(x =>
                 x.IsActive &&
@@ -98,7 +98,7 @@ public sealed class ExamRegistrationService : IExamRegistrationService, IScopedD
         if (string.IsNullOrWhiteSpace(registration.LastName))
             throw new BadRequestException("نام خانوادگی داوطلب الزامی است.");
 
-        var exam = await _db.Set<Exam>()
+        var exam = await _uow.Repository<Exam>().Entities
             .AsNoTracking()
             .FirstOrDefaultAsync(x => x.Id == registration.ExamId, cancellationToken);
 
@@ -113,7 +113,7 @@ public sealed class ExamRegistrationService : IExamRegistrationService, IScopedD
         if (now < exam.RegistrationStartDate || now > exam.RegistrationEndDate)
             throw new BadRequestException("در حال حاضر بازه ثبت‌نام این آزمون فعال نیست.");
 
-        var candidateUniversity = await _db.Set<University>()
+        var candidateUniversity = await _uow.Repository<University>().Entities
             .AsNoTracking()
             .FirstOrDefaultAsync(
                 x => x.Id == registration.UniversityId && x.IsActive,
@@ -122,7 +122,7 @@ public sealed class ExamRegistrationService : IExamRegistrationService, IScopedD
         if (candidateUniversity is null)
             throw new BadRequestException("دانشگاه محل تحصیل معتبر نیست یا غیرفعال شده است.");
 
-        var venueUniversity = await _db.Set<University>()
+        var venueUniversity = await _uow.Repository<University>().Entities
             .AsNoTracking()
             .FirstOrDefaultAsync(
                 x => x.Id == registration.ExamVenueUniversityId && x.IsActive,
@@ -131,7 +131,7 @@ public sealed class ExamRegistrationService : IExamRegistrationService, IScopedD
         if (venueUniversity is null)
             throw new BadRequestException("دانشگاه محل آزمون معتبر نیست یا غیرفعال شده است.");
 
-        var capacity = await _db.Set<UniversityExamCapacity>()
+        var capacity = await _uow.Repository<UniversityExamCapacity>().Entities
             .Include(x => x.GuestCapacities)
             .FirstOrDefaultAsync(
                 x => x.Id == registration.UniversityExamCapacityId &&
@@ -175,7 +175,7 @@ public sealed class ExamRegistrationService : IExamRegistrationService, IScopedD
 
             if (capacity.OwnCapacity.HasValue)
             {
-                var ownCount = await _db.Set<ExamRegistration>()
+                var ownCount = await _uow.Repository<ExamRegistration>().Entities
                     .CountAsync(
                         x => x.UniversityExamCapacityId == capacity.Id &&
                              x.UniversityId == capacity.UniversityId,
@@ -198,7 +198,7 @@ public sealed class ExamRegistrationService : IExamRegistrationService, IScopedD
             if (guestCapacity is null)
                 throw new BadRequestException("ظرفیت مهمان انتخاب‌شده با دانشگاه داوطلب مطابقت ندارد.");
 
-            var guestCount = await _db.Set<ExamRegistration>()
+            var guestCount = await _uow.Repository<ExamRegistration>().Entities
                 .CountAsync(
                     x => x.UniversityExamGuestCapacityId == guestCapacity.Id,
                     cancellationToken);
@@ -209,7 +209,7 @@ public sealed class ExamRegistrationService : IExamRegistrationService, IScopedD
 
         if (capacity.AllocatedCapacity.HasValue)
         {
-            var totalCount = await _db.Set<ExamRegistration>()
+            var totalCount = await _uow.Repository<ExamRegistration>().Entities
                 .CountAsync(
                     x => x.UniversityExamCapacityId == capacity.Id,
                     cancellationToken);
@@ -242,11 +242,11 @@ public sealed class ExamRegistrationService : IExamRegistrationService, IScopedD
             item.IsDeleted = false;
         }
 
-        _db.Set<ExamRegistration>().Add(registration);
+        _uow.Repository<ExamRegistration>().Entities.Add(registration);
 
         try
         {
-            await _db.SaveChangesAsync(cancellationToken);
+            await _uow.SaveChangesAsync(cancellationToken);
         }
         catch (DbUpdateException ex) when (IsUniqueConstraintViolation(ex))
         {
@@ -268,7 +268,7 @@ public sealed class ExamRegistrationService : IExamRegistrationService, IScopedD
         if (updatedBy == Guid.Empty)
             throw new BadRequestException("شناسه کارشناس ویرایش‌کننده معتبر نیست.");
 
-        var item = await _db.Set<ExamRegistration>()
+        var item = await _uow.Repository<ExamRegistration>().Entities
             .Include(x => x.CustomFieldValues)
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
 
@@ -283,7 +283,7 @@ public sealed class ExamRegistrationService : IExamRegistrationService, IScopedD
         if (updatedRegistration.UniversityId != item.UniversityId)
             throw new BadRequestException("تغییر دانشگاه محل تحصیل در ویرایش ثبت‌نام مجاز نیست.");
 
-        var exam = await _db.Set<Exam>()
+        var exam = await _uow.Repository<Exam>().Entities
             .AsNoTracking()
             .FirstOrDefaultAsync(x => x.Id == item.ExamId, cancellationToken);
 
@@ -304,7 +304,7 @@ public sealed class ExamRegistrationService : IExamRegistrationService, IScopedD
         if (string.IsNullOrWhiteSpace(updatedRegistration.LastName))
             throw new BadRequestException("نام خانوادگی داوطلب الزامی است.");
 
-        var venueUniversity = await _db.Set<University>()
+        var venueUniversity = await _uow.Repository<University>().Entities
             .AsNoTracking()
             .FirstOrDefaultAsync(
                 x => x.Id == updatedRegistration.ExamVenueUniversityId &&
@@ -314,7 +314,7 @@ public sealed class ExamRegistrationService : IExamRegistrationService, IScopedD
         if (venueUniversity is null)
             throw new BadRequestException("دانشگاه محل آزمون معتبر نیست یا غیرفعال شده است.");
 
-        var capacity = await _db.Set<UniversityExamCapacity>()
+        var capacity = await _uow.Repository<UniversityExamCapacity>().Entities
             .Include(x => x.GuestCapacities)
             .FirstOrDefaultAsync(
                 x => x.Id == updatedRegistration.UniversityExamCapacityId &&
@@ -351,7 +351,7 @@ public sealed class ExamRegistrationService : IExamRegistrationService, IScopedD
 
             if (capacity.OwnCapacity.HasValue)
             {
-                var ownCount = await _db.Set<ExamRegistration>()
+                var ownCount = await _uow.Repository<ExamRegistration>().Entities
                     .CountAsync(
                         x => x.UniversityExamCapacityId == capacity.Id &&
                              x.UniversityId == capacity.UniversityId &&
@@ -375,7 +375,7 @@ public sealed class ExamRegistrationService : IExamRegistrationService, IScopedD
             if (guestCapacity is null)
                 throw new BadRequestException("ظرفیت مهمان انتخاب‌شده با دانشگاه داوطلب مطابقت ندارد.");
 
-            var guestCount = await _db.Set<ExamRegistration>()
+            var guestCount = await _uow.Repository<ExamRegistration>().Entities
                 .CountAsync(
                     x => x.UniversityExamGuestCapacityId == guestCapacity.Id &&
                          x.Id != id,
@@ -387,7 +387,7 @@ public sealed class ExamRegistrationService : IExamRegistrationService, IScopedD
 
         if (capacity.AllocatedCapacity.HasValue)
         {
-            var totalCount = await _db.Set<ExamRegistration>()
+            var totalCount = await _uow.Repository<ExamRegistration>().Entities
                 .CountAsync(
                     x => x.UniversityExamCapacityId == capacity.Id &&
                          x.Id != id,
@@ -440,7 +440,7 @@ public sealed class ExamRegistrationService : IExamRegistrationService, IScopedD
 
         try
         {
-            await _db.SaveChangesAsync(cancellationToken);
+            await _uow.SaveChangesAsync(cancellationToken);
         }
         catch (DbUpdateException ex) when (IsUniqueConstraintViolation(ex))
         {
@@ -457,7 +457,7 @@ public sealed class ExamRegistrationService : IExamRegistrationService, IScopedD
         Guid userId,
         CancellationToken cancellationToken)
     {
-        var item = await _db.Set<ExamRegistration>()
+        var item = await _uow.Repository<ExamRegistration>().Entities
             .AsNoTracking()
             .Include(x => x.CustomFieldValues)
                 .ThenInclude(x => x.ExamCustomField)
@@ -490,13 +490,13 @@ public sealed class ExamRegistrationService : IExamRegistrationService, IScopedD
             universityId,
             cancellationToken);
 
-        var examExists = await _db.Set<Exam>()
+        var examExists = await _uow.Repository<Exam>().Entities
             .AnyAsync(x => x.Id == examId, cancellationToken);
 
         if (!examExists)
             throw new NotFoundException("آزمون موردنظر پیدا نشد.");
 
-        return await _db.Set<ExamRegistration>()
+        return await _uow.Repository<ExamRegistration>().Entities
             .AsNoTracking()
             .Where(x =>
                 x.ExamId == examId &&
@@ -514,7 +514,7 @@ public sealed class ExamRegistrationService : IExamRegistrationService, IScopedD
         Guid userId,
         CancellationToken cancellationToken)
     {
-        var item = await _db.Set<ExamRegistration>()
+        var item = await _uow.Repository<ExamRegistration>().Entities
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
 
         if (item is null)
@@ -529,7 +529,7 @@ public sealed class ExamRegistrationService : IExamRegistrationService, IScopedD
         item.IsActive = false;
         item.UpdatedDate = DateTime.UtcNow;
 
-        await _db.SaveChangesAsync(cancellationToken);
+        await _uow.SaveChangesAsync(cancellationToken);
     }
 
     private async Task<List<ExamRegistrationCustomFieldValue>> ValidateCustomFieldsAsync(
@@ -545,7 +545,7 @@ public sealed class ExamRegistrationService : IExamRegistrationService, IScopedD
         if (values.Select(x => x.ExamCustomFieldId).Distinct().Count() != values.Count)
             throw new BadRequestException("یک فیلد اختصاصی بیش از یک بار ارسال شده است.");
 
-        var fields = await _db.Set<ExamCustomField>()
+        var fields = await _uow.Repository<ExamCustomField>().Entities
             .AsNoTracking()
             .Where(x => x.ExamId == examId && x.IsActive)
             .ToListAsync(cancellationToken);
@@ -611,7 +611,7 @@ public sealed class ExamRegistrationService : IExamRegistrationService, IScopedD
         if (userId == Guid.Empty)
             throw new BadRequestException("شناسه کاربر معتبر نیست.");
 
-        var hasAccess = await _db.Set<SanjeshP.Payeh.Entities.User.UserUniversity>()
+        var hasAccess = await _uow.Repository<SanjeshP.Payeh.Entities.User.UserUniversity>().Entities
             .AnyAsync(
                 x => x.UserId == userId &&
                      x.UniversityId == universityId &&
@@ -660,7 +660,7 @@ public sealed class ExamRegistrationService : IExamRegistrationService, IScopedD
 
         var now = DateTime.UtcNow;
 
-        var examExists = await _db.Set<Exam>()
+        var examExists = await _uow.Repository<Exam>().Entities
             .AnyAsync(x =>
                 x.Id == examId &&
                 x.IsActive &&
@@ -671,7 +671,7 @@ public sealed class ExamRegistrationService : IExamRegistrationService, IScopedD
         if (!examExists)
             throw new BadRequestException("آزمون فعال یا در بازه ثبت‌نام نیست.");
 
-        var capacities = await _db.Set<UniversityExamCapacity>()
+        var capacities = await _uow.Repository<UniversityExamCapacity>().Entities
             .AsNoTracking()
             .Where(x =>
                 x.ExamId == examId &&
@@ -692,7 +692,7 @@ public sealed class ExamRegistrationService : IExamRegistrationService, IScopedD
             .OrderBy(x => x.University.Title)
             .ToListAsync(cancellationToken);
 
-        var customFields = await _db.Set<ExamCustomField>()
+        var customFields = await _uow.Repository<ExamCustomField>().Entities
             .AsNoTracking()
             .Where(x => x.ExamId == examId && x.IsActive)
             .OrderBy(x => x.DisplayOrder)

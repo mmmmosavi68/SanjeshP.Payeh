@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace SanjeshP.Payeh.Data.Contracts
+namespace SanjeshP.Payeh.Services.Contracts
 {
 
     public interface ICodesService

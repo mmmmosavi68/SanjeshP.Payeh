@@ -1,4 +1,4 @@
-namespace SanjeshP.Payeh.Data.Contracts;
+namespace SanjeshP.Payeh.Services.Contracts;
 
 /// <summary>ثبت رویدادهای فعالیت کاربران و رویدادهای ممیزی.</summary>
 public interface IAuditLogService

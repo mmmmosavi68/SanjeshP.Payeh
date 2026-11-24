@@ -1,5 +1,5 @@
 ﻿using SanjeshP.Payeh.Entities.Menu;
-namespace SanjeshP.Payeh.Services.Permissions
+namespace SanjeshP.Payeh.Services.Contracts
 {
     /// <summary>
     /// بررسی دسترسی کاربر به Area/Controller/Action بر اساس جدول‌های

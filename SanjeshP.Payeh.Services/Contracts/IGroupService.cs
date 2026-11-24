@@ -2,7 +2,7 @@
 using SanjeshP.Payeh.Entities.Menu;
 
 
-namespace SanjeshP.Payeh.Services.Groups;
+namespace SanjeshP.Payeh.Services.Contracts;
 
 public interface IGroupService
 {

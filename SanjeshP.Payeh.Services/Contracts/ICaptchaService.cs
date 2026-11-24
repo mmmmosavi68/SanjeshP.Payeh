@@ -1,4 +1,4 @@
-namespace SanjeshP.Payeh.Services.Captcha
+namespace SanjeshP.Payeh.Services.Contracts
 {
     /// <summary>اطلاعات لازم برای نمایش کپچای تصویری در کلاینت.</summary>
     public sealed record CaptchaChallenge(string CaptchaId, string ImageBase64, string ContentType, int ExpiresInSeconds);

@@ -6,7 +6,7 @@ using System.IO.Compression;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace SanjeshP.Payeh.Services.Captcha
+namespace SanjeshP.Payeh.Services.Implementations
 {
     /// <summary>
     /// کپچای تصویری محلی. پاسخ خام فقط هنگام تولید تصویر در حافظه‌ی جاری وجود دارد؛

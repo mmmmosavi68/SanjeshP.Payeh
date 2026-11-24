@@ -1,4 +1,4 @@
-namespace SanjeshP.Payeh.Services.Otp
+namespace SanjeshP.Payeh.Services.Contracts
 {
     /// <param name="DevCode">فقط در توسعه (OtpSettings.ReturnCodeInResponse=true) مقدار دارد.</param>
     public record OtpRequestResult(string? DevCode, string? CodeForDelivery = null);

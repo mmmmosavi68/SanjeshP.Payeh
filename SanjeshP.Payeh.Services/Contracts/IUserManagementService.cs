@@ -1,6 +1,6 @@
 ﻿using SanjeshP.Payeh.Entities.Menu;
 
-namespace SanjeshP.Payeh.Services.Users;
+namespace SanjeshP.Payeh.Services.Contracts;
 
 public record UniversityOption(
     int Id,

@@ -7,7 +7,7 @@ using SanjeshP.Payeh.Data.Contracts;
 using SanjeshP.Payeh.Entities.User;
 using System.Net.Mail;
 
-namespace SanjeshP.Payeh.Services.Users
+namespace SanjeshP.Payeh.Services.Implementations
 {
     /// <summary>
     /// پیاده‌سازی مدیریت کاربران روی مخزن عمومی EF.
@@ -25,13 +25,13 @@ namespace SanjeshP.Payeh.Services.Users
         };
 
         private readonly IEFRepository<User> _userRepository;
-        private readonly ApplicationDbContext _dbContext;
+        private readonly IUnitOfWork _uow;
         private readonly IPasswordHasher<User> _passwordHasher;
 
-        public UserService(IEFRepository<User> userRepository, ApplicationDbContext dbContext, IPasswordHasher<User> passwordHasher)
+        public UserService(IEFRepository<User> userRepository, IUnitOfWork uow, IPasswordHasher<User> passwordHasher)
         {
             _userRepository = userRepository;
-            _dbContext = dbContext;
+            _uow = uow;
             _passwordHasher = passwordHasher;
         }
 
@@ -66,7 +66,7 @@ namespace SanjeshP.Payeh.Services.Users
                     user.LockoutEnd = DateTimeOffset.UtcNow.AddMinutes(15);
                     user.AccessFailedCount = 0;
                 }
-                await _dbContext.SaveChangesAsync(cancellationToken);
+                await _uow.SaveChangesAsync(cancellationToken);
                 return null;
             }
 
@@ -76,7 +76,7 @@ namespace SanjeshP.Payeh.Services.Users
             user.AccessFailedCount = 0;
             user.LockoutEnd = null;
             user.LastLoginDate = DateTimeOffset.UtcNow;
-            await _dbContext.SaveChangesAsync(cancellationToken);
+            await _uow.SaveChangesAsync(cancellationToken);
             return user;
         }
 
@@ -105,14 +105,14 @@ namespace SanjeshP.Payeh.Services.Users
             user.UpdatedDate = DateTime.UtcNow;
 
             // همه‌ی نشست‌های کاربر حذف‌شده باید فوراً باطل شوند.
-            var sessions = await _dbContext.Set<UserSession>()
+            var sessions = await _uow.Repository<UserSession>().Entities
                 .Where(x => x.UserId == id && x.RevocationDate == null)
                 .ToListAsync(cancellationToken);
             foreach (var session in sessions)
                 session.RevocationDate = DateTime.UtcNow;
 
             _userRepository.Update(user, saveNow: false);
-            await _dbContext.SaveChangesAsync(cancellationToken);
+            await _uow.SaveChangesAsync(cancellationToken);
         }
 
         /// <inheritdoc />
@@ -128,14 +128,14 @@ namespace SanjeshP.Payeh.Services.Users
             user.UpdatedDate = DateTime.UtcNow;
 
             // با تغییر رمز، همه‌ی نشست‌های فعال باطل می‌شوند.
-            var sessions = await _dbContext.Set<UserSession>()
+            var sessions = await _uow.Repository<UserSession>().Entities
                 .Where(x => x.UserId == id && x.RevocationDate == null)
                 .ToListAsync(cancellationToken);
             foreach (var session in sessions)
                 session.RevocationDate = DateTime.UtcNow;
 
             _userRepository.Update(user, saveNow: false);
-            await _dbContext.SaveChangesAsync(cancellationToken);
+            await _uow.SaveChangesAsync(cancellationToken);
         }
 
         /// <inheritdoc />
@@ -327,9 +327,9 @@ namespace SanjeshP.Payeh.Services.Users
 
                 await EnsureRolesExistAsync(roleIdList, cancellationToken);
 
-                _dbContext.RemoveRange(
+                _uow.Repository<UserRole>().DeleteRange(
                     user.UserRoles.Where(
-                        ur => !roleIdList.Contains(ur.RoleId)));
+                        ur => !roleIdList.Contains(ur.RoleId)).ToList(), false);
 
                 foreach (var roleId in roleIdList.Where(
                     r => user.UserRoles.All(ur => ur.RoleId != r)))
@@ -345,7 +345,7 @@ namespace SanjeshP.Payeh.Services.Users
 
             _userRepository.Update(user, saveNow: false);
 
-            await _dbContext.SaveChangesAsync(cancellationToken);
+            await _uow.SaveChangesAsync(cancellationToken);
 
             return await GetByIdAsync(id, cancellationToken);
         }
@@ -409,7 +409,7 @@ namespace SanjeshP.Payeh.Services.Users
         private async Task EnsureRolesExistAsync(List<int> roleIds, CancellationToken cancellationToken)
         {
             if (roleIds.Count == 0) return;
-            var existingCount = await _dbContext.Set<Role>().CountAsync(r => roleIds.Contains(r.Id) && !r.IsDeleted, cancellationToken);
+            var existingCount = await _uow.Repository<Role>().Entities.CountAsync(r => roleIds.Contains(r.Id) && !r.IsDeleted, cancellationToken);
             if (existingCount != roleIds.Count)
                 throw new BadRequestException("یک یا چند نقش ارسالی معتبر نیستند.");
         }
@@ -422,7 +422,7 @@ namespace SanjeshP.Payeh.Services.Users
 
             var normalizedNationalCode = nationalCode.Trim();
 
-            var exists = await _dbContext.Set<UserProfile>().AnyAsync(
+            var exists = await _uow.Repository<UserProfile>().Entities.AnyAsync(
                 up => !up.IsDeleted &&
                       up.NationalCode == normalizedNationalCode &&
                       (excludeUserId == null || up.UserId != excludeUserId),
@@ -438,7 +438,7 @@ namespace SanjeshP.Payeh.Services.Users
             if (string.IsNullOrWhiteSpace(NormalizedEmailAddress))
                 return;
 
-            var exists = await _dbContext.Set<User>().AnyAsync(
+            var exists = await _uow.Repository<User>().Entities.AnyAsync(
                 u => !u.IsDeleted &&
                      u.NormalizedEmailAddress == NormalizedEmailAddress &&
                      (excludeUserId == null || u.Id != excludeUserId),

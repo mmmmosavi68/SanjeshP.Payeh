@@ -9,7 +9,7 @@ using SanjeshP.Payeh.Entities.User;
 //using SanjeshP.Payeh.Services.Sms;
 using System.Security.Cryptography;
 
-namespace SanjeshP.Payeh.Services.Otp
+namespace SanjeshP.Payeh.Services.Implementations
 {
     /// <summary>
     /// پیاده‌سازی امن OTP:
@@ -27,18 +27,18 @@ namespace SanjeshP.Payeh.Services.Otp
         private const string InvalidChallengeMessage = "درخواست ورود نامعتبر یا منقضی شده است؛ دوباره وارد شوید.";
         private const int ChallengeMaxAgeMinutes = 30;
 
-        private readonly ApplicationDbContext _dbContext;
+        private readonly IUnitOfWork _uow;
         //private readonly ISmsSender _smsSender;
         private readonly OtpSettings _settings;
         private readonly ILogger<OtpService> _logger;
 
         public OtpService(
-            ApplicationDbContext dbContext,
+            IUnitOfWork uow,
             //ISmsSender smsSender,
             IOptions<SiteSettings> siteSettings,
             ILogger<OtpService> logger)
         {
-            _dbContext = dbContext;
+            _uow = uow;
             //_smsSender = smsSender;
             _settings = siteSettings.Value.OtpSettings;
             _logger = logger;
@@ -61,7 +61,7 @@ namespace SanjeshP.Payeh.Services.Otp
                 return new OtpRequestResult(null, null);
             }
 
-            var lastOtp = await _dbContext.Set<UserOtp>()
+            var lastOtp = await _uow.Repository<UserOtp>().Entities
                 .Where(x => x.UserId == user.Id && x.Purpose == LoginPurpose)
                 .OrderByDescending(x => x.CreatedDate)
                 .FirstOrDefaultAsync(cancellationToken);
@@ -87,7 +87,7 @@ namespace SanjeshP.Payeh.Services.Otp
             var user = await FindActiveUserByMobileAsync(mobileNumber, cancellationToken, includeRoles: true)
                 ?? throw new InvalidOtpException(InvalidCodeMessage);
 
-            var otp = await _dbContext.Set<UserOtp>().AsNoTracking()
+            var otp = await _uow.Repository<UserOtp>().Entities.AsNoTracking()
                 .Where(x => x.UserId == user.Id && x.Purpose == LoginPurpose && !x.IsUsed)
                 .OrderByDescending(x => x.CreatedDate)
                 .FirstOrDefaultAsync(cancellationToken)
@@ -109,7 +109,7 @@ namespace SanjeshP.Payeh.Services.Otp
             var mobile = NormalizeMobile(user.PhoneNumber);
             var now = DateTime.UtcNow;
 
-            var latest = await _dbContext.Set<UserOtp>().AsNoTracking()
+            var latest = await _uow.Repository<UserOtp>().Entities.AsNoTracking()
                 .Where(x => x.UserId == user.Id && x.Purpose == PasswordLoginPurpose)
                 .OrderByDescending(x => x.CreatedDate)
                 .FirstOrDefaultAsync(cancellationToken);
@@ -139,11 +139,11 @@ namespace SanjeshP.Payeh.Services.Otp
         {
             code = NormalizeDigits(code).Trim();
 
-            var otp = await _dbContext.Set<UserOtp>().AsNoTracking()
+            var otp = await _uow.Repository<UserOtp>().Entities.AsNoTracking()
                 .FirstOrDefaultAsync(x => x.Id == challengeId && x.Purpose == PasswordLoginPurpose && !x.IsUsed, cancellationToken)
                 ?? throw new InvalidOtpException(InvalidCodeMessage);
 
-            var user = await _dbContext.Set<User>()
+            var user = await _uow.Repository<User>().Entities
                 .Where(x => x.Id == otp.UserId && !x.IsDeleted && x.IsActive
                             && (x.LockoutEnd == null || x.LockoutEnd <= DateTimeOffset.UtcNow))
                 .Include(x => x.UserRoles).ThenInclude(ur => ur.Role)
@@ -159,7 +159,7 @@ namespace SanjeshP.Payeh.Services.Otp
         public async Task<LoginChallengeResult> ResendPasswordLoginCodeAsync(Guid challengeId, CancellationToken cancellationToken)
         {
             var now = DateTime.UtcNow;
-            var otps = _dbContext.Set<UserOtp>();
+            var otps = _uow.Repository<UserOtp>().Entities;
 
             var old = await otps.AsNoTracking()
                 .FirstOrDefaultAsync(x => x.Id == challengeId && x.Purpose == PasswordLoginPurpose && x.ConsumedAt == null, cancellationToken);
@@ -167,7 +167,7 @@ namespace SanjeshP.Payeh.Services.Otp
             if (old is null || old.CreatedDate < now.AddMinutes(-ChallengeMaxAgeMinutes))
                 throw new InvalidOtpException(InvalidChallengeMessage);
 
-            var user = await _dbContext.Set<User>().AsNoTracking()
+            var user = await _uow.Repository<User>().Entities.AsNoTracking()
                 .FirstOrDefaultAsync(x => x.Id == old.UserId && !x.IsDeleted && x.IsActive
                                           && (x.LockoutEnd == null || x.LockoutEnd <= DateTimeOffset.UtcNow), cancellationToken)
                 ?? throw new InvalidOtpException(InvalidChallengeMessage);
@@ -196,7 +196,7 @@ namespace SanjeshP.Payeh.Services.Otp
         private async Task<(UserOtp Otp, string Code)> CreateAndSendAsync(
             User user, string mobileNumber, string purpose, CancellationToken cancellationToken)
         {
-            var otps = _dbContext.Set<UserOtp>();
+            var otps = _uow.Repository<UserOtp>().Entities;
 
             // یک‌بارمصرف بودن: همه‌ی کدهای قبلیِ مصرف‌نشده باطل می‌شوند.
             await otps
@@ -217,7 +217,7 @@ namespace SanjeshP.Payeh.Services.Otp
             otp.CodeHash = HashCode(otp.Id, code);
 
             otps.Add(otp);
-            await _dbContext.SaveChangesAsync(cancellationToken);
+            await _uow.SaveChangesAsync(cancellationToken);
 
             //await _smsSender.SendAsync(mobileNumber, $"کد ورود شما: {code}\nاعتبار: {_settings.ExpirationSeconds} ثانیه", cancellationToken);
 
@@ -232,7 +232,7 @@ namespace SanjeshP.Payeh.Services.Otp
             if (otp.ExpireAt <= now)
                 throw new InvalidOtpException("کد وارد شده منقضی شده است؛ کد جدید درخواست کنید.");
 
-            var otps = _dbContext.Set<UserOtp>();
+            var otps = _uow.Repository<UserOtp>().Entities;
 
             // ۱) رزرو اتمیک یک تلاش: حتی با درخواست‌های موازی، مجموع تلاش‌ها از MaxAttempts بیشتر نمی‌شود.
             var reserved = await otps
@@ -270,7 +270,7 @@ namespace SanjeshP.Payeh.Services.Otp
             user.PhoneNumberConfirmed = true;
             user.LastLoginDate = DateTime.UtcNow;
             user.AccessFailedCount = 0;
-            await _dbContext.SaveChangesAsync(cancellationToken);
+            await _uow.SaveChangesAsync(cancellationToken);
         }
 
         private string WaitMessage(double elapsedSeconds)
@@ -292,7 +292,7 @@ namespace SanjeshP.Payeh.Services.Otp
 
         private async Task<User?> FindActiveUserByMobileAsync(string mobileNumber, CancellationToken cancellationToken, bool includeRoles = false)
         {
-            IQueryable<User> query = _dbContext.Set<User>().Where(x => !x.IsDeleted);
+            IQueryable<User> query = _uow.Repository<User>().Entities.Where(x => !x.IsDeleted);
 
             query = includeRoles
                 ? query.Include(x => x.UserRoles).ThenInclude(ur => ur.Role)

@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SanjeshP.Payeh.Api.DTOs.Users;
 using SanjeshP.Payeh.Common;
-using SanjeshP.Payeh.Services.Users;
 using SanjeshP.Payeh.WebFramework.Api;
 
 namespace SanjeshP.Payeh.Api.Controllers.V1;

@@ -1,6 +1,6 @@
 using SanjeshP.Payeh.Entities.Audit;
 
-namespace SanjeshP.Payeh.Data.Contracts;
+namespace SanjeshP.Payeh.Services.Contracts;
 
 /// <summary>پارامترهای جستجوی تاریخچه ممیزی؛ تاریخ‌ها باید UTC باشند.</summary>
 public sealed record AuditLogQuery(

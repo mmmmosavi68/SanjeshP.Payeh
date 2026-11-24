@@ -6,7 +6,7 @@ using SanjeshP.Payeh.Data;
 using SanjeshP.Payeh.Entities.Group;
 using SanjeshP.Payeh.Entities.Menu;
 
-namespace SanjeshP.Payeh.Services.Permissions
+namespace SanjeshP.Payeh.Services.Implementations
 {
     public class PermissionService : IPermissionService, IScopedDependency
     {
@@ -15,12 +15,12 @@ namespace SanjeshP.Payeh.Services.Permissions
         // «نسل» کش: با لغو این توکن، کش همه‌ی کاربران یک‌جا باطل می‌شود.
         private static CancellationTokenSource _epoch = new();
 
-        private readonly ApplicationDbContext _db;
+        private readonly IUnitOfWork _uow;
         private readonly IMemoryCache _cache;
 
-        public PermissionService(ApplicationDbContext db, IMemoryCache cache)
+        public PermissionService(IUnitOfWork uow, IMemoryCache cache)
         {
-            _db = db;
+            _uow = uow;
             _cache = cache;
         }
 
@@ -33,14 +33,14 @@ namespace SanjeshP.Payeh.Services.Permissions
 
         public async Task<List<Menu>> GetUserMenuItemsAsync(Guid userId, CancellationToken cancellationToken)
         {
-            var direct = _db.Set<UserAccessMenus>()
+            var direct = _uow.Repository<UserAccessMenus>().Entities
                 .Where(a => a.UserId == userId && a.IsActive && !a.IsDeleted)
                 .Select(a => a.Menu);
 
-            var viaGroups = from gu in _db.Set<GroupUsers>()
+            var viaGroups = from gu in _uow.Repository<GroupUsers>().Entities
                             where gu.UserId == userId && gu.IsActive && !gu.IsDeleted
                                   && gu.Group.IsActive && !gu.Group.IsDeleted
-                            join ga in _db.Set<GroupAccessMenus>() on gu.GroupId equals ga.GroupId
+                            join ga in _uow.Repository<GroupAccessMenus>().Entities on gu.GroupId equals ga.GroupId
                             where ga.IsActive && !ga.IsDeleted
                             select ga.Menu;
 
@@ -51,7 +51,7 @@ namespace SanjeshP.Payeh.Services.Permissions
                 .ToListAsync(cancellationToken);
 
             // والدهای منو فقط برای ساخت درخت به پاسخ اضافه می‌شوند؛ مجوز Action جدیدی ایجاد نمی‌شود.
-            var allMenus = await _db.Set<Menu>()
+            var allMenus = await _uow.Repository<Menu>().Entities
                 .Where(m => m.IsActive && !m.IsDeleted)
                 .AsNoTracking()
                 .ToListAsync(cancellationToken);
@@ -100,13 +100,13 @@ namespace SanjeshP.Payeh.Services.Permissions
         private async Task<HashSet<string>> LoadFromDatabaseAsync(Guid userId, CancellationToken cancellationToken)
         {
             // دسترسی مستقیم کاربر
-            var direct = _db.Set<UserAccessMenus>().Where(a => a.UserId == userId && a.IsActive && !a.IsDeleted).Select(a => a.Menu);
+            var direct = _uow.Repository<UserAccessMenus>().Entities.Where(a => a.UserId == userId && a.IsActive && !a.IsDeleted).Select(a => a.Menu);
 
             // دسترسی از طریق گروه‌های فعال کاربر
-            var viaGroups = from gu in _db.Set<GroupUsers>()
+            var viaGroups = from gu in _uow.Repository<GroupUsers>().Entities
                             where gu.UserId == userId && gu.IsActive && !gu.IsDeleted
                                   && gu.Group.IsActive && !gu.Group.IsDeleted
-                            join ga in _db.Set<GroupAccessMenus>() on gu.GroupId equals ga.GroupId
+                            join ga in _uow.Repository<GroupAccessMenus>().Entities on gu.GroupId equals ga.GroupId
                             where ga.IsActive && !ga.IsDeleted
                             select ga.Menu;
 

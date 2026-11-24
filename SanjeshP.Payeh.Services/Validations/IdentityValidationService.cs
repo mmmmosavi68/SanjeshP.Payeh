@@ -12,11 +12,11 @@ namespace SanjeshP.Payeh.Services.Validations;
 public sealed class IdentityValidationService
     : IIdentityValidationService, IScopedDependency
 {
-    private readonly ApplicationDbContext _db;
+    private readonly IUnitOfWork _uow;
 
-    public IdentityValidationService(ApplicationDbContext db)
+    public IdentityValidationService(IUnitOfWork uow)
     {
-        _db = db;
+        _uow = uow;
     }
 
     public async Task<string> ValidateUserNationalCodeAsync(
@@ -26,7 +26,7 @@ public sealed class IdentityValidationService
     {
         var normalizedCode = NormalizeNationalCode(nationalCode);
 
-        var exists = await _db.Set<UserProfile>()
+        var exists = await _uow.Repository<UserProfile>().Entities
             .AnyAsync(
                 x => x.NationalCode == normalizedCode &&
                      (!excludeProfileId.HasValue || x.Id != excludeProfileId.Value),
@@ -50,7 +50,7 @@ public sealed class IdentityValidationService
         if (normalizedNumber is null)
             return null;
 
-        var exists = await _db.Set<User>()
+        var exists = await _uow.Repository<User>().Entities
             .AnyAsync(
                 x => x.PhoneNumber == normalizedNumber &&
                      (!excludeUserId.HasValue || x.Id != excludeUserId.Value),
@@ -75,7 +75,7 @@ public sealed class IdentityValidationService
 
         var normalizedCode = NormalizeNationalCode(nationalCode);
 
-        var exists = await _db.Set<ExamRegistration>()
+        var exists = await _uow.Repository<ExamRegistration>().Entities
             .AnyAsync(
                 x => x.ExamId == examId &&
                      x.NationalCode == normalizedCode &&
@@ -105,7 +105,7 @@ public sealed class IdentityValidationService
         if (normalizedNumber is null)
             return null;
 
-        var exists = await _db.Set<ExamRegistration>()
+        var exists = await _uow.Repository<ExamRegistration>().Entities
             .AnyAsync(
                 x => x.ExamId == examId &&
                      x.PhoneNumber == normalizedNumber &&

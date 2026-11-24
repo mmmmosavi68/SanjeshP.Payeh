@@ -7,7 +7,6 @@ using SanjeshP.Payeh.Api.Models.Users;
 using SanjeshP.Payeh.Common;
 using SanjeshP.Payeh.Data.Contracts;
 using SanjeshP.Payeh.Entities.User;
-using SanjeshP.Payeh.Services.Users;
 using SanjeshP.Payeh.WebFramework.Api;
 using System.Text.Json;
 

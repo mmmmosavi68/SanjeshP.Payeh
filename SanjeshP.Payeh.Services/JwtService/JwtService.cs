@@ -26,16 +26,16 @@ namespace SanjeshP.Payeh.Services.JwtService
     {
         private readonly SiteSettings _siteSettings;
         private readonly IUserSessionRepository _sessionRepository;
-        private readonly ApplicationDbContext _dbContext;
+        private readonly IUnitOfWork _uow;
 
         public JwtService(
             IOptions<SiteSettings> siteSettings,
             IUserSessionRepository sessionRepository,
-            ApplicationDbContext dbContext)
+            IUnitOfWork uow)
         {
             _siteSettings = siteSettings.Value;
             _sessionRepository = sessionRepository;
-            _dbContext = dbContext;
+            _uow = uow;
         }
 
         /// <inheritdoc />
@@ -80,7 +80,7 @@ namespace SanjeshP.Payeh.Services.JwtService
             };
 
             await _sessionRepository.AddAsync(session, cancellationToken);
-            await _dbContext.SaveChangesAsync(cancellationToken);
+            await _uow.SaveChangesAsync(cancellationToken);
 
             return BuildAccessToken(user, session, refreshToken);
         }
@@ -103,7 +103,7 @@ namespace SanjeshP.Payeh.Services.JwtService
                 if (reused is not null && reused.RevocationDate is null)
                 {
                     reused.RevocationDate = now;
-                    await _dbContext.SaveChangesAsync(cancellationToken);
+                    await _uow.SaveChangesAsync(cancellationToken);
                 }
                 throw new UnauthorizedException("توکن تازه‌سازی نامعتبر است. لطفاً دوباره وارد شوید.");
             }
@@ -127,7 +127,7 @@ namespace SanjeshP.Payeh.Services.JwtService
             session.LastUsedAt = now;
 
             _sessionRepository.Update(session, saveNow: false);
-            await _dbContext.SaveChangesAsync(cancellationToken);
+            await _uow.SaveChangesAsync(cancellationToken);
 
             return BuildAccessToken(session.User, session, newRefreshToken);
         }
@@ -140,7 +140,7 @@ namespace SanjeshP.Payeh.Services.JwtService
             {
                 session.RevocationDate = DateTime.UtcNow;
                 _sessionRepository.Update(session, saveNow: false);
-                await _dbContext.SaveChangesAsync(cancellationToken);
+                await _uow.SaveChangesAsync(cancellationToken);
             }
         }
 
@@ -154,7 +154,7 @@ namespace SanjeshP.Payeh.Services.JwtService
             session.IsActive = false;
             session.IsDeleted = true;
             _sessionRepository.Update(session, saveNow: false);
-            await _dbContext.SaveChangesAsync(cancellationToken);
+            await _uow.SaveChangesAsync(cancellationToken);
         }
 
         /// <inheritdoc />
@@ -167,7 +167,7 @@ namespace SanjeshP.Payeh.Services.JwtService
         {
             var now = DateTime.UtcNow;
 
-            var activeSessions = _dbContext.Set<UserSession>()
+            var activeSessions = _uow.Repository<UserSession>().Entities
                 .AsNoTracking()
                 .Where(x =>
                     x.UserId == userId &&
@@ -182,7 +182,7 @@ namespace SanjeshP.Payeh.Services.JwtService
                 })
                 .ToList();
 
-            var affectedRows = _dbContext.Set<UserSession>()
+            var affectedRows = _uow.Repository<UserSession>().Entities
                 .Where(x =>
                     x.UserId == userId &&
                     x.Id != currentSessionId &&
@@ -201,7 +201,7 @@ namespace SanjeshP.Payeh.Services.JwtService
         {
             var now = DateTime.UtcNow;
 
-            await _dbContext.Set<UserSession>()
+            await _uow.Repository<UserSession>().Entities
                 .Where(x =>
                     x.UserId == userId &&
                     x.RevocationDate == null &&

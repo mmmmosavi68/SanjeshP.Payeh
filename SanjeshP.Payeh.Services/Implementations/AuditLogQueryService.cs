@@ -3,7 +3,7 @@ using SanjeshP.Payeh.Common;
 using SanjeshP.Payeh.Data.Contracts;
 using SanjeshP.Payeh.Entities.Audit;
 
-namespace SanjeshP.Payeh.Data.Repositories;
+namespace SanjeshP.Payeh.Services.Implementations;
 
 /// <summary>پیاده‌سازی جستجوی سوابق ممیزی با فیلترهای امن و صفحه‌بندی.</summary>
 public sealed class AuditLogQueryService : IAuditLogQueryService, IScopedDependency

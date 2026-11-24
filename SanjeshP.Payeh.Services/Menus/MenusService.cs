@@ -3,7 +3,6 @@ using SanjeshP.Payeh.Common;
 using SanjeshP.Payeh.Common.Exceptions;
 using SanjeshP.Payeh.Data.Contracts.Menus;
 using SanjeshP.Payeh.Entities.Menu;
-using SanjeshP.Payeh.Services.Permissions;
 
 namespace SanjeshP.Payeh.Services.Menus;
 

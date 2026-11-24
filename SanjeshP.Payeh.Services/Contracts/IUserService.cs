@@ -1,6 +1,6 @@
 using SanjeshP.Payeh.Entities.User;
 
-namespace SanjeshP.Payeh.Services.Users
+namespace SanjeshP.Payeh.Services.Contracts
 {
     public record UserQuery(
         int PageNumber,

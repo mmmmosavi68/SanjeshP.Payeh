@@ -2,7 +2,6 @@ using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SanjeshP.Payeh.Api.Models.Auth;
-using SanjeshP.Payeh.Services.Permissions;
 using SanjeshP.Payeh.WebFramework.Api;
 using SanjeshP.Payeh.WebFramework.Middlewares;
 

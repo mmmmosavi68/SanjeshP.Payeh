@@ -13,7 +13,7 @@ using SanjeshP.Payeh.Data.Contracts;
 using SanjeshP.Payeh.Data.Repositories;
 using SanjeshP.Payeh.Entities.User;
 using SanjeshP.Payeh.Services.Captcha;
-using SanjeshP.Payeh.Services.Permissions;
+using SanjeshP.Payeh.Services.Implementations;
 using SanjeshP.Payeh.Services.Sms;
 using SanjeshP.Payeh.WebFramework.Api;
 using SanjeshP.Payeh.WebFramework.CustomMapping;

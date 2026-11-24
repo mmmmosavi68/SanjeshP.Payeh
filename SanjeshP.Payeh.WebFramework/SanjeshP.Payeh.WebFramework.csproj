@@ -46,4 +46,8 @@
     <NoWarn>$(NoWarn);1591</NoWarn>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Using Include="SanjeshP.Payeh.Services.Contracts" />
+    <Using Include="SanjeshP.Payeh.Data.Contracts" />
+  </ItemGroup>
 </Project>

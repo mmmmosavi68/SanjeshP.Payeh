@@ -3,16 +3,16 @@ using SanjeshP.Payeh.Common;
 using SanjeshP.Payeh.Data;
 using SanjeshP.Payeh.Entities.User;
 
-namespace SanjeshP.Payeh.Services.Roles
+namespace SanjeshP.Payeh.Services.Implementations
 {
     public class RoleService : IRoleService, IScopedDependency
     {
-        private readonly ApplicationDbContext _dbContext;
+        private readonly IUnitOfWork _uow;
 
-        public RoleService(ApplicationDbContext dbContext) => _dbContext = dbContext;
+        public RoleService(IUnitOfWork uow) => _uow = uow;
 
         public async Task<IReadOnlyList<Role>> GetActiveRolesAsync(CancellationToken cancellationToken)
-            => await _dbContext.Set<Role>()
+            => await _uow.Repository<Role>().Entities
                 .AsNoTracking()
                 .Where(x => !x.IsDeleted && x.IsActive)
                 .OrderBy(x => x.Id)
