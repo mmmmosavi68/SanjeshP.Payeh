@@ -1,4 +1,4 @@
-﻿using SanjeshP.Payeh.Common;
+using SanjeshP.Payeh.Common;
 using SanjeshP.Payeh.Common.Exceptions;
 using SanjeshP.Payeh.Data.Contracts.Exams;
 using SanjeshP.Payeh.Entities.Exam;
@@ -8,9 +8,11 @@ namespace SanjeshP.Payeh.Services.Exams;
 public sealed class ExamService : IExamService, IScopedDependency
 {
     private readonly IExamRepository _repository;
+    private readonly ICodesService _codes;
 
-    public ExamService(IExamRepository repository)
+    public ExamService(IExamRepository repository, ICodesService codes)
     {
+        _codes = codes;
         _repository = repository;
     }
 
@@ -156,18 +158,13 @@ public sealed class ExamService : IExamService, IScopedDependency
                 "نوبت انتخاب‌شده وجود ندارد یا غیرفعال است.");
         }
 
-        if (!await _repository.CodeExistsInGroupAsync(
-                exam.ExamTypeId, "نوع آزمون", cancellationToken))
-        {
-            throw new BadRequestException(
-                "نوع آزمون انتخاب‌شده معتبر نیست.");
-        }
+        await _codes.ResolveIdAsync(exam.ExamTypeId, null, null, CodeGroupTitles.ExamType, ApiMessages.Lookup.ExamTypeInvalid, cancellationToken);
 
-        if (!await _repository.CodeExistsInGroupAsync(
-                exam.ExamModeId, "نحوه برگزاری", cancellationToken))
-        {
-            throw new BadRequestException(
-                "نحوه برگزاری انتخاب‌شده معتبر نیست.");
-        }
+        await _codes.ResolveIdAsync(exam.ExamModeId, null, null, CodeGroupTitles.ExamMode, ApiMessages.Lookup.ExamModeInvalid, cancellationToken);
+    }
+
+    public Task<PagedItems<TDto>> GetPageAsync<TDto>(string? search, Guid? examSessionId, int? examTypeId, int? examTypePrimaryCode, int? examTypeSubCode, int? examModeId, int? examModePrimaryCode, int? examModeSubCode, bool? isActive, int? page, int? pageSize, Func<IQueryable<Exam>, IQueryable<TDto>> project, CancellationToken cancellationToken)
+    {
+        return _repository.GetPageAsync(search, examSessionId, examTypeId, examTypePrimaryCode, examTypeSubCode, examModeId, examModePrimaryCode, examModeSubCode, isActive, page, pageSize, project, cancellationToken);
     }
 }

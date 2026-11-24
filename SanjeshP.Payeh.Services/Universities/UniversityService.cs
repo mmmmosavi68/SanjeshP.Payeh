@@ -1,4 +1,4 @@
-﻿
+
 using SanjeshP.Payeh.Common;
 using SanjeshP.Payeh.Common.Exceptions;
 using SanjeshP.Payeh.Data.Contracts.Universities;
@@ -9,9 +9,11 @@ namespace SanjeshP.Payeh.Services.Universities;
 public sealed class UniversityService : IUniversityService, IScopedDependency
 {
     private readonly IUniversityRepository _repository;
+    private readonly ICodesService _codes;
 
-    public UniversityService(IUniversityRepository repository)
+    public UniversityService(IUniversityRepository repository, ICodesService codes)
     {
+        _codes = codes;
         _repository = repository;
     }
 
@@ -192,19 +194,9 @@ public sealed class UniversityService : IUniversityService, IScopedDependency
             throw new BadRequestException("ظرفیت مصوب نمی‌تواند منفی باشد.");
     }
 
-    private async Task ValidateUniversityTypeAsync(
-        int universityTypeId,
-        CancellationToken cancellationToken)
+    private async Task ValidateUniversityTypeAsync(int universityTypeId, CancellationToken cancellationToken)
     {
-        var exists = await _repository.UniversityTypeExistsAsync(
-            universityTypeId,
-            cancellationToken);
-
-        if (!exists)
-        {
-            throw new BadRequestException(
-                "نوع دانشگاه انتخاب‌شده معتبر نیست یا غیرفعال شده است.");
-        }
+        await _codes.ResolveIdAsync(universityTypeId, null, null, null, ApiMessages.Lookup.UniversityTypeInvalid, cancellationToken);
     }
 
     private async Task ValidateParentAsync(
@@ -274,4 +266,9 @@ public sealed class UniversityService : IUniversityService, IScopedDependency
     }
 
     #endregion
+
+    public Task<PagedItems<TDto>> GetPageAsync<TDto>(string? search, int? universityTypeId, int? universityTypePrimaryCode, int? universityTypeSubCode, int? region, int? parentUniversityId, bool? isActive, int? page, int? pageSize, Func<IQueryable<University>, IQueryable<TDto>> project, CancellationToken cancellationToken)
+    {
+        return _repository.GetPageAsync(search, universityTypeId, universityTypePrimaryCode, universityTypeSubCode, region, parentUniversityId, isActive, page, pageSize, project, cancellationToken);
+    }
 }

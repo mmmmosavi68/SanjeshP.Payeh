@@ -1,4 +1,4 @@
-﻿
+
 using Microsoft.EntityFrameworkCore;
 using SanjeshP.Payeh.Common;
 using SanjeshP.Payeh.Data.Contracts;
@@ -76,5 +76,10 @@ public class MenuRepository : EFRepository<Menu>, IMenuRepository, IScopedDepend
         menu.UpdatedDate = DateTime.UtcNow;
 
         await base.UpdateAsync(menu, cancellationToken);
+    }
+
+    public Task<PagedItems<TDto>> GetPageAsync<TDto>(int? page, int? pageSize, Func<IQueryable<Menu>, IQueryable<TDto>> project, CancellationToken cancellationToken)
+    {
+        return TableNoTracking.Where(m => !m.IsDeleted).OrderBy(m => m.PageCode).ThenBy(m => m.MenuTitle).ThenBy(m => m.Id).ToPagedAsync(project, page, pageSize, cancellationToken);
     }
 }

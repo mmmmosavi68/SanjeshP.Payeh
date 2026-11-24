@@ -1,4 +1,4 @@
-﻿
+
 using Microsoft.EntityFrameworkCore;
 using SanjeshP.Payeh.Common;
 using SanjeshP.Payeh.Data.Contracts.Exams;
@@ -77,5 +77,20 @@ public sealed class ExamSessionRepository
             .AnyAsync(
                 x => x.ExamSessionId == sessionId,
                 cancellationToken);
+    }
+
+    public Task<PagedItems<TDto>> GetPageAsync<TDto>(string? search, bool? isActive, int? page, int? pageSize, Func<IQueryable<ExamSession>, IQueryable<TDto>> project, CancellationToken cancellationToken)
+    {
+        var query = _dbContext.Set<ExamSession>().AsNoTracking().AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = search.Trim();
+            query = query.Where(x => x.Title.Contains(term));
+        }
+
+        if (isActive.HasValue) query = query.Where(x => x.IsActive == isActive.Value);
+
+        return query.OrderByDescending(x => x.ExamDate).ThenBy(x => x.StartTime).ThenBy(x => x.Id).ToPagedAsync(project, page, pageSize, cancellationToken);
     }
 }

@@ -1,4 +1,4 @@
-﻿
+
 using Microsoft.EntityFrameworkCore;
 using SanjeshP.Payeh.Common;
 using SanjeshP.Payeh.Data.Contracts;
@@ -133,5 +133,25 @@ public sealed class UniversityRepository
         CancellationToken cancellationToken)
     {
         return base.UpdateAsync(university, cancellationToken);
+    }
+
+    public Task<PagedItems<TDto>> GetPageAsync<TDto>(string? search, int? universityTypeId, int? universityTypePrimaryCode, int? universityTypeSubCode, int? region, int? parentUniversityId, bool? isActive, int? page, int? pageSize, Func<IQueryable<University>, IQueryable<TDto>> project, CancellationToken cancellationToken)
+    {
+        var query = TableNoTracking.AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = search.Trim();
+            query = query.Where(x => x.Title.Contains(term));
+        }
+
+        if (universityTypeId.HasValue) query = query.Where(x => x.UniversityTypeId == universityTypeId.Value);
+        if (universityTypePrimaryCode.HasValue) query = query.Where(x => x.UniversityType!.PrimaryCode == universityTypePrimaryCode.Value);
+        if (universityTypeSubCode.HasValue) query = query.Where(x => x.UniversityType!.SubCode == universityTypeSubCode.Value);
+        if (region.HasValue) query = query.Where(x => x.Region == region.Value);
+        if (parentUniversityId.HasValue) query = query.Where(x => x.ParentUniversityId == parentUniversityId.Value);
+        if (isActive.HasValue) query = query.Where(x => x.IsActive == isActive.Value);
+
+        return query.OrderBy(x => x.Title).ThenBy(x => x.Id).ToPagedAsync(project, page, pageSize, cancellationToken);
     }
 }

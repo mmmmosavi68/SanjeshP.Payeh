@@ -24,4 +24,7 @@
 		<Nullable>enable</Nullable>
 	</PropertyGroup>
 
+  <ItemGroup>
+    <Using Include="SanjeshP.Payeh.Common" />
+  </ItemGroup>
 </Project>

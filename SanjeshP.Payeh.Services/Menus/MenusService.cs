@@ -1,4 +1,4 @@
-﻿
+
 using SanjeshP.Payeh.Common;
 using SanjeshP.Payeh.Common.Exceptions;
 using SanjeshP.Payeh.Data.Contracts.Menus;
@@ -189,5 +189,10 @@ public class MenusService : IMenusService, IScopedDependency
             throw new BadRequestException(
                 "عنوان منو الزامی است.");
         }
+    }
+
+    public Task<PagedItems<TDto>> GetPageAsync<TDto>(int? page, int? pageSize, Func<IQueryable<Menu>, IQueryable<TDto>> project, CancellationToken cancellationToken)
+    {
+        return _menuRepository.GetPageAsync(page, pageSize, project, cancellationToken);
     }
 }

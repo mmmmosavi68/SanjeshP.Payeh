@@ -1,4 +1,4 @@
-﻿
+
 using SanjeshP.Payeh.Entities.Menu;
 
 namespace SanjeshP.Payeh.Data.Contracts.Menus;
@@ -30,4 +30,6 @@ public interface IMenuRepository
     Task SoftDeleteAsync(
         Menu menu,
         CancellationToken cancellationToken);
+
+    Task<PagedItems<TDto>> GetPageAsync<TDto>(int? page, int? pageSize, Func<IQueryable<Menu>, IQueryable<TDto>> project, CancellationToken cancellationToken);
 }

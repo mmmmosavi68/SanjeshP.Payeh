@@ -1,4 +1,4 @@
-﻿
+
 using SanjeshP.Payeh.Common;
 using SanjeshP.Payeh.Common.Exceptions;
 using SanjeshP.Payeh.Data.Contracts.Exams;
@@ -112,5 +112,10 @@ public sealed class ExamSessionService : IExamSessionService, IScopedDependency
 
         if (session.EndTime <= session.StartTime)
             throw new BadRequestException("ساعت پایان باید بعد از ساعت شروع باشد.");
+    }
+
+    public Task<PagedItems<TDto>> GetPageAsync<TDto>(string? search, bool? isActive, int? page, int? pageSize, Func<IQueryable<ExamSession>, IQueryable<TDto>> project, CancellationToken cancellationToken)
+    {
+        return _repository.GetPageAsync(search, isActive, page, pageSize, project, cancellationToken);
     }
 }

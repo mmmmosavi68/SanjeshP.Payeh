@@ -1,4 +1,4 @@
-﻿
+
 using SanjeshP.Payeh.Entities.Exam;
 
 namespace SanjeshP.Payeh.Data.Contracts.Exams;
@@ -25,4 +25,6 @@ public interface IExamSessionRepository
     Task<bool> HasExamsAsync(
         Guid sessionId,
         CancellationToken cancellationToken);
+
+    Task<PagedItems<TDto>> GetPageAsync<TDto>(string? search, bool? isActive, int? page, int? pageSize, Func<IQueryable<ExamSession>, IQueryable<TDto>> project, CancellationToken cancellationToken);
 }

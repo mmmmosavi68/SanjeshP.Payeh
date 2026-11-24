@@ -1,4 +1,4 @@
-﻿using SanjeshP.Payeh.Entities.Exam;
+using SanjeshP.Payeh.Entities.Exam;
 
 namespace SanjeshP.Payeh.Data.Contracts.Exams;
 
@@ -31,4 +31,6 @@ public interface IExamRepository
 
     Task AddAsync(Exam exam, CancellationToken cancellationToken);
     Task UpdateAsync(Exam exam, CancellationToken cancellationToken);
+
+    Task<PagedItems<TDto>> GetPageAsync<TDto>(string? search, Guid? examSessionId, int? examTypeId, int? examTypePrimaryCode, int? examTypeSubCode, int? examModeId, int? examModePrimaryCode, int? examModeSubCode, bool? isActive, int? page, int? pageSize, Func<IQueryable<Exam>, IQueryable<TDto>> project, CancellationToken cancellationToken);
 }

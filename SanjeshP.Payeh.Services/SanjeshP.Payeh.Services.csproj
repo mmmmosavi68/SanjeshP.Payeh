@@ -30,6 +30,7 @@
 	</PropertyGroup>
 
   <ItemGroup>
+    <Using Include="SanjeshP.Payeh.Common" />
     <Using Include="SanjeshP.Payeh.Services.Contracts" />
     <Using Include="SanjeshP.Payeh.Data.Contracts" />
   </ItemGroup>

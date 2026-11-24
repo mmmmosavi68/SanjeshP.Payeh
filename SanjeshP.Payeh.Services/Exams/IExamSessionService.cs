@@ -1,4 +1,4 @@
-﻿
+
 using SanjeshP.Payeh.Entities.Exam;
 
 namespace SanjeshP.Payeh.Services.Exams;
@@ -27,4 +27,6 @@ public interface IExamSessionService
     Task DeleteAsync(
         Guid id,
         CancellationToken cancellationToken);
+
+    Task<PagedItems<TDto>> GetPageAsync<TDto>(string? search, bool? isActive, int? page, int? pageSize, Func<IQueryable<ExamSession>, IQueryable<TDto>> project, CancellationToken cancellationToken);
 }

@@ -19,4 +19,15 @@ public static partial class ApiMessages
         public static readonly ApiMessage MappingError = new("COMMON_MAPPING", "خطا در تبدیل داده‌ها. لطفاً با پشتیبانی تماس بگیرید.");
         public static readonly ApiMessage InvalidModel = new("COMMON_INVALID_MODEL", "مقدار ارسالی معتبر نیست");
     }
+
+    public static class Lookup
+    {
+        public static readonly ApiMessage CodeRequired = new("LOOKUP_001", "شناسه یا کد اصلی و کد فرعی الزامی است.");
+        public static readonly ApiMessage CodeNotFound = new("LOOKUP_002", "کد موردنظر پیدا نشد.");
+        public static readonly ApiMessage ExamTypeInvalid = new("LOOKUP_003", "نوع آزمون انتخاب‌شده معتبر نیست.");
+        public static readonly ApiMessage ExamModeInvalid = new("LOOKUP_004", "نحوه برگزاری انتخاب‌شده معتبر نیست.");
+        public static readonly ApiMessage UniversityTypeInvalid = new("LOOKUP_005", "نوع دانشگاه انتخاب‌شده معتبر نیست.");
+        public static readonly ApiMessage GenderInvalid = new("LOOKUP_006", "جنسیت انتخاب‌شده معتبر نیست.");
+        public static readonly ApiMessage ParentCodeInvalid = new("LOOKUP_007", "والد انتخاب‌شده معتبر نیست.");
+    }
 }

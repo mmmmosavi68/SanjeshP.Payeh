@@ -1,8 +1,9 @@
-﻿
+
 using Microsoft.EntityFrameworkCore;
 using SanjeshP.Payeh.Common;
 using SanjeshP.Payeh.Common.Exceptions;
 using SanjeshP.Payeh.Data.Contracts;
+using SanjeshP.Payeh.Data.Repositories;
 using SanjeshP.Payeh.Entities.Menu;
 
 namespace SanjeshP.Payeh.Services.Implementations;
@@ -474,5 +475,43 @@ public sealed class CodesService : ICodesService, IScopedDependency
             .OrderBy(x => x.SubCode)
             .ThenBy(x => x.Title)
             .ToListAsync(cancellationToken);
+    }
+
+    /// <summary>تبدیل (Id | PrimaryCode+SubCode) به Id؛ اعتبارسنجی همیشه با PrimaryCode/SubCode انجام می‌شود.</summary>
+    public async Task<int> ResolveIdAsync(int? id, int? primaryCode, int? subCode, string? groupTitle, ApiMessage invalidMessage, CancellationToken cancellationToken)
+    {
+        if (!primaryCode.HasValue || !subCode.HasValue)
+        {
+            if (id is null or <= 0)
+                throw new BadRequestException(invalidMessage);
+
+            var pair = await _repository.TableNoTracking
+                .Where(x => x.Id == id.Value)
+                .Select(x => new { x.PrimaryCode, x.SubCode })
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (pair is null || !pair.PrimaryCode.HasValue || !pair.SubCode.HasValue)
+                throw new BadRequestException(invalidMessage);
+
+            primaryCode = pair.PrimaryCode;
+            subCode = pair.SubCode;
+        }
+
+        var query = _repository.TableNoTracking.Where(x => x.PrimaryCode == primaryCode && x.SubCode == subCode && x.IsActive);
+
+        if (!string.IsNullOrWhiteSpace(groupTitle))
+            query = query.Where(x => x.Parent != null && x.Parent.Title == groupTitle && x.Parent.IsActive);
+
+        var resolved = await query.Select(x => (int?)x.Id).FirstOrDefaultAsync(cancellationToken);
+
+        if (resolved is null)
+            throw new BadRequestException(invalidMessage);
+
+        return resolved.Value;
+    }
+
+    public Task<PagedItems<TDto>> GetPageAsync<TDto>(int? page, int? pageSize, Func<IQueryable<Code>, IQueryable<TDto>> project, CancellationToken cancellationToken)
+    {
+        return _repository.TableNoTracking.OrderBy(x => x.ParentId).ThenBy(x => x.PrimaryCode).ThenBy(x => x.SubCode).ThenBy(x => x.Id).ToPagedAsync(project, page, pageSize, cancellationToken);
     }
 }

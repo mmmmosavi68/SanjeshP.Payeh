@@ -1,4 +1,4 @@
-﻿using SanjeshP.Payeh.Entities.Menu;
+using SanjeshP.Payeh.Entities.Menu;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -44,5 +44,9 @@ namespace SanjeshP.Payeh.Services.Contracts
         Task<List<Code>> GetManagementItemsAsync(
             int groupId,
             CancellationToken cancellationToken);
-    }
+
+    Task<int> ResolveIdAsync(int? id, int? primaryCode, int? subCode, string? groupTitle, ApiMessage invalidMessage, CancellationToken cancellationToken);
+
+    Task<PagedItems<TDto>> GetPageAsync<TDto>(int? page, int? pageSize, Func<IQueryable<Code>, IQueryable<TDto>> project, CancellationToken cancellationToken);
+}
 }

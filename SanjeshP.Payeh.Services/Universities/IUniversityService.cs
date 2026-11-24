@@ -1,4 +1,4 @@
-﻿
+
 using SanjeshP.Payeh.Entities.University;
 
 namespace SanjeshP.Payeh.Services.Universities;
@@ -30,4 +30,6 @@ public interface IUniversityService
     Task SoftDeleteAsync(
         int id,
         CancellationToken cancellationToken);
+
+    Task<PagedItems<TDto>> GetPageAsync<TDto>(string? search, int? universityTypeId, int? universityTypePrimaryCode, int? universityTypeSubCode, int? region, int? parentUniversityId, bool? isActive, int? page, int? pageSize, Func<IQueryable<University>, IQueryable<TDto>> project, CancellationToken cancellationToken);
 }

@@ -1,4 +1,4 @@
-﻿
+
 using SanjeshP.Payeh.Entities.University;
 
 namespace SanjeshP.Payeh.Data.Contracts.Universities;
@@ -40,4 +40,6 @@ public interface IUniversityRepository
     Task UpdateAsync(
         University university,
         CancellationToken cancellationToken);
+
+    Task<PagedItems<TDto>> GetPageAsync<TDto>(string? search, int? universityTypeId, int? universityTypePrimaryCode, int? universityTypeSubCode, int? region, int? parentUniversityId, bool? isActive, int? page, int? pageSize, Func<IQueryable<University>, IQueryable<TDto>> project, CancellationToken cancellationToken);
 }
