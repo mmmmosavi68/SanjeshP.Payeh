@@ -36,6 +36,7 @@ try
 
     // ── ثبت سرویس‌ها (همه قبل از Build) ──
     builder.Services.AddMinimalServices(builder.Configuration);
+    builder.Services.AddSingleton<SanjeshP.Payeh.Api.Mapping.IApiMapper, SanjeshP.Payeh.Api.Mapping.ApiMapper>();
 
     // پشت BFF/Reverse Proxy: IP واقعی کلاینت از X-Forwarded-For (فقط از پروکسی‌های مورد اعتماد).
     // Loopback به‌صورت پیش‌فرض مورد اعتماد است؛ در سرور واقعی IP سرور BFF را در ForwardedHeaders:KnownProxies بگذارید.

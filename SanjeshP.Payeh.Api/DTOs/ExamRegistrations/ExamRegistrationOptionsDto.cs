@@ -1,4 +1,4 @@
-﻿namespace SanjeshP.Payeh.Api.DTOs.ExamRegistrations;
+namespace SanjeshP.Payeh.Api.DTOs.ExamRegistrations;
 
 public sealed class ExamRegistrationOptionsDto
 {
@@ -28,6 +28,8 @@ public sealed class ExamRegistrationCustomFieldDto
     public string Name { get; set; } = string.Empty;
     public string Label { get; set; } = string.Empty;
     public int FieldTypeId { get; set; }
+    public int? FieldTypePrimaryCode { get; set; }
+    public int? FieldTypeSubCode { get; set; }
     public bool IsRequired { get; set; }
     public string? OptionsJson { get; set; }
     public string? ValidationJson { get; set; }

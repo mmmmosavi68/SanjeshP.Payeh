@@ -1,4 +1,4 @@
-﻿
+
 using System.ComponentModel.DataAnnotations;
 
 namespace SanjeshP.Payeh.Api.DTOs.Codes;
@@ -9,8 +9,12 @@ public sealed class UpdateCodeDto
     [MaxLength(200, ErrorMessage = "عنوان نباید بیشتر از ۲۰۰ کاراکتر باشد")]
     public string Title { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "انتخاب والد الزامی است")]
+    /// <summary>شناسه والد (سازگاری قبلی). به‌جای آن می‌توان ParentPrimaryCode و ParentSubCode را فرستاد.</summary>
     public int? ParentId { get; set; }
+
+    public int? ParentPrimaryCode { get; set; }
+
+    public int? ParentSubCode { get; set; }
 
     public int? StandardCode { get; set; }
 

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -8,6 +8,11 @@ namespace SanjeshP.Payeh.Common.Exceptions
     {
         public BadRequestException()
             : base(ApiResultStatusCode.BadRequest)
+        {
+        }
+
+        public BadRequestException(ApiMessage message)
+            : base(ApiResultStatusCode.BadRequest, message)
         {
         }
 

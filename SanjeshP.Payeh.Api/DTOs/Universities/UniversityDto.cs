@@ -1,4 +1,4 @@
-﻿
+
 namespace SanjeshP.Payeh.Api.DTOs.Universities;
 
 public sealed class UniversityDto
@@ -8,6 +8,8 @@ public sealed class UniversityDto
     public string Title { get; set; } = string.Empty;
 
     public int UniversityTypeId { get; set; }
+    public int? UniversityTypePrimaryCode { get; set; }
+    public int? UniversityTypeSubCode { get; set; }
 
     public string? UniversityTypeTitle { get; set; }
 

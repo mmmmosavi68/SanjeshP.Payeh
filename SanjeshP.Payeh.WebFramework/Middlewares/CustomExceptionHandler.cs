@@ -40,7 +40,7 @@ namespace SanjeshP.Payeh.WebFramework.Middlewares
 
         public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
         {
-            var (httpStatusCode, apiStatusCode, message) = MapException(exception);
+            var (httpStatusCode, apiStatusCode, message, errorCode) = MapException(exception);
 
             // خطاهای مورد انتظار (۴xx) با سطح Warning و بقیه با Error لاگ می‌شوند.
             if ((int)httpStatusCode >= 500)
@@ -52,46 +52,21 @@ namespace SanjeshP.Payeh.WebFramework.Middlewares
             httpContext.Response.ContentType = "application/json; charset=utf-8";
             httpContext.Response.Headers["X-Trace-Id"] = httpContext.TraceIdentifier;
 
-            var result = new ApiResult(false, apiStatusCode, message);
+            var result = new ApiResult(false, apiStatusCode, message) { ErrorCode = errorCode };
             await httpContext.Response.WriteAsync(JsonSerializer.Serialize(result, SerializerOptions), cancellationToken);
             return true;
         }
 
         /// <summary>نگاشت استثنا به کد HTTP، کد ApiResult و پیام امن فارسی.</summary>
-        private static (HttpStatusCode Http, ApiResultStatusCode Api, string Message) MapException(Exception exception) => exception switch
+        private static (HttpStatusCode Http, ApiResultStatusCode Api, string Message, string? ErrorCode) MapException(Exception exception) => exception switch
         {
-            // استثناهای دامنه‌ای: کد و پیام از خود استثنا
-            AppException appException => (
-                appException.HttpStatusCode,
-                appException.ApiStatusCode,
-                appException.Message),
-
-            UnauthorizedAccessException => (
-                HttpStatusCode.Unauthorized,
-                ApiResultStatusCode.UnAuthorized,
-                ApiResultStatusCode.UnAuthorized.ToDisplay()),
-
-            // نقض محدودیت یکتایی/کلید خارجی در دیتابیس ⇒ تعارض، بدون افشای جزئیات
-            DbUpdateException => (
-                HttpStatusCode.Conflict,
-                ApiResultStatusCode.Conflict,
-                "ذخیره‌سازی با محدودیت‌های داده‌ای در تعارض است (رکورد تکراری یا وابسته)."),
-
-            BadHttpRequestException => (
-                HttpStatusCode.BadRequest,
-                ApiResultStatusCode.BadRequest,
-                "درخواست ارسالی معتبر نیست."),
-
-            OperationCanceledException => (
-                HttpStatusCode.BadRequest,
-                ApiResultStatusCode.BadRequest,
-                "درخواست لغو شد."),
-
-            // هر چیز دیگر: پیام عمومی، بدون جزئیات فنی
-            _ => (
-                HttpStatusCode.InternalServerError,
-                ApiResultStatusCode.ServerError,
-                "خطای غیرمنتظره‌ای در سرور رخ داده است. لطفاً بعداً دوباره تلاش کنید.")
+            AppException appException => (appException.HttpStatusCode, appException.ApiStatusCode, appException.Message, appException.ErrorCode),
+            UnauthorizedAccessException => (HttpStatusCode.Unauthorized, ApiResultStatusCode.UnAuthorized, ApiResultStatusCode.UnAuthorized.ToDisplay(), ApiMessages.Common.Unauthorized.Code),
+            DbUpdateException => (HttpStatusCode.Conflict, ApiResultStatusCode.Conflict, ApiMessages.Common.DataConflict.Text, ApiMessages.Common.DataConflict.Code),
+            BadHttpRequestException => (HttpStatusCode.BadRequest, ApiResultStatusCode.BadRequest, ApiMessages.Common.BadHttpRequest.Text, ApiMessages.Common.BadHttpRequest.Code),
+            OperationCanceledException => (HttpStatusCode.BadRequest, ApiResultStatusCode.BadRequest, ApiMessages.Common.Cancelled.Text, ApiMessages.Common.Cancelled.Code),
+            ArgumentNullException { StackTrace: not null } nullEx when nullEx.StackTrace.Contains("Mapping.ApiMapper") => (HttpStatusCode.InternalServerError, ApiResultStatusCode.ServerError, ApiMessages.Common.MappingError.Text, ApiMessages.Common.MappingError.Code),
+            _ => (HttpStatusCode.InternalServerError, ApiResultStatusCode.ServerError, ApiMessages.Common.ServerError.Text, ApiMessages.Common.ServerError.Code)
         };
     }
 }

@@ -1,6 +1,6 @@
-﻿
+
 using Asp.Versioning;
-using AutoMapper;
+using SanjeshP.Payeh.Api.Mapping;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SanjeshP.Payeh.Api.DTOs.Menus;
@@ -19,11 +19,11 @@ namespace SanjeshP.Payeh.Api.Controllers.V1;
 public class MenusController : BaseController
 {
     private readonly IMenusService _menusService;
-    private readonly IMapper _mapper;
+    private readonly IApiMapper _mapper;
 
     public MenusController(
         IMenusService menusService,
-        IMapper mapper)
+        IApiMapper mapper)
     {
         _menusService = menusService;
         _mapper = mapper;
@@ -41,7 +41,7 @@ public class MenusController : BaseController
     {
         var menus = await _menusService.GetAllAsync(cancellationToken);
 
-        var result = _mapper.Map<List<MenuDto>>(menus);
+        var result = menus.Select(_mapper.ToDto).ToList();
 
         return result;
     }
@@ -61,7 +61,7 @@ public class MenusController : BaseController
             id,
             cancellationToken);
 
-        return MenuDto.FromEntity(_mapper, menu);
+        return _mapper.ToDto(menu);
     }
 
     /// <summary>
@@ -75,7 +75,7 @@ public class MenusController : BaseController
         [FromBody] CreateMenuDto dto,
         CancellationToken cancellationToken)
     {
-        var entity = _mapper.Map<Menu>(dto);
+        var entity = _mapper.ToEntity(dto);
 
         var created = await _menusService.CreateAsync(
             entity,
@@ -85,7 +85,7 @@ public class MenusController : BaseController
         var result = new ApiResult<MenuDto>(
             true,
             ApiResultStatusCode.Success,
-            MenuDto.FromEntity(_mapper, created),
+            _mapper.ToDto(created),
             "منو با موفقیت ایجاد شد.");
 
         return CreatedAtAction(
@@ -106,14 +106,14 @@ public class MenusController : BaseController
         [FromBody] UpdateMenuDto dto,
         CancellationToken cancellationToken)
     {
-        var entity = _mapper.Map<Menu>(dto);
+        var entity = _mapper.ToEntity(dto);
 
         var updated = await _menusService.UpdateAsync(
             id,
             entity,
             cancellationToken);
 
-        return MenuDto.FromEntity(_mapper, updated);
+        return _mapper.ToDto(updated);
     }
 
     /// <summary>

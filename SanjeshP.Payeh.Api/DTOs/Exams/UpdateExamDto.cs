@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace SanjeshP.Payeh.Api.DTOs.Exams;
 
@@ -11,11 +11,13 @@ public sealed class UpdateExamDto
     [Required]
     public Guid ExamSessionId { get; set; }
 
-    [Range(1, int.MaxValue, ErrorMessage = "نوع آزمون معتبر نیست")]
     public int ExamTypeId { get; set; }
+    public int? ExamTypePrimaryCode { get; set; }
+    public int? ExamTypeSubCode { get; set; }
 
-    [Range(1, int.MaxValue, ErrorMessage = "نحوه برگزاری معتبر نیست")]
     public int ExamModeId { get; set; }
+    public int? ExamModePrimaryCode { get; set; }
+    public int? ExamModeSubCode { get; set; }
 
     public DateTime RegistrationStartDate { get; set; }
     public DateTime RegistrationEndDate { get; set; }

@@ -1,4 +1,4 @@
-﻿
+
 using SanjeshP.Payeh.Entities.Common;
 using SanjeshP.Payeh.Entities.Menu;
 using System.ComponentModel.DataAnnotations;
@@ -19,7 +19,7 @@ public class University : BaseEntity<int>
 
     [ForeignKey(nameof(UniversityTypeId))]
     [Display(Name = "نوع دانشگاه")]
-    public virtual Code UniversityType { get; set; } = null!;
+    public virtual Code? UniversityType { get; set; }
 
     [Range(1, 11, ErrorMessage = "منطقه دانشگاه باید بین ۱ تا ۱۱ باشد")]
     [Display(Name = "منطقه دانشگاه")]

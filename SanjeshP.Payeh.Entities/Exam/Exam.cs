@@ -1,4 +1,4 @@
-﻿
+
 using SanjeshP.Payeh.Entities.Common;
 using SanjeshP.Payeh.Entities.Menu;
 using System.ComponentModel.DataAnnotations;
@@ -19,7 +19,7 @@ namespace SanjeshP.Payeh.Entities.Exam
 
         [ForeignKey(nameof(ExamSessionId))]
         [Display(Name = "نوبت آزمون")]
-        public virtual ExamSession ExamSession { get; set; } = null!;
+        public virtual ExamSession? ExamSession { get; set; }
 
         [Required(ErrorMessage = "نوع آزمون الزامی است")]
         [Display(Name = "نوع آزمون")]
@@ -27,7 +27,7 @@ namespace SanjeshP.Payeh.Entities.Exam
 
         [ForeignKey(nameof(ExamTypeId))]
         [Display(Name = "نوع آزمون")]
-        public virtual Code ExamType { get; set; } = null!;
+        public virtual Code? ExamType { get; set; }
 
         [Required(ErrorMessage = "نحوه برگزاری آزمون الزامی است")]
         [Display(Name = "نحوه برگزاری")]
@@ -35,7 +35,7 @@ namespace SanjeshP.Payeh.Entities.Exam
 
         [ForeignKey(nameof(ExamModeId))]
         [Display(Name = "نحوه برگزاری")]
-        public virtual Code ExamMode { get; set; } = null!;
+        public virtual Code? ExamMode { get; set; }
 
         [Required(ErrorMessage = "تاریخ شروع ثبت‌نام الزامی است")]
         [Display(Name = "شروع ثبت‌نام")]

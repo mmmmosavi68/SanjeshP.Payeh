@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace SanjeshP.Payeh.Api.DTOs.ExamRegistrations;
 
@@ -34,6 +34,8 @@ public sealed class CreateExamRegistrationDto
     public string NationalCode { get; set; } = string.Empty;
 
     public int? GenderId { get; set; }
+    public int? GenderPrimaryCode { get; set; }
+    public int? GenderSubCode { get; set; }
 
     [MaxLength(20)]
     public string? BirthCertificateNumber { get; set; }

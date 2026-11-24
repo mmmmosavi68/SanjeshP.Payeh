@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Text;
@@ -10,6 +10,13 @@ namespace SanjeshP.Payeh.Common.Exceptions
         public HttpStatusCode HttpStatusCode { get; set; }
         public ApiResultStatusCode ApiStatusCode { get; set; }
         public object AdditionalData { get; set; }
+        public string? ErrorCode { get; set; }
+
+        public AppException(ApiResultStatusCode statusCode, ApiMessage message)
+            : this(statusCode, message.Text)
+        {
+            ErrorCode = message.Code;
+        }
 
         public AppException()
             : this(ApiResultStatusCode.ServerError)

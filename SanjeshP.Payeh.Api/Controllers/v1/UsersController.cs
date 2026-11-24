@@ -1,6 +1,6 @@
 
 using Asp.Versioning;
-using AutoMapper;
+using SanjeshP.Payeh.Api.Mapping;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SanjeshP.Payeh.Api.Models.Users;
@@ -22,12 +22,12 @@ namespace SanjeshP.Payeh.Api.Controllers.V1
     public class UsersController : BaseController
     {
         private readonly IUserService _userService;
-        private readonly IMapper _mapper;
+        private readonly IApiMapper _mapper;
         private readonly IAuditLogService _auditLogService;
 
         public UsersController(
             IUserService userService,
-            IMapper mapper,
+            IApiMapper mapper,
             IAuditLogService auditLogService)
         {
             _userService = userService;
@@ -57,8 +57,7 @@ namespace SanjeshP.Payeh.Api.Controllers.V1
                     query.SortDirection),
                 cancellationToken);
 
-            var items = _mapper.Map<IReadOnlyList<UserSelectDto>>(  
-                result.Items);
+            var items = result.Items.Select(_mapper.ToDto).ToList();
 
             return new PagedResult<UserSelectDto>(
                 items,
@@ -123,7 +122,7 @@ namespace SanjeshP.Payeh.Api.Controllers.V1
             [FromBody] CreateUserDto dto,
             CancellationToken cancellationToken)
         {
-            var entity = _mapper.Map<User>(dto);
+            var entity = _mapper.ToEntity(dto);
 
             var profile = new UserProfile
             {
@@ -172,7 +171,7 @@ namespace SanjeshP.Payeh.Api.Controllers.V1
             var result = new ApiResult<UserSelectDto>(
                 true,
                 ApiResultStatusCode.Success,
-                _mapper.Map<UserSelectDto>(created),
+                _mapper.ToDto(created),
                 "کاربر با موفقیت ایجاد شد.");
 
             return CreatedAtAction(
@@ -434,7 +433,7 @@ namespace SanjeshP.Payeh.Api.Controllers.V1
                 id,
                 cancellationToken);
 
-            return _mapper.Map<UserSelectDto>(finalUser);
+            return _mapper.ToDto(finalUser);
         }
 
         /// <summary>

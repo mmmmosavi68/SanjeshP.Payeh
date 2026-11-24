@@ -1,4 +1,4 @@
-﻿
+
 using System.ComponentModel.DataAnnotations;
 
 namespace SanjeshP.Payeh.Api.DTOs.Universities;
@@ -11,6 +11,8 @@ public sealed class UpdateUniversityDto
 
     [Range(1, int.MaxValue, ErrorMessage = "نوع دانشگاه معتبر نیست")]
     public int UniversityTypeId { get; set; }
+    public int? UniversityTypePrimaryCode { get; set; }
+    public int? UniversityTypeSubCode { get; set; }
 
     [Range(1, 11, ErrorMessage = "منطقه دانشگاه باید بین ۱ تا ۱۱ باشد")]
     public int Region { get; set; }

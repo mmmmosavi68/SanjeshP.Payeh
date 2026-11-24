@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -8,6 +8,11 @@ namespace SanjeshP.Payeh.Common.Exceptions
     {
         public LogicException()
             : base(ApiResultStatusCode.LogicError)
+        {
+        }
+
+        public LogicException(ApiMessage message)
+            : base(ApiResultStatusCode.LogicError, message)
         {
         }
 

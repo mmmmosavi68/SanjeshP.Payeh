@@ -1,4 +1,4 @@
-﻿namespace SanjeshP.Payeh.Api.DTOs.ExamRegistrations;
+namespace SanjeshP.Payeh.Api.DTOs.ExamRegistrations;
 
 public sealed class ExamRegistrationDto
 {
@@ -15,6 +15,8 @@ public sealed class ExamRegistrationDto
     public string? FatherName { get; set; }
     public string NationalCode { get; set; } = string.Empty;
     public int? GenderId { get; set; }
+    public int? GenderPrimaryCode { get; set; }
+    public int? GenderSubCode { get; set; }
     public string? BirthCertificateNumber { get; set; }
     public DateTime? BirthDate { get; set; }
     public string? StudentNumber { get; set; }

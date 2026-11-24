@@ -1,6 +1,5 @@
 using SanjeshP.Payeh.Entities.User;
 using SanjeshP.Payeh.WebFramework.Api;
-using SanjeshP.Payeh.WebFramework.CustomMapping;
 using System.ComponentModel.DataAnnotations;
 
 namespace SanjeshP.Payeh.Api.Models.Users

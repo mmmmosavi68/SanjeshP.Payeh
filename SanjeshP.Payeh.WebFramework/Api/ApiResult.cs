@@ -24,6 +24,10 @@ namespace SanjeshP.Payeh.WebFramework.Api
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public string? Message { get; set; }
 
+        /// <summary>کد پایدار خطا برای ترجمه در Frontend (فقط در خطاها مقدار دارد).</summary>
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public string? ErrorCode { get; set; }
+
         public ApiResult(bool isSuccess, ApiResultStatusCode statusCode, string? message = null)
         {
             IsSuccess = isSuccess;

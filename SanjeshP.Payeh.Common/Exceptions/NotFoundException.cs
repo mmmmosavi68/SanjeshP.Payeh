@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -8,6 +8,11 @@ namespace SanjeshP.Payeh.Common.Exceptions
     {
         public NotFoundException()
             : base(ApiResultStatusCode.NotFound)
+        {
+        }
+
+        public NotFoundException(ApiMessage message)
+            : base(ApiResultStatusCode.NotFound, message)
         {
         }
 
