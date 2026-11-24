@@ -15,7 +15,7 @@ try
     builder.Host.UseSerilog((ctx, services, cfg) => cfg
         .ReadFrom.Configuration(ctx.Configuration)
         .ReadFrom.Services(services)
-        .Enrich.FromLogContext());
+        .Enrich.FromLogContext(), preserveStaticLogger: builder.Configuration.GetValue<bool>("Testing"));
 
     // ── اعتبارسنجی تنظیمات حساس هنگام startup ──
     var jwtSettings = builder.Configuration.GetSection("SiteSettings:JwtSettings").Get<JwtSettings>() ?? new JwtSettings();
@@ -93,3 +93,6 @@ finally
 {
     Log.CloseAndFlush();
 }
+
+/// <summary>برای WebApplicationFactory در تست‌های Integration.</summary>
+public partial class Program { }

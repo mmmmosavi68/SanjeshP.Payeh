@@ -1,4 +1,4 @@
-﻿
+
 using SanjeshP.Payeh.Entities.Common;
 using SanjeshP.Payeh.Entities.Menu;
 using System.ComponentModel.DataAnnotations;
@@ -28,7 +28,7 @@ namespace SanjeshP.Payeh.Entities.Exam
 
         [ForeignKey(nameof(FieldTypeId))]
         [Display(Name = "نوع فیلد")]
-        public virtual Code FieldType { get; set; } = null!;
+        public virtual Code? FieldType { get; set; }
 
         [Required(ErrorMessage = "وضعیت اجباری بودن فیلد الزامی است")]
         [Display(Name = "اجباری")]

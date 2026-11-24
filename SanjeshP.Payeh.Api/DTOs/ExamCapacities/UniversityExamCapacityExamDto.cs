@@ -1,4 +1,4 @@
-﻿
+
 namespace SanjeshP.Payeh.Api.DTOs.ExamCapacities;
 
 public sealed class UniversityExamCapacityExamDto
@@ -11,6 +11,8 @@ public sealed class UniversityExamCapacityExamDto
     public DateTime ExamDate { get; set; }
 
     public int ExamModeId { get; set; }
+    public int? ExamModePrimaryCode { get; set; }
+    public int? ExamModeSubCode { get; set; }
     public string? ExamModeTitle { get; set; }
 
     public bool IsCapacityDefined { get; set; }

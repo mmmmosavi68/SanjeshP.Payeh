@@ -88,6 +88,8 @@ public sealed class UniversityExamCapacitiesController : BaseController
                 Title = x.Title,
 
                 UniversityTypeId = x.UniversityTypeId,
+                UniversityTypePrimaryCode = x.UniversityType?.PrimaryCode,
+                UniversityTypeSubCode = x.UniversityType?.SubCode,
                 UniversityTypeTitle = x.UniversityType?.Title,
 
                 Region = x.Region,
@@ -242,6 +244,8 @@ public sealed class UniversityExamCapacitiesController : BaseController
                 ExamDate = exam.ExamSession?.ExamDate ?? default,
 
                 ExamModeId = exam.ExamModeId,
+                ExamModePrimaryCode = exam.ExamMode?.PrimaryCode,
+                ExamModeSubCode = exam.ExamMode?.SubCode,
                 ExamModeTitle = exam.ExamMode?.Title,
 
                 IsCapacityDefined = capacity is not null,

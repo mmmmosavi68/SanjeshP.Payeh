@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -41,7 +41,11 @@ namespace SanjeshP.Payeh.WebFramework.Configuration
             //Dos not use Migrations, just Create Database with latest changes
             //dbContext.Database.EnsureCreated();
             //Applies any pending migrations for the context to the database like (Update-Database)
-            dbContext.Database.Migrate();
+            // دیتابیس رابطه‌ای: Migration؛ ارائه‌دهنده‌ی غیررابطه‌ای (تست‌ها): ساخت مستقیم مدل.
+            if (dbContext!.Database.IsRelational())
+                dbContext.Database.Migrate();
+            else
+                dbContext.Database.EnsureCreated();
 
             var dataInitializers = scope.ServiceProvider.GetServices<IDataInitializer>();
             foreach (var dataInitializer in dataInitializers)

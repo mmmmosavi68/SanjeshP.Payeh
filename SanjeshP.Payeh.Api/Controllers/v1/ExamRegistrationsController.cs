@@ -16,9 +16,20 @@ public sealed class ExamRegistrationsController : BaseController
 {
     private readonly IExamRegistrationService _service;
 
-    public ExamRegistrationsController(IExamRegistrationService service)
+    private readonly ICodesService _codes;
+
+    public ExamRegistrationsController(IExamRegistrationService service, ICodesService codes)
     {
         _service = service;
+        _codes = codes;
+    }
+
+    private async Task<int?> ResolveGenderIdAsync(int? genderId, int? primaryCode, int? subCode, CancellationToken cancellationToken)
+    {
+        if (!genderId.HasValue && !primaryCode.HasValue && !subCode.HasValue)
+            return null;
+
+        return await _codes.ResolveIdAsync(genderId, primaryCode, subCode, null, ApiMessages.Lookup.GenderInvalid, cancellationToken);
     }
 
     /// <summary>
@@ -117,6 +128,8 @@ public sealed class ExamRegistrationsController : BaseController
                     Name = x.Name,
                     Label = x.Label,
                     FieldTypeId = x.FieldTypeId,
+                    FieldTypePrimaryCode = x.FieldType?.PrimaryCode,
+                    FieldTypeSubCode = x.FieldType?.SubCode,
                     IsRequired = x.IsRequired,
                     OptionsJson = x.OptionsJson,
                     ValidationJson = x.ValidationJson,
@@ -149,7 +162,7 @@ public sealed class ExamRegistrationsController : BaseController
             LastName = dto.LastName,
             FatherName = dto.FatherName,
             NationalCode = dto.NationalCode,
-            GenderId = dto.GenderId,
+            GenderId = await ResolveGenderIdAsync(dto.GenderId, dto.GenderPrimaryCode, dto.GenderSubCode, cancellationToken),
             BirthCertificateNumber = dto.BirthCertificateNumber,
             BirthDate = dto.BirthDate,
             StudentNumber = dto.StudentNumber,
@@ -241,7 +254,7 @@ public sealed class ExamRegistrationsController : BaseController
             LastName = dto.LastName,
             FatherName = dto.FatherName,
             NationalCode = dto.NationalCode,
-            GenderId = dto.GenderId,
+            GenderId = await ResolveGenderIdAsync(dto.GenderId, dto.GenderPrimaryCode, dto.GenderSubCode, cancellationToken),
             BirthCertificateNumber = dto.BirthCertificateNumber,
             BirthDate = dto.BirthDate,
             StudentNumber = dto.StudentNumber,
@@ -327,6 +340,8 @@ public sealed class ExamRegistrationsController : BaseController
             FatherName = item.FatherName,
             NationalCode = item.NationalCode,
             GenderId = item.GenderId,
+            GenderPrimaryCode = item.Gender?.PrimaryCode,
+            GenderSubCode = item.Gender?.SubCode,
             BirthCertificateNumber = item.BirthCertificateNumber,
             BirthDate = item.BirthDate,
             StudentNumber = item.StudentNumber,

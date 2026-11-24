@@ -1,4 +1,4 @@
-﻿namespace SanjeshP.Payeh.Api.DTOs.ExamCapacities;
+namespace SanjeshP.Payeh.Api.DTOs.ExamCapacities;
 
 public sealed class UniversityExamCapacityUniversityDto
 {
@@ -7,6 +7,8 @@ public sealed class UniversityExamCapacityUniversityDto
     public string Title { get; set; } = string.Empty;
 
     public int UniversityTypeId { get; set; }
+    public int? UniversityTypePrimaryCode { get; set; }
+    public int? UniversityTypeSubCode { get; set; }
 
     public string? UniversityTypeTitle { get; set; }
 
