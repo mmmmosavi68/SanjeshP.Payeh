@@ -177,13 +177,7 @@ namespace SanjeshP.Payeh.Services.Implementations
 
             return new PagedUsers(items, totalCount, query.PageNumber, query.PageSize);
         }
-        public async Task<User> CreateAsync(
-    User user,
-    string? plainPassword,
-    IEnumerable<int> roleIds,
-    UserProfile profile,
-    Guid createdBy,
-    CancellationToken cancellationToken)
+        public async Task<User> CreateAsync(User user, string? plainPassword, IEnumerable<int> roleIds, UserProfile profile, Guid createdBy, CancellationToken cancellationToken)
         {
             await EnsureUniqueAsync(
                 user.UserName,
@@ -248,12 +242,7 @@ namespace SanjeshP.Payeh.Services.Implementations
             return await GetByIdAsync(user.Id, cancellationToken);
         }
 
-        public async Task<User> UpdateAsync(
-    Guid id,
-    Action<User> applyChanges,
-    Action<UserProfile> applyProfileChanges,
-    IEnumerable<int>? roleIds,
-    CancellationToken cancellationToken)
+        public async Task<User> UpdateAsync(Guid id, Action<User> applyChanges, Action<UserProfile> applyProfileChanges, IEnumerable<int>? roleIds, CancellationToken cancellationToken)
         {
             var user = await _userRepository.Table
                 .Include(x => x.UserProfile)

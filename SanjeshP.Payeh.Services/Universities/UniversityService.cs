@@ -19,13 +19,7 @@ public sealed class UniversityService : IUniversityService, IScopedDependency
 
     #region Read
 
-    public Task<List<University>> GetAllAsync(
-        string? search,
-        int? universityTypeId,
-        int? region,
-        int? parentUniversityId,
-        bool? isActive,
-        CancellationToken cancellationToken)
+    public Task<List<University>> GetAllAsync(string? search, int? universityTypeId, int? region, int? parentUniversityId, bool? isActive, CancellationToken cancellationToken)
     {
         return _repository.GetAllAsync(
             search,
@@ -36,9 +30,7 @@ public sealed class UniversityService : IUniversityService, IScopedDependency
             cancellationToken);
     }
 
-    public async Task<University> GetByIdAsync(
-        int id,
-        CancellationToken cancellationToken)
+    public async Task<University> GetByIdAsync(int id, CancellationToken cancellationToken)
     {
         var university = await _repository.GetByIdAsync(
             id,
@@ -54,10 +46,7 @@ public sealed class UniversityService : IUniversityService, IScopedDependency
 
     #region Create
 
-    public async Task<University> CreateAsync(
-        University university,
-        Guid createdBy,
-        CancellationToken cancellationToken)
+    public async Task<University> CreateAsync(University university, Guid createdBy, CancellationToken cancellationToken)
     {
         if (createdBy == Guid.Empty)
             throw new BadRequestException(ApiMessages.University.M002);
@@ -94,10 +83,7 @@ public sealed class UniversityService : IUniversityService, IScopedDependency
 
     #region Update
 
-    public async Task<University> UpdateAsync(
-        int id,
-        University updatedUniversity,
-        CancellationToken cancellationToken)
+    public async Task<University> UpdateAsync(int id, University updatedUniversity, CancellationToken cancellationToken)
     {
         var university = await GetByIdAsync(
             id,
@@ -135,9 +121,7 @@ public sealed class UniversityService : IUniversityService, IScopedDependency
 
     #region Delete
 
-    public async Task SoftDeleteAsync(
-        int id,
-        CancellationToken cancellationToken)
+    public async Task SoftDeleteAsync(int id, CancellationToken cancellationToken)
     {
         var university = await GetByIdAsync(
             id,
@@ -199,10 +183,7 @@ public sealed class UniversityService : IUniversityService, IScopedDependency
         await _codes.ResolveIdAsync(universityTypeId, null, null, null, ApiMessages.Lookup.UniversityTypeInvalid, cancellationToken);
     }
 
-    private async Task ValidateParentAsync(
-        int? parentUniversityId,
-        int? currentUniversityId,
-        CancellationToken cancellationToken)
+    private async Task ValidateParentAsync(int? parentUniversityId, int? currentUniversityId, CancellationToken cancellationToken)
     {
         if (!parentUniversityId.HasValue)
             return;

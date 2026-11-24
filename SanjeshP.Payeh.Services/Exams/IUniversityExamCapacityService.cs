@@ -1,4 +1,4 @@
-﻿
+
 using SanjeshP.Payeh.Data.Contracts.Exams;
 using SanjeshP.Payeh.Entities.Exam;
 using SanjeshP.Payeh.Entities.University;
@@ -7,48 +7,19 @@ namespace SanjeshP.Payeh.Services.Exams;
 
 public interface IUniversityExamCapacityService
 {
-    Task<List<Exam>> GetActiveExamsForUniversityAsync(
-    Guid userId,
-    int universityId,
-    CancellationToken cancellationToken);
+    Task<List<Exam>> GetActiveExamsForUniversityAsync(Guid userId, int universityId, CancellationToken cancellationToken);
 
-    Task<UniversityExamCapacity> SaveAsync(
-        int universityId,
-        Guid examId,
-        int allocatedCapacity,
-        int ownCapacity,
-        Guid createdBy,
-        CancellationToken cancellationToken);
+    Task<UniversityExamCapacity> SaveAsync(int universityId, Guid examId, int allocatedCapacity, int ownCapacity, Guid createdBy, CancellationToken cancellationToken);
 
-    Task<List<University>> GetAccessibleUniversitiesAsync(
-    Guid userId,
-    CancellationToken cancellationToken);
-    Task<List<Exam>> GetDefinedExamsForUniversityAsync(
-    Guid userId,
-    int universityId,
-    CancellationToken cancellationToken);
+    Task<List<University>> GetAccessibleUniversitiesAsync(Guid userId, CancellationToken cancellationToken);
+    Task<List<Exam>> GetDefinedExamsForUniversityAsync(Guid userId, int universityId, CancellationToken cancellationToken);
 
-    Task<UniversityExamGuestCapacity> SaveGuestCapacityAsync(
-    int universityId,
-    Guid examId,
-    int guestUniversityId,
-    int capacity,
-    Guid createdBy,
-    CancellationToken cancellationToken);
+    Task<UniversityExamGuestCapacity> SaveGuestCapacityAsync(int universityId, Guid examId, int guestUniversityId, int capacity, Guid createdBy, CancellationToken cancellationToken);
 
-    Task<List<UniversityExamGuestCapacity>> GetGuestCapacitiesAsync(
-        Guid userId,
-        int universityId,
-        Guid examId,
-        CancellationToken cancellationToken);
+    Task<List<UniversityExamGuestCapacity>> GetGuestCapacitiesAsync(Guid userId, int universityId, Guid examId, CancellationToken cancellationToken);
 
-    Task<Dictionary<Guid, UniversityExamCapacityUsage>> GetCapacityUsageAsync(
-        int universityId,
-        IReadOnlyCollection<Guid> capacityIds,
-        CancellationToken cancellationToken);
+    Task<Dictionary<Guid, UniversityExamCapacityUsage>> GetCapacityUsageAsync(int universityId, IReadOnlyCollection<Guid> capacityIds, CancellationToken cancellationToken);
 
-    Task<Dictionary<Guid, int>> GetGuestRegistrationCountsAsync(
-        IReadOnlyCollection<Guid> guestCapacityIds,
-        CancellationToken cancellationToken);
+    Task<Dictionary<Guid, int>> GetGuestRegistrationCountsAsync(IReadOnlyCollection<Guid> guestCapacityIds, CancellationToken cancellationToken);
 
 }

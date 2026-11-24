@@ -23,8 +23,7 @@ public sealed class UserManagementController : BaseController
     /// دریافت فهرست منوهای فعال و قابل انتخاب
     /// </summary>
     [HttpGet("available-menus")]
-    public async Task<ApiResult<List<UserAvailableMenuDto>>> GetAvailableMenus(
-        CancellationToken cancellationToken)
+    public async Task<ApiResult<List<UserAvailableMenuDto>>> GetAvailableMenus(CancellationToken cancellationToken)
     {
         var menus = await _service.GetAvailableMenusAsync(
             cancellationToken);
@@ -50,9 +49,7 @@ public sealed class UserManagementController : BaseController
     /// دریافت دسترسی‌های مستقیم یک کاربر
     /// </summary>
     [HttpGet("{id:guid}/menu-access")]
-    public async Task<ApiResult<List<Guid>>> GetMenuAccess(
-        Guid id,
-        CancellationToken cancellationToken)
+    public async Task<ApiResult<List<Guid>>> GetMenuAccess(Guid id, CancellationToken cancellationToken)
     {
         var menuIds = await _service.GetAssignedMenuIdsAsync(
             id,
@@ -68,10 +65,7 @@ public sealed class UserManagementController : BaseController
     /// ثبت یا جایگزینی دسترسی مستقیم کاربر
     /// </summary>
     [HttpPut("{id:guid}/menu-access")]
-    public async Task<ApiResult> UpdateMenuAccess(
-        Guid id,
-        [FromBody] UpdateUserMenuAccessDto dto,
-        CancellationToken cancellationToken)
+    public async Task<ApiResult> UpdateMenuAccess(Guid id, [FromBody] UpdateUserMenuAccessDto dto, CancellationToken cancellationToken)
     {
         await _service.UpdateMenuAccessAsync(
             id,
@@ -90,8 +84,7 @@ public sealed class UserManagementController : BaseController
     /// دریافت فهرست دانشگاه‌های فعال و قابل تخصیص
     /// </summary>
     [HttpGet("available-universities")]
-    public async Task<ApiResult<List<UniversityOption>>> GetAvailableUniversities(
-        CancellationToken cancellationToken)
+    public async Task<ApiResult<List<UniversityOption>>> GetAvailableUniversities(CancellationToken cancellationToken)
     {
         var universities = await _service.GetAvailableUniversitiesAsync(
             cancellationToken);
@@ -106,9 +99,7 @@ public sealed class UserManagementController : BaseController
     /// دریافت شناسه دانشگاه‌های تخصیص‌یافته به کاربر
     /// </summary>
     [HttpGet("{id:guid}/university-access")]
-    public async Task<ApiResult<List<int>>> GetUniversityAccess(
-        Guid id,
-        CancellationToken cancellationToken)
+    public async Task<ApiResult<List<int>>> GetUniversityAccess(Guid id, CancellationToken cancellationToken)
     {
         var universityIds = await _service.GetAssignedUniversityIdsAsync(
             id,
@@ -124,10 +115,7 @@ public sealed class UserManagementController : BaseController
     /// ثبت یا جایگزینی دانشگاه‌های قابل دسترس کاربر
     /// </summary>
     [HttpPut("{id:guid}/university-access")]
-    public async Task<ApiResult> UpdateUniversityAccess(
-        Guid id,
-        [FromBody] UpdateUserUniversityAccessDto dto,
-        CancellationToken cancellationToken)
+    public async Task<ApiResult> UpdateUniversityAccess(Guid id, [FromBody] UpdateUserUniversityAccessDto dto, CancellationToken cancellationToken)
     {
         await _service.UpdateUniversityAccessAsync(
             id,
@@ -145,9 +133,7 @@ public sealed class UserManagementController : BaseController
     /// غیرفعال‌سازی گروهی کاربران و ابطال نشست‌های فعال
     /// </summary>
     [HttpPost("bulk/deactivate")]
-    public async Task<ApiResult> BulkDeactivate(
-        [FromBody] BulkUserIdsDto dto,
-        CancellationToken cancellationToken)
+    public async Task<ApiResult> BulkDeactivate([FromBody] BulkUserIdsDto dto, CancellationToken cancellationToken)
     {
         await _service.BulkDeactivateAsync(
             dto.UserIds,
@@ -164,9 +150,7 @@ public sealed class UserManagementController : BaseController
     /// حذف نرم گروهی کاربران و ابطال نشست‌های فعال
     /// </summary>
     [HttpDelete("bulk")]
-    public async Task<ApiResult> BulkDelete(
-        [FromBody] BulkUserIdsDto dto,
-        CancellationToken cancellationToken)
+    public async Task<ApiResult> BulkDelete([FromBody] BulkUserIdsDto dto, CancellationToken cancellationToken)
     {
         await _service.BulkDeleteAsync(
             dto.UserIds,

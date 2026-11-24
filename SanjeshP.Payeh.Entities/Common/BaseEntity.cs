@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SanjeshP.Payeh.Entities.Common
@@ -13,7 +13,7 @@ namespace SanjeshP.Payeh.Entities.Common
     public abstract class BaseEntity<TKey> : IEntity<TKey>
     {
         [Key]
-        public TKey Id { get; set; }
+        public TKey Id { get; set; } = default!;
 
 
         [Required(ErrorMessage = "تاریخ ایجاد الزامی است")]

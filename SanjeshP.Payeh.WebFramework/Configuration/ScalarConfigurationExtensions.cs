@@ -28,8 +28,7 @@ public static class ScalarConfigurationExtensions
     private const string OpenApiRoute =
         "/openapi";
 
-    public static void AddOpenApiDocuments(
-        this IServiceCollection services)
+    public static void AddOpenApiDocuments(this IServiceCollection services)
     {
         // یک HttpContextAccessor مشترک برای تولید مستندات
         services.RemoveAll<IHttpContextAccessor>();
@@ -139,8 +138,7 @@ public static class ScalarConfigurationExtensions
         }
     }
 
-    private static bool RequiresAuthorization(
-        ApiDescription description)
+    private static bool RequiresAuthorization(ApiDescription description)
     {
         var metadata =
             description.ActionDescriptor.EndpointMetadata;
@@ -153,8 +151,7 @@ public static class ScalarConfigurationExtensions
         return metadata.OfType<IAuthorizeData>().Any();
     }
 
-    public static WebApplication MapApiDocuments(
-        this WebApplication app)
+    public static WebApplication MapApiDocuments(this WebApplication app)
     {
         var settings = app.Services
             .GetRequiredService<

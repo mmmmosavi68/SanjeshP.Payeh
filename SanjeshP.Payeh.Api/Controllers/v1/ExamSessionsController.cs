@@ -34,9 +34,7 @@ public sealed class ExamSessionsController : BaseController
     }
 
     [HttpGet("{id:guid}")]
-    public async Task<ApiResult<ExamSessionDto>> GetById(
-        [FromRoute] Guid id,
-        CancellationToken cancellationToken)
+    public async Task<ApiResult<ExamSessionDto>> GetById([FromRoute] Guid id, CancellationToken cancellationToken)
     {
         var session = await _service.GetByIdAsync(id, cancellationToken);
 
@@ -47,9 +45,7 @@ public sealed class ExamSessionsController : BaseController
     }
 
     [HttpPost]
-    public async Task<ApiResult<ExamSessionDto>> Create(
-        [FromBody] CreateExamSessionDto dto,
-        CancellationToken cancellationToken)
+    public async Task<ApiResult<ExamSessionDto>> Create([FromBody] CreateExamSessionDto dto, CancellationToken cancellationToken)
     {
         var session = _mapper.ToEntity(dto);
 
@@ -66,10 +62,7 @@ public sealed class ExamSessionsController : BaseController
     }
 
     [HttpPut("{id:guid}")]
-    public async Task<ApiResult<ExamSessionDto>> Update(
-        [FromRoute] Guid id,
-        [FromBody] UpdateExamSessionDto dto,
-        CancellationToken cancellationToken)
+    public async Task<ApiResult<ExamSessionDto>> Update([FromRoute] Guid id, [FromBody] UpdateExamSessionDto dto, CancellationToken cancellationToken)
     {
         var session = _mapper.ToEntity(dto);
 
@@ -86,9 +79,7 @@ public sealed class ExamSessionsController : BaseController
     }
 
     [HttpDelete("{id:guid}")]
-    public async Task<ApiResult> Delete(
-        [FromRoute] Guid id,
-        CancellationToken cancellationToken)
+    public async Task<ApiResult> Delete([FromRoute] Guid id, CancellationToken cancellationToken)
     {
         await _service.DeleteAsync(id, cancellationToken);
 

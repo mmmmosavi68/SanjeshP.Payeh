@@ -37,9 +37,7 @@ public sealed class ExamsController : BaseController
 
     [HttpGet("{id:guid}")]
     [ProducesResponseType(typeof(ApiResult<ExamDto>), StatusCodes.Status200OK)]
-    public async Task<ApiResult<ExamDto>> GetById(
-        [FromRoute] Guid id,
-        CancellationToken cancellationToken)
+    public async Task<ApiResult<ExamDto>> GetById([FromRoute] Guid id, CancellationToken cancellationToken)
     {
         var exam = await _service.GetByIdAsync(id, cancellationToken);
 
@@ -51,9 +49,7 @@ public sealed class ExamsController : BaseController
 
     [HttpPost]
     [ProducesResponseType(typeof(ApiResult<ExamDto>), StatusCodes.Status200OK)]
-    public async Task<ApiResult<ExamDto>> Create(
-        [FromBody] CreateExamDto dto,
-        CancellationToken cancellationToken)
+    public async Task<ApiResult<ExamDto>> Create([FromBody] CreateExamDto dto, CancellationToken cancellationToken)
     {
         var exam = _mapper.ToEntity(dto);
         await ResolveCodesAsync(exam, dto.ExamTypeId, dto.ExamTypePrimaryCode, dto.ExamTypeSubCode, dto.ExamModeId, dto.ExamModePrimaryCode, dto.ExamModeSubCode, cancellationToken);
@@ -72,10 +68,7 @@ public sealed class ExamsController : BaseController
 
     [HttpPut("{id:guid}")]
     [ProducesResponseType(typeof(ApiResult<ExamDto>), StatusCodes.Status200OK)]
-    public async Task<ApiResult<ExamDto>> Update(
-        [FromRoute] Guid id,
-        [FromBody] UpdateExamDto dto,
-        CancellationToken cancellationToken)
+    public async Task<ApiResult<ExamDto>> Update([FromRoute] Guid id, [FromBody] UpdateExamDto dto, CancellationToken cancellationToken)
     {
         var exam = _mapper.ToEntity(dto);
         await ResolveCodesAsync(exam, dto.ExamTypeId, dto.ExamTypePrimaryCode, dto.ExamTypeSubCode, dto.ExamModeId, dto.ExamModePrimaryCode, dto.ExamModeSubCode, cancellationToken);
@@ -94,9 +87,7 @@ public sealed class ExamsController : BaseController
 
     [HttpDelete("{id:guid}")]
     [ProducesResponseType(typeof(ApiResult), StatusCodes.Status200OK)]
-    public async Task<ApiResult> Delete(
-        [FromRoute] Guid id,
-        CancellationToken cancellationToken)
+    public async Task<ApiResult> Delete([FromRoute] Guid id, CancellationToken cancellationToken)
     {
         await _service.SoftDeleteAsync(id, cancellationToken);
 

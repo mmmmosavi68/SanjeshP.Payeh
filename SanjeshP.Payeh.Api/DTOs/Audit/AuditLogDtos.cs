@@ -143,9 +143,4 @@ public sealed class AuditLogDto
 }
 
 /// <summary>خروجی صفحه‌بندی‌شده گزارش ممیزی.</summary>
-public sealed record AuditLogPagedDto(
-    IReadOnlyList<AuditLogDto> Items,
-    int TotalCount,
-    int PageNumber,
-    int PageSize,
-    int TotalPages);
+public sealed record AuditLogPagedDto(IReadOnlyList<AuditLogDto> Items, int TotalCount, int PageNumber, int PageSize, int TotalPages);

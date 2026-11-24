@@ -14,9 +14,7 @@ public sealed class AuditRequestLoggingMiddleware
     private readonly RequestDelegate _next;
     private readonly ILogger<AuditRequestLoggingMiddleware> _logger;
 
-    public AuditRequestLoggingMiddleware(
-        RequestDelegate next,
-        ILogger<AuditRequestLoggingMiddleware> logger)
+    public AuditRequestLoggingMiddleware(RequestDelegate next, ILogger<AuditRequestLoggingMiddleware> logger)
     {
         _next = next;
         _logger = logger;

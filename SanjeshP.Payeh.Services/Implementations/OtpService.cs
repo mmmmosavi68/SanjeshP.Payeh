@@ -193,8 +193,7 @@ namespace SanjeshP.Payeh.Services.Implementations
         // ───────────── اشتراکی ─────────────
 
         /// <summary>کدهای قبلیِ مصرف‌نشده را باطل می‌کند، کد جدید می‌سازد و پیامک می‌فرستد.</summary>
-        private async Task<(UserOtp Otp, string Code)> CreateAndSendAsync(
-            User user, string mobileNumber, string purpose, CancellationToken cancellationToken)
+        private async Task<(UserOtp Otp, string Code)> CreateAndSendAsync(User user, string mobileNumber, string purpose, CancellationToken cancellationToken)
         {
             var otps = _uow.Repository<UserOtp>().Entities;
 

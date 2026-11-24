@@ -22,8 +22,7 @@ public sealed class CodesService : ICodesService, IScopedDependency
 
     #region Read
 
-    public async Task<List<Code>> GetAllAsync(
-        CancellationToken cancellationToken)
+    public async Task<List<Code>> GetAllAsync(CancellationToken cancellationToken)
     {
         return await _repository.TableNoTracking
             .Include(x => x.Parent)
@@ -34,9 +33,7 @@ public sealed class CodesService : ICodesService, IScopedDependency
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<Code> GetByIdAsync(
-        int id,
-        CancellationToken cancellationToken)
+    public async Task<Code> GetByIdAsync(int id, CancellationToken cancellationToken)
     {
         var code = await _repository.Table
             .FirstOrDefaultAsync(
@@ -49,8 +46,7 @@ public sealed class CodesService : ICodesService, IScopedDependency
         return code;
     }
 
-    public async Task<List<Code>> GetGroupsAsync(
-        CancellationToken cancellationToken)
+    public async Task<List<Code>> GetGroupsAsync(CancellationToken cancellationToken)
     {
         var root = await GetRootAsync(cancellationToken);
 
@@ -68,9 +64,7 @@ public sealed class CodesService : ICodesService, IScopedDependency
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<List<Code>> GetItemsAsync(
-        int primaryCode,
-        CancellationToken cancellationToken)
+    public async Task<List<Code>> GetItemsAsync(int primaryCode, CancellationToken cancellationToken)
     {
         var group = await _repository.TableNoTracking
             .FirstOrDefaultAsync(x =>
@@ -99,10 +93,7 @@ public sealed class CodesService : ICodesService, IScopedDependency
 
     #region Create
 
-    public async Task<Code> CreateAsync(
-        Code code,
-        Guid createdBy,
-        CancellationToken cancellationToken)
+    public async Task<Code> CreateAsync(Code code, Guid createdBy, CancellationToken cancellationToken)
     {
         ValidateTitle(code.Title);
         ValidateAdditionalInformation(code.AdditionalInformation);
@@ -204,10 +195,7 @@ public sealed class CodesService : ICodesService, IScopedDependency
     #region Update
 
 
-    public async Task<Code> UpdateAsync(
-        int id,
-        Code updatedCode,
-        CancellationToken cancellationToken)
+    public async Task<Code> UpdateAsync(int id, Code updatedCode, CancellationToken cancellationToken)
     {
         var code = await GetByIdAsync(id, cancellationToken);
 
@@ -315,9 +303,7 @@ public sealed class CodesService : ICodesService, IScopedDependency
 
     #region Delete
 
-    public async Task SoftDeleteAsync(
-        int id,
-        CancellationToken cancellationToken)
+    public async Task SoftDeleteAsync(int id, CancellationToken cancellationToken)
     {
         var code = await GetByIdAsync(
             id,
@@ -354,8 +340,7 @@ public sealed class CodesService : ICodesService, IScopedDependency
 
     #region Validation
 
-    private async Task<Code?> GetRootAsync(
-        CancellationToken cancellationToken)
+    private async Task<Code?> GetRootAsync(CancellationToken cancellationToken)
     {
         return await _repository.TableNoTracking
             .FirstOrDefaultAsync(x =>
@@ -365,9 +350,7 @@ public sealed class CodesService : ICodesService, IScopedDependency
                 cancellationToken);
     }
 
-    private async Task<Code> GetActiveCodeAsync(
-        int id,
-        CancellationToken cancellationToken)
+    private async Task<Code> GetActiveCodeAsync(int id, CancellationToken cancellationToken)
     {
         var code = await _repository.TableNoTracking
             .FirstOrDefaultAsync(
@@ -383,10 +366,7 @@ public sealed class CodesService : ICodesService, IScopedDependency
         return code;
     }
 
-    private async Task ValidateGroupAsync(
-        Code parent,
-        int rootId,
-        CancellationToken cancellationToken)
+    private async Task ValidateGroupAsync(Code parent, int rootId, CancellationToken cancellationToken)
     {
         var isGroup = parent.ParentId == rootId &&
                       parent.SubCode == 0;
@@ -415,8 +395,7 @@ public sealed class CodesService : ICodesService, IScopedDependency
         }
     }
 
-    private static void ValidateAdditionalInformation(
-        string? additionalInformation)
+    private static void ValidateAdditionalInformation(string? additionalInformation)
     {
         if (additionalInformation?.Length > 400)
         {
@@ -428,8 +407,7 @@ public sealed class CodesService : ICodesService, IScopedDependency
     #endregion
 
 
-    public async Task<List<Code>> GetManagementGroupsAsync(
-    CancellationToken cancellationToken)
+    public async Task<List<Code>> GetManagementGroupsAsync(CancellationToken cancellationToken)
     {
         var root = await GetRootAsync(cancellationToken);
 
@@ -446,9 +424,7 @@ public sealed class CodesService : ICodesService, IScopedDependency
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<List<Code>> GetManagementItemsAsync(
-        int groupId,
-        CancellationToken cancellationToken)
+    public async Task<List<Code>> GetManagementItemsAsync(int groupId, CancellationToken cancellationToken)
     {
         var root = await GetRootAsync(cancellationToken);
 

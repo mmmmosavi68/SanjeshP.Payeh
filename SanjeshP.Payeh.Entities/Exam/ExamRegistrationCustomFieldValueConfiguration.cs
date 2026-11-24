@@ -1,4 +1,4 @@
-﻿
+
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -7,8 +7,7 @@ namespace SanjeshP.Payeh.Entities.Exam;
 public class ExamRegistrationCustomFieldValueConfiguration
     : IEntityTypeConfiguration<ExamRegistrationCustomFieldValue>
 {
-    public void Configure(
-        EntityTypeBuilder<ExamRegistrationCustomFieldValue> builder)
+    public void Configure(EntityTypeBuilder<ExamRegistrationCustomFieldValue> builder)
     {
         builder.ToTable("ExamRegistrationCustomFieldValues");
 

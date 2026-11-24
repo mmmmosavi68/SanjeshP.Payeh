@@ -1,4 +1,4 @@
-﻿
+
 using Microsoft.EntityFrameworkCore;
 using SanjeshP.Payeh.Common;
 using SanjeshP.Payeh.Data.Contracts.Exams;
@@ -18,9 +18,7 @@ public sealed class UniversityExamCapacityRepository
         _dbContext = dbContext;
     }
 
-    public Task<University?> GetActiveUniversityAsync(
-        int universityId,
-        CancellationToken cancellationToken)
+    public Task<University?> GetActiveUniversityAsync(int universityId, CancellationToken cancellationToken)
     {
         return _dbContext.Set<University>()
             .FirstOrDefaultAsync(
@@ -30,9 +28,7 @@ public sealed class UniversityExamCapacityRepository
                 cancellationToken);
     }
 
-    public async Task<List<Exam>> GetActiveExamsForUniversityAsync(
-        int universityId,
-        CancellationToken cancellationToken)
+    public async Task<List<Exam>> GetActiveExamsForUniversityAsync(int universityId, CancellationToken cancellationToken)
     {
         return await _dbContext.Set<Exam>()
             .AsNoTracking()
@@ -55,10 +51,7 @@ public sealed class UniversityExamCapacityRepository
             .ToListAsync(cancellationToken);
     }
 
-    public Task<UniversityExamCapacity?> GetByUniversityAndExamAsync(
-        int universityId,
-        Guid examId,
-        CancellationToken cancellationToken)
+    public Task<UniversityExamCapacity?> GetByUniversityAndExamAsync(int universityId, Guid examId, CancellationToken cancellationToken)
     {
         return _dbContext.Set<UniversityExamCapacity>()
             .Include(x => x.Exam)
@@ -71,11 +64,7 @@ public sealed class UniversityExamCapacityRepository
                 cancellationToken);
     }
 
-    public Task<int> GetAllocatedCapacityForElectronicExamsInSessionAsync(
-        int universityId,
-        Guid examSessionId,
-        Guid? excludedExamId,
-        CancellationToken cancellationToken)
+    public Task<int> GetAllocatedCapacityForElectronicExamsInSessionAsync(int universityId, Guid examSessionId, Guid? excludedExamId, CancellationToken cancellationToken)
     {
         var query = _dbContext.Set<UniversityExamCapacity>()
             .Where(x =>
@@ -100,9 +89,7 @@ public sealed class UniversityExamCapacityRepository
             cancellationToken);
     }
 
-    public Task<int> CountRegistrationsAsync(
-        Guid capacityId,
-        CancellationToken cancellationToken)
+    public Task<int> CountRegistrationsAsync(Guid capacityId, CancellationToken cancellationToken)
     {
         return _dbContext.Set<ExamRegistration>()
             .CountAsync(
@@ -111,10 +98,7 @@ public sealed class UniversityExamCapacityRepository
                 cancellationToken);
     }
 
-    public Task<int> CountOwnRegistrationsAsync(
-        Guid capacityId,
-        int universityId,
-        CancellationToken cancellationToken)
+    public Task<int> CountOwnRegistrationsAsync(Guid capacityId, int universityId, CancellationToken cancellationToken)
     {
         return _dbContext.Set<ExamRegistration>()
             .CountAsync(
@@ -124,9 +108,7 @@ public sealed class UniversityExamCapacityRepository
                 cancellationToken);
     }
 
-    public async Task AddAsync(
-        UniversityExamCapacity capacity,
-        CancellationToken cancellationToken)
+    public async Task AddAsync(UniversityExamCapacity capacity, CancellationToken cancellationToken)
     {
         await _dbContext.Set<UniversityExamCapacity>()
             .AddAsync(capacity, cancellationToken);
@@ -134,16 +116,12 @@ public sealed class UniversityExamCapacityRepository
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task UpdateAsync(
-        UniversityExamCapacity capacity,
-        CancellationToken cancellationToken)
+    public async Task UpdateAsync(UniversityExamCapacity capacity, CancellationToken cancellationToken)
     {
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task<List<University>> GetAccessibleUniversitiesAsync(
-    Guid userId,
-    CancellationToken cancellationToken)
+    public async Task<List<University>> GetAccessibleUniversitiesAsync(Guid userId, CancellationToken cancellationToken)
     {
         return await _dbContext.Set<UserUniversity>()
             .AsNoTracking()
@@ -164,10 +142,7 @@ public sealed class UniversityExamCapacityRepository
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<University?> GetAccessibleUniversityAsync(
-    Guid userId,
-    int universityId,
-    CancellationToken cancellationToken)
+    public async Task<University?> GetAccessibleUniversityAsync(Guid userId, int universityId, CancellationToken cancellationToken)
     {
         return await _dbContext.Set<UserUniversity>()
             .AsNoTracking()
@@ -184,9 +159,7 @@ public sealed class UniversityExamCapacityRepository
             .FirstOrDefaultAsync(cancellationToken);
     }
 
-    public async Task<List<Exam>> GetDefinedExamsForUniversityAsync(
-    int universityId,
-    CancellationToken cancellationToken)
+    public async Task<List<Exam>> GetDefinedExamsForUniversityAsync(int universityId, CancellationToken cancellationToken)
     {
         return await _dbContext.Set<Exam>()
             .AsNoTracking()
@@ -218,9 +191,7 @@ public sealed class UniversityExamCapacityRepository
     }
 
 
-    public async Task<List<UniversityExamGuestCapacity>> GetGuestCapacitiesAsync(
-    Guid universityExamCapacityId,
-    CancellationToken cancellationToken)
+    public async Task<List<UniversityExamGuestCapacity>> GetGuestCapacitiesAsync(Guid universityExamCapacityId, CancellationToken cancellationToken)
     {
         return await _dbContext.Set<UniversityExamGuestCapacity>()
             .AsNoTracking()
@@ -235,10 +206,7 @@ public sealed class UniversityExamCapacityRepository
             .ToListAsync(cancellationToken);
     }
 
-    public Task<UniversityExamGuestCapacity?> GetGuestCapacityByUniversityAsync(
-    Guid universityExamCapacityId,
-    int guestUniversityId,
-    CancellationToken cancellationToken)
+    public Task<UniversityExamGuestCapacity?> GetGuestCapacityByUniversityAsync(Guid universityExamCapacityId, int guestUniversityId, CancellationToken cancellationToken)
     {
         return _dbContext.Set<UniversityExamGuestCapacity>()
             .FirstOrDefaultAsync(
@@ -247,9 +215,7 @@ public sealed class UniversityExamCapacityRepository
                 cancellationToken);
     }
 
-    public Task<int> CountGuestRegistrationsAsync(
-    Guid guestCapacityId,
-    CancellationToken cancellationToken)
+    public Task<int> CountGuestRegistrationsAsync(Guid guestCapacityId, CancellationToken cancellationToken)
     {
         return _dbContext.Set<ExamRegistration>()
             .CountAsync(
@@ -258,9 +224,7 @@ public sealed class UniversityExamCapacityRepository
                 cancellationToken);
     }
 
-    public async Task AddGuestCapacityAsync(
-    UniversityExamGuestCapacity guestCapacity,
-    CancellationToken cancellationToken)
+    public async Task AddGuestCapacityAsync(UniversityExamGuestCapacity guestCapacity, CancellationToken cancellationToken)
     {
         await _dbContext.Set<UniversityExamGuestCapacity>()
             .AddAsync(guestCapacity, cancellationToken);
@@ -268,16 +232,12 @@ public sealed class UniversityExamCapacityRepository
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task UpdateGuestCapacityAsync(
-    UniversityExamGuestCapacity guestCapacity,
-    CancellationToken cancellationToken)
+    public async Task UpdateGuestCapacityAsync(UniversityExamGuestCapacity guestCapacity, CancellationToken cancellationToken)
     {
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    public Task<int> GetTotalGuestCapacityAsync(
-    Guid universityExamCapacityId,
-    CancellationToken cancellationToken)
+    public Task<int> GetTotalGuestCapacityAsync(Guid universityExamCapacityId, CancellationToken cancellationToken)
     {
         return _dbContext.Set<UniversityExamGuestCapacity>()
             .Where(x =>
@@ -289,10 +249,7 @@ public sealed class UniversityExamCapacityRepository
             .SumAsync(x => x.Capacity, cancellationToken);
     }
 
-    public async Task<Dictionary<Guid, UniversityExamCapacityUsage>> GetCapacityUsageAsync(
-        int universityId,
-        IReadOnlyCollection<Guid> capacityIds,
-        CancellationToken cancellationToken)
+    public async Task<Dictionary<Guid, UniversityExamCapacityUsage>> GetCapacityUsageAsync(int universityId, IReadOnlyCollection<Guid> capacityIds, CancellationToken cancellationToken)
     {
         var result = new Dictionary<Guid, UniversityExamCapacityUsage>();
 
@@ -347,9 +304,7 @@ public sealed class UniversityExamCapacityRepository
         return result;
     }
 
-    public async Task<Dictionary<Guid, int>> GetGuestRegistrationCountsAsync(
-        IReadOnlyCollection<Guid> guestCapacityIds,
-        CancellationToken cancellationToken)
+    public async Task<Dictionary<Guid, int>> GetGuestRegistrationCountsAsync(IReadOnlyCollection<Guid> guestCapacityIds, CancellationToken cancellationToken)
     {
         if (guestCapacityIds.Count == 0)
             return new Dictionary<Guid, int>();

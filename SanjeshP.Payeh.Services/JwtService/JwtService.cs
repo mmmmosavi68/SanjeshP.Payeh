@@ -28,10 +28,7 @@ namespace SanjeshP.Payeh.Services.JwtService
         private readonly IUserSessionRepository _sessionRepository;
         private readonly IUnitOfWork _uow;
 
-        public JwtService(
-            IOptions<SiteSettings> siteSettings,
-            IUserSessionRepository sessionRepository,
-            IUnitOfWork uow)
+        public JwtService(IOptions<SiteSettings> siteSettings, IUserSessionRepository sessionRepository, IUnitOfWork uow)
         {
             _siteSettings = siteSettings.Value;
             _sessionRepository = sessionRepository;
@@ -43,12 +40,7 @@ namespace SanjeshP.Payeh.Services.JwtService
             => GenerateAsync(user, deviceName, ipAddress, userAgent: null, cancellationToken);
 
         /// <inheritdoc />
-        public async Task<AccessToken> GenerateAsync(
-     User user,
-     string deviceName,
-     string ipAddress,
-     string? userAgent,
-     CancellationToken cancellationToken)
+        public async Task<AccessToken> GenerateAsync(User user, string deviceName, string ipAddress, string? userAgent, CancellationToken cancellationToken)
         {
             // در صورت غیرفعال بودن ورود چنددستگاهی،
             // تمام نشست‌های قبلی کاربر باطل می‌شوند.

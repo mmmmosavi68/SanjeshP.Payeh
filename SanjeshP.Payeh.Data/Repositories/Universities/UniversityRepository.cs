@@ -17,13 +17,7 @@ public sealed class UniversityRepository
     {
     }
 
-    public async Task<List<University>> GetAllAsync(
-        string? search,
-        int? universityTypeId,
-        int? region,
-        int? parentUniversityId,
-        bool? isActive,
-        CancellationToken cancellationToken)
+    public async Task<List<University>> GetAllAsync(string? search, int? universityTypeId, int? region, int? parentUniversityId, bool? isActive, CancellationToken cancellationToken)
     {
         var query = TableNoTracking
             .Include(x => x.UniversityType)
@@ -54,9 +48,7 @@ public sealed class UniversityRepository
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<University?> GetByIdAsync(
-        int id,
-        CancellationToken cancellationToken)
+    public async Task<University?> GetByIdAsync(int id, CancellationToken cancellationToken)
     {
         return await Table
             .Include(x => x.UniversityType)
@@ -66,9 +58,7 @@ public sealed class UniversityRepository
                 cancellationToken);
     }
 
-    public Task<bool> UniversityTypeExistsAsync(
-        int universityTypeId,
-        CancellationToken cancellationToken)
+    public Task<bool> UniversityTypeExistsAsync(int universityTypeId, CancellationToken cancellationToken)
     {
         return DbContext.Set<Code>()
             .AnyAsync(
@@ -76,27 +66,21 @@ public sealed class UniversityRepository
                 cancellationToken);
     }
 
-    public Task<bool> ParentExistsAsync(
-        int parentUniversityId,
-        CancellationToken cancellationToken)
+    public Task<bool> ParentExistsAsync(int parentUniversityId, CancellationToken cancellationToken)
     {
         return TableNoTracking.AnyAsync(
             x => x.Id == parentUniversityId && x.IsActive,
             cancellationToken);
     }
 
-    public Task<bool> HasChildrenAsync(
-        int universityId,
-        CancellationToken cancellationToken)
+    public Task<bool> HasChildrenAsync(int universityId, CancellationToken cancellationToken)
     {
         return TableNoTracking.AnyAsync(
             x => x.ParentUniversityId == universityId,
             cancellationToken);
     }
 
-    public async Task<bool> HasDependenciesAsync(
-        int universityId,
-        CancellationToken cancellationToken)
+    public async Task<bool> HasDependenciesAsync(int universityId, CancellationToken cancellationToken)
     {
         var hasCapacity = await DbContext.Set<UniversityExamCapacity>()
             .AnyAsync(
@@ -121,16 +105,12 @@ public sealed class UniversityRepository
                 cancellationToken);
     }
 
-    public Task AddAsync(
-        University university,
-        CancellationToken cancellationToken)
+    public Task AddAsync(University university, CancellationToken cancellationToken)
     {
         return base.AddAsync(university, cancellationToken);
     }
 
-    public Task UpdateAsync(
-        University university,
-        CancellationToken cancellationToken)
+    public Task UpdateAsync(University university, CancellationToken cancellationToken)
     {
         return base.UpdateAsync(university, cancellationToken);
     }

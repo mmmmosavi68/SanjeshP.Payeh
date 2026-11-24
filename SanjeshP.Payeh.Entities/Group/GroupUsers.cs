@@ -1,4 +1,4 @@
-﻿using SanjeshP.Payeh.Entities.Common;
+using SanjeshP.Payeh.Entities.Common;
 using SanjeshP.Payeh.Entities.Menu;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -18,10 +18,10 @@ namespace SanjeshP.Payeh.Entities.Group
         public Guid GroupId { get; set; }
 
         [Display(Name = "کاربر")]
-        public virtual User.User User { get; set; }
+        public virtual User.User? User { get; set; }
 
         [Display(Name = "گروه")]
-        public virtual Group Group { get; set; }
+        public virtual Group? Group { get; set; }
         public virtual ICollection<GroupAccessMenus> GroupAccessMenus { get; set; } = new List<GroupAccessMenus>();
 
     }

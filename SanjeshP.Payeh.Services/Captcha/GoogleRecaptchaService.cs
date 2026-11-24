@@ -17,10 +17,7 @@ namespace SanjeshP.Payeh.Services.Captcha
         private readonly CaptchaSettings _settings;
         private readonly ILogger<GoogleRecaptchaService> _logger;
 
-        public GoogleRecaptchaService(
-            IHttpClientFactory httpClientFactory,
-            IOptions<SiteSettings> siteSettings,
-            ILogger<GoogleRecaptchaService> logger)
+        public GoogleRecaptchaService(IHttpClientFactory httpClientFactory, IOptions<SiteSettings> siteSettings, ILogger<GoogleRecaptchaService> logger)
         {
             _httpClientFactory = httpClientFactory;
             _settings = siteSettings.Value.CaptchaSettings;

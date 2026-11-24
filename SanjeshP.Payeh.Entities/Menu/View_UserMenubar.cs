@@ -1,4 +1,4 @@
-﻿using SanjeshP.Payeh.Entities.Common;
+using SanjeshP.Payeh.Entities.Common;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SanjeshP.Payeh.Entities.Menu
@@ -7,16 +7,16 @@ namespace SanjeshP.Payeh.Entities.Menu
     //[IgnoreMigrationAttribute]
     public class View_UserMenubar : BaseEntity /*IIgnoreDependency*/
     {
-        public string MenuTitle { get; set; }
+        public string MenuTitle { get; set; } = string.Empty;
         public Guid? ParentId { get; set; }
         public int? PageCode { get; set; }
-        public string Area { get; set; }
-        public string ControllerName { get; set; }
-        public string ActionName { get; set; }
+        public string Area { get; set; } = string.Empty;
+        public string ControllerName { get; set; } = string.Empty;
+        public string ActionName { get; set; } = string.Empty;
         public bool? ShowMenu { get; set; }
-        public string CssClass { get; set; }
-        public string Icon { get; set; }
-        public string Link { get; set; }
+        public string CssClass { get; set; } = string.Empty;
+        public string Icon { get; set; } = string.Empty;
+        public string Link { get; set; } = string.Empty;
         public bool CurentUser_Person_Checkecd { get; set; }
         public bool CurentUser_Group_Checkecd { get; set; }
         public int IsParent { get; set; }
@@ -25,16 +25,16 @@ namespace SanjeshP.Payeh.Entities.Menu
         public bool disabled { get; set; }
 
         [NotMapped]
-        public DateTime CreatedDate { get; set; }
+        public new DateTime CreatedDate { get; set; }
         [NotMapped]
-        public DateTime? UpdatedDate { get; set; }
+        public new DateTime? UpdatedDate { get; set; }
         [NotMapped]
-        public bool IsActive { get; set; }
+        public new bool IsActive { get; set; }
         [NotMapped]
-        public bool IsDeleted { get; set; }
+        public new bool IsDeleted { get; set; }
         [NotMapped]
-        public Guid CreatedBy { get; set; }
+        public new Guid CreatedBy { get; set; }
         [NotMapped]
-        public string HostIp { get; set; }
+        public new string HostIp { get; set; } = string.Empty;
     }
 }

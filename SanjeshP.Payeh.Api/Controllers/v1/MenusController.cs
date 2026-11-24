@@ -21,9 +21,7 @@ public class MenusController : BaseController
     private readonly IMenusService _menusService;
     private readonly IApiMapper _mapper;
 
-    public MenusController(
-        IMenusService menusService,
-        IApiMapper mapper)
+    public MenusController(IMenusService menusService, IApiMapper mapper)
     {
         _menusService = menusService;
         _mapper = mapper;
@@ -51,9 +49,7 @@ public class MenusController : BaseController
     [ProducesResponseType(
         typeof(ApiResult<MenuDto>),
         StatusCodes.Status200OK)]
-    public async Task<ApiResult<MenuDto>> GetById(
-        [FromRoute] Guid id,
-        CancellationToken cancellationToken)
+    public async Task<ApiResult<MenuDto>> GetById([FromRoute] Guid id, CancellationToken cancellationToken)
     {
         var menu = await _menusService.GetByIdAsync(
             id,
@@ -69,9 +65,7 @@ public class MenusController : BaseController
     [ProducesResponseType(
         typeof(ApiResult<MenuDto>),
         StatusCodes.Status201Created)]
-    public async Task<ActionResult<ApiResult<MenuDto>>> Create(
-        [FromBody] CreateMenuDto dto,
-        CancellationToken cancellationToken)
+    public async Task<ActionResult<ApiResult<MenuDto>>> Create([FromBody] CreateMenuDto dto, CancellationToken cancellationToken)
     {
         var entity = _mapper.ToEntity(dto);
 
@@ -99,10 +93,7 @@ public class MenusController : BaseController
     [ProducesResponseType(
         typeof(ApiResult<MenuDto>),
         StatusCodes.Status200OK)]
-    public async Task<ApiResult<MenuDto>> Update(
-        [FromRoute] Guid id,
-        [FromBody] UpdateMenuDto dto,
-        CancellationToken cancellationToken)
+    public async Task<ApiResult<MenuDto>> Update([FromRoute] Guid id, [FromBody] UpdateMenuDto dto, CancellationToken cancellationToken)
     {
         var entity = _mapper.ToEntity(dto);
 
@@ -120,9 +111,7 @@ public class MenusController : BaseController
     /// </summary>
     [HttpDelete("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    public async Task<ApiResult> Delete(
-        [FromRoute] Guid id,
-        CancellationToken cancellationToken)
+    public async Task<ApiResult> Delete([FromRoute] Guid id, CancellationToken cancellationToken)
     {
         await _menusService.SoftDeleteAsync(
             id,

@@ -1,4 +1,4 @@
-﻿//using Microsoft.Data.SqlClient;
+//using Microsoft.Data.SqlClient;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -8,12 +8,7 @@ namespace SanjeshP.Payeh.Common.Utilities
 {
     public class CreateSqlParameter
     {
-        public SqlParameter Create_Param<T>(
-            string paramName,
-            T paramValue,
-            SqlDbType sqlDbType,
-            int? size = null,
-            ParameterDirection direction = ParameterDirection.Input)
+        public SqlParameter Create_Param<T>(string paramName, T paramValue, SqlDbType sqlDbType, int? size = null, ParameterDirection direction = ParameterDirection.Input)
         {
             var parameter = new SqlParameter
             {
@@ -32,11 +27,7 @@ namespace SanjeshP.Payeh.Common.Utilities
             return parameter;
         }
 
-        public SqlParameter Create_TableParam(
-            string paramName,
-            DataTable paramValue,
-            string typeName,
-            ParameterDirection direction = ParameterDirection.Input)
+        public SqlParameter Create_TableParam(string paramName, DataTable paramValue, string typeName, ParameterDirection direction = ParameterDirection.Input)
         {
             var parameter = new SqlParameter
             {

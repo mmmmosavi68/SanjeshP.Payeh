@@ -40,17 +40,7 @@ namespace SanjeshP.Payeh.Api.Controllers.V1
         private readonly SiteSettings _siteSettings;
         private readonly IAuditLogService _auditLogService;
 
-        public AuthController(
-            IOtpService otpService,
-            IJwtService jwtService,
-            ICaptchaService captchaService,
-            ICaptchaImageService captchaImageService,
-            IUserService userService,
-            ISmsSender smsSender,
-            IOptions<SiteSettings> siteSettings,
-            IPayamSMS payamSMS,
-            IAuditLogService auditLogService
-            )
+        public AuthController(IOtpService otpService, IJwtService jwtService, ICaptchaService captchaService, ICaptchaImageService captchaImageService, IUserService userService, ISmsSender smsSender, IOptions<SiteSettings> siteSettings, IPayamSMS payamSMS, IAuditLogService auditLogService)
         {
             _otpService = otpService;
             _jwtService = jwtService;

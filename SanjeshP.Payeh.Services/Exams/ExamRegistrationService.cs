@@ -17,17 +17,13 @@ public sealed class ExamRegistrationService : IExamRegistrationService, IScopedD
     private readonly IUnitOfWork _uow;
     private readonly IIdentityValidationService _identityValidation;
 
-    public ExamRegistrationService(
-        IUnitOfWork uow,
-        IIdentityValidationService identityValidation)
+    public ExamRegistrationService(IUnitOfWork uow, IIdentityValidationService identityValidation)
     {
         _uow = uow;
         _identityValidation = identityValidation;
     }
 
-    public async Task<List<University>> GetAccessibleUniversitiesAsync(
-        Guid userId,
-        CancellationToken cancellationToken)
+    public async Task<List<University>> GetAccessibleUniversitiesAsync(Guid userId, CancellationToken cancellationToken)
     {
         if (userId == Guid.Empty)
             throw new BadRequestException(ApiMessages.ExamRegistration.M001);
@@ -41,10 +37,7 @@ public sealed class ExamRegistrationService : IExamRegistrationService, IScopedD
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<List<Exam>> GetAvailableExamsAsync(
-        int universityId,
-        Guid userId,
-        CancellationToken cancellationToken)
+    public async Task<List<Exam>> GetAvailableExamsAsync(int universityId, Guid userId, CancellationToken cancellationToken)
     {
         if (universityId <= 0)
             throw new BadRequestException(ApiMessages.ExamRegistration.M002);
@@ -75,11 +68,7 @@ public sealed class ExamRegistrationService : IExamRegistrationService, IScopedD
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<ExamRegistration> CreateAsync(
-        ExamRegistration registration,
-        IReadOnlyCollection<ExamRegistrationCustomFieldValue> customFieldValues,
-        Guid createdBy,
-        CancellationToken cancellationToken)
+    public async Task<ExamRegistration> CreateAsync(ExamRegistration registration, IReadOnlyCollection<ExamRegistrationCustomFieldValue> customFieldValues, Guid createdBy, CancellationToken cancellationToken)
     {
         if (createdBy == Guid.Empty)
             throw new BadRequestException(ApiMessages.ExamRegistration.M003);
@@ -258,12 +247,7 @@ public sealed class ExamRegistrationService : IExamRegistrationService, IScopedD
         return await GetByIdAsync(registration.Id, createdBy, cancellationToken);
     }
 
-    public async Task<ExamRegistration> UpdateAsync(
-        Guid id,
-        ExamRegistration updatedRegistration,
-        IReadOnlyCollection<ExamRegistrationCustomFieldValue> customFieldValues,
-        Guid updatedBy,
-        CancellationToken cancellationToken)
+    public async Task<ExamRegistration> UpdateAsync(Guid id, ExamRegistration updatedRegistration, IReadOnlyCollection<ExamRegistrationCustomFieldValue> customFieldValues, Guid updatedBy, CancellationToken cancellationToken)
     {
         if (updatedBy == Guid.Empty)
             throw new BadRequestException(ApiMessages.ExamRegistration.M019);
@@ -452,10 +436,7 @@ public sealed class ExamRegistrationService : IExamRegistrationService, IScopedD
         return await GetByIdAsync(item.Id, updatedBy, cancellationToken);
     }
 
-    public async Task<ExamRegistration> GetByIdAsync(
-        Guid id,
-        Guid userId,
-        CancellationToken cancellationToken)
+    public async Task<ExamRegistration> GetByIdAsync(Guid id, Guid userId, CancellationToken cancellationToken)
     {
         var item = await _uow.Repository<ExamRegistration>().Entities
             .AsNoTracking()
@@ -476,11 +457,7 @@ public sealed class ExamRegistrationService : IExamRegistrationService, IScopedD
         return item;
     }
 
-    public async Task<List<ExamRegistration>> GetByExamAsync(
-        Guid examId,
-        int universityId,
-        Guid userId,
-        CancellationToken cancellationToken)
+    public async Task<List<ExamRegistration>> GetByExamAsync(Guid examId, int universityId, Guid userId, CancellationToken cancellationToken)
     {
         if (examId == Guid.Empty)
             throw new BadRequestException(ApiMessages.ExamRegistration.M023);
@@ -509,10 +486,7 @@ public sealed class ExamRegistrationService : IExamRegistrationService, IScopedD
             .ToListAsync(cancellationToken);
     }
 
-    public async Task SoftDeleteAsync(
-        Guid id,
-        Guid userId,
-        CancellationToken cancellationToken)
+    public async Task SoftDeleteAsync(Guid id, Guid userId, CancellationToken cancellationToken)
     {
         var item = await _uow.Repository<ExamRegistration>().Entities
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
@@ -532,10 +506,7 @@ public sealed class ExamRegistrationService : IExamRegistrationService, IScopedD
         await _uow.SaveChangesAsync(cancellationToken);
     }
 
-    private async Task<List<ExamRegistrationCustomFieldValue>> ValidateCustomFieldsAsync(
-        Guid examId,
-        IReadOnlyCollection<ExamRegistrationCustomFieldValue> submittedValues,
-        CancellationToken cancellationToken)
+    private async Task<List<ExamRegistrationCustomFieldValue>> ValidateCustomFieldsAsync(Guid examId, IReadOnlyCollection<ExamRegistrationCustomFieldValue> submittedValues, CancellationToken cancellationToken)
     {
         var values = submittedValues?.ToList() ?? [];
 
@@ -603,10 +574,7 @@ public sealed class ExamRegistrationService : IExamRegistrationService, IScopedD
         return values;
     }
 
-    private async Task EnsureUniversityAccessAsync(
-        Guid userId,
-        int universityId,
-        CancellationToken cancellationToken)
+    private async Task EnsureUniversityAccessAsync(Guid userId, int universityId, CancellationToken cancellationToken)
     {
         if (userId == Guid.Empty)
             throw new BadRequestException(ApiMessages.ExamRegistration.M001);

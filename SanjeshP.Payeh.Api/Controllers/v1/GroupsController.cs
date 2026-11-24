@@ -24,8 +24,7 @@ public sealed class GroupsController : BaseController
     /// دریافت فهرست گروه‌ها
     /// </summary>
     [HttpGet]
-    public async Task<ApiResult<List<GroupDto>>> Get(
-        CancellationToken cancellationToken)
+    public async Task<ApiResult<List<GroupDto>>> Get(CancellationToken cancellationToken)
     {
         var groups = await _groupService.GetAllAsync(
             cancellationToken);
@@ -44,9 +43,7 @@ public sealed class GroupsController : BaseController
     /// دریافت اطلاعات یک گروه
     /// </summary>
     [HttpGet("{id:guid}")]
-    public async Task<ApiResult<GroupDto>> GetById(
-        Guid id,
-        CancellationToken cancellationToken)
+    public async Task<ApiResult<GroupDto>> GetById(Guid id, CancellationToken cancellationToken)
     {
         var group = await _groupService.GetByIdAsync(
             id,
@@ -64,9 +61,7 @@ public sealed class GroupsController : BaseController
     /// ایجاد گروه جدید
     /// </summary>
     [HttpPost]
-    public async Task<ActionResult<ApiResult<GroupDto>>> Create(
-        [FromBody] CreateGroupDto dto,
-        CancellationToken cancellationToken)
+    public async Task<ActionResult<ApiResult<GroupDto>>> Create([FromBody] CreateGroupDto dto, CancellationToken cancellationToken)
     {
         var group = await _groupService.CreateAsync(
             dto.GroupName,
@@ -92,10 +87,7 @@ public sealed class GroupsController : BaseController
     /// ویرایش گروه
     /// </summary>
     [HttpPut("{id:guid}")]
-    public async Task<ApiResult<GroupDto>> Update(
-        Guid id,
-        [FromBody] UpdateGroupDto dto,
-        CancellationToken cancellationToken)
+    public async Task<ApiResult<GroupDto>> Update(Guid id, [FromBody] UpdateGroupDto dto, CancellationToken cancellationToken)
     {
         var group = await _groupService.UpdateAsync(
             id,
@@ -116,9 +108,7 @@ public sealed class GroupsController : BaseController
     /// حذف نرم گروه
     /// </summary>
     [HttpDelete("{id:guid}")]
-    public async Task<ApiResult> Delete(
-        Guid id,
-        CancellationToken cancellationToken)
+    public async Task<ApiResult> Delete(Guid id, CancellationToken cancellationToken)
     {
         await _groupService.SoftDeleteAsync(
             id,
@@ -134,9 +124,7 @@ public sealed class GroupsController : BaseController
     /// دریافت اعضای یک گروه
     /// </summary>
     [HttpGet("{id:guid}/users")]
-    public async Task<ApiResult<List<GroupMemberDto>>> GetUsers(
-        Guid id,
-        CancellationToken cancellationToken)
+    public async Task<ApiResult<List<GroupMemberDto>>> GetUsers(Guid id, CancellationToken cancellationToken)
     {
         var members = await _groupService.GetUsersAsync(
             id,
@@ -156,10 +144,7 @@ public sealed class GroupsController : BaseController
     /// اضافه کردن کاربر به گروه
     /// </summary>
     [HttpPost("{id:guid}/users")]
-    public async Task<ApiResult> AddUser(
-        Guid id,
-        [FromBody] AddGroupUserDto dto,
-        CancellationToken cancellationToken)
+    public async Task<ApiResult> AddUser(Guid id, [FromBody] AddGroupUserDto dto, CancellationToken cancellationToken)
     {
         await _groupService.AddUserAsync(
             id,
@@ -177,10 +162,7 @@ public sealed class GroupsController : BaseController
     /// حذف کاربر از گروه
     /// </summary>
     [HttpDelete("{id:guid}/users/{userId:guid}")]
-    public async Task<ApiResult> RemoveUser(
-        Guid id,
-        Guid userId,
-        CancellationToken cancellationToken)
+    public async Task<ApiResult> RemoveUser(Guid id, Guid userId, CancellationToken cancellationToken)
     {
         await _groupService.RemoveUserAsync(
             id,
@@ -198,10 +180,7 @@ public sealed class GroupsController : BaseController
     /// افزودن گروهی کاربران به گروه
     /// </summary>
     [HttpPost("{id:guid}/users/bulk")]
-    public async Task<ApiResult> AddUsers(
-        Guid id,
-        [FromBody] BulkGroupUsersDto dto,
-        CancellationToken cancellationToken)
+    public async Task<ApiResult> AddUsers(Guid id, [FromBody] BulkGroupUsersDto dto, CancellationToken cancellationToken)
     {
         await _groupService.AddUsersAsync(
             id,
@@ -219,10 +198,7 @@ public sealed class GroupsController : BaseController
     /// حذف گروهی کاربران از گروه
     /// </summary>
     [HttpDelete("{id:guid}/users/bulk")]
-    public async Task<ApiResult> RemoveUsers(
-        Guid id,
-        [FromBody] BulkGroupUsersDto dto,
-        CancellationToken cancellationToken)
+    public async Task<ApiResult> RemoveUsers(Guid id, [FromBody] BulkGroupUsersDto dto, CancellationToken cancellationToken)
     {
         await _groupService.RemoveUsersAsync(
             id,
@@ -241,8 +217,7 @@ public sealed class GroupsController : BaseController
     /// دریافت فهرست منوهای فعال و قابل انتخاب
     /// </summary>
     [HttpGet("available-menus")]
-    public async Task<ApiResult<List<GroupMenuDto>>> GetAvailableMenus(
-        CancellationToken cancellationToken)
+    public async Task<ApiResult<List<GroupMenuDto>>> GetAvailableMenus(CancellationToken cancellationToken)
     {
         var menus = await _groupService.GetAvailableMenusAsync(
             cancellationToken);
@@ -270,9 +245,7 @@ public sealed class GroupsController : BaseController
     /// دریافت شناسه منوهای اختصاص‌یافته به گروه
     /// </summary>
     [HttpGet("{id:guid}/menu-access")]
-    public async Task<ApiResult<List<Guid>>> GetMenuAccess(
-        Guid id,
-        CancellationToken cancellationToken)
+    public async Task<ApiResult<List<Guid>>> GetMenuAccess(Guid id, CancellationToken cancellationToken)
     {
         var menuIds = await _groupService.GetAssignedMenuIdsAsync(
             id,
@@ -288,10 +261,7 @@ public sealed class GroupsController : BaseController
     /// ثبت یا جایگزینی دسترسی منوهای گروه
     /// </summary>
     [HttpPut("{id:guid}/menu-access")]
-    public async Task<ApiResult> UpdateMenuAccess(
-        Guid id,
-        [FromBody] UpdateGroupMenuAccessDto dto,
-        CancellationToken cancellationToken)
+    public async Task<ApiResult> UpdateMenuAccess(Guid id, [FromBody] UpdateGroupMenuAccessDto dto, CancellationToken cancellationToken)
     {
         await _groupService.UpdateMenuAccessAsync(
             id,

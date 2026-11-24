@@ -1,11 +1,9 @@
-﻿
+
 namespace SanjeshP.Payeh.Common.Utilities;
 
 public static class IranianMobileNumberNormalizer
 {
-    public static bool TryNormalize(
-        string? phoneNumber,
-        out string normalizedNumber)
+    public static bool TryNormalize(string? phoneNumber, out string normalizedNumber)
     {
         normalizedNumber = string.Empty;
 

@@ -46,9 +46,7 @@ public sealed class UniversitiesController : BaseController
     /// </summary>
     [HttpGet("{id:int}")]
     [ProducesResponseType(typeof(ApiResult<UniversityDto>), StatusCodes.Status200OK)]
-    public async Task<ApiResult<UniversityDto>> GetById(
-        [FromRoute] int id,
-        CancellationToken cancellationToken)
+    public async Task<ApiResult<UniversityDto>> GetById([FromRoute] int id, CancellationToken cancellationToken)
     {
         var university = await _service.GetByIdAsync(
             id,
@@ -69,9 +67,7 @@ public sealed class UniversitiesController : BaseController
     /// </summary>
     [HttpPost]
     [ProducesResponseType(typeof(ApiResult<UniversityDto>), StatusCodes.Status200OK)]
-    public async Task<ApiResult<UniversityDto>> Create(
-        [FromBody] CreateUniversityDto dto,
-        CancellationToken cancellationToken)
+    public async Task<ApiResult<UniversityDto>> Create([FromBody] CreateUniversityDto dto, CancellationToken cancellationToken)
     {
         var university = _mapper.ToEntity(dto);
         university.UniversityTypeId = await _codes.ResolveIdAsync(dto.UniversityTypeId, dto.UniversityTypePrimaryCode, dto.UniversityTypeSubCode, null, ApiMessages.Lookup.UniversityTypeInvalid, cancellationToken);
@@ -97,10 +93,7 @@ public sealed class UniversitiesController : BaseController
     /// </summary>
     [HttpPut("{id:int}")]
     [ProducesResponseType(typeof(ApiResult<UniversityDto>), StatusCodes.Status200OK)]
-    public async Task<ApiResult<UniversityDto>> Update(
-        [FromRoute] int id,
-        [FromBody] UpdateUniversityDto dto,
-        CancellationToken cancellationToken)
+    public async Task<ApiResult<UniversityDto>> Update([FromRoute] int id, [FromBody] UpdateUniversityDto dto, CancellationToken cancellationToken)
     {
         var university = _mapper.ToEntity(dto);
         university.UniversityTypeId = await _codes.ResolveIdAsync(dto.UniversityTypeId, dto.UniversityTypePrimaryCode, dto.UniversityTypeSubCode, null, ApiMessages.Lookup.UniversityTypeInvalid, cancellationToken);
@@ -126,9 +119,7 @@ public sealed class UniversitiesController : BaseController
     /// </summary>
     [HttpDelete("{id:int}")]
     [ProducesResponseType(typeof(ApiResult), StatusCodes.Status200OK)]
-    public async Task<ApiResult> Delete(
-        [FromRoute] int id,
-        CancellationToken cancellationToken)
+    public async Task<ApiResult> Delete([FromRoute] int id, CancellationToken cancellationToken)
     {
         await _service.SoftDeleteAsync(
             id,

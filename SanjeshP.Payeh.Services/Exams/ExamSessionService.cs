@@ -15,10 +15,7 @@ public sealed class ExamSessionService : IExamSessionService, IScopedDependency
         _repository = repository;
     }
 
-    public Task<List<ExamSession>> GetAllAsync(
-        string? search,
-        bool? isActive,
-        CancellationToken cancellationToken)
+    public Task<List<ExamSession>> GetAllAsync(string? search, bool? isActive, CancellationToken cancellationToken)
     {
         return _repository.GetAllAsync(
             search,
@@ -26,9 +23,7 @@ public sealed class ExamSessionService : IExamSessionService, IScopedDependency
             cancellationToken);
     }
 
-    public async Task<ExamSession> GetByIdAsync(
-        Guid id,
-        CancellationToken cancellationToken)
+    public async Task<ExamSession> GetByIdAsync(Guid id, CancellationToken cancellationToken)
     {
         var session = await _repository.GetByIdAsync(
             id,
@@ -40,10 +35,7 @@ public sealed class ExamSessionService : IExamSessionService, IScopedDependency
         return session;
     }
 
-    public async Task<ExamSession> CreateAsync(
-        ExamSession session,
-        Guid createdBy,
-        CancellationToken cancellationToken)
+    public async Task<ExamSession> CreateAsync(ExamSession session, Guid createdBy, CancellationToken cancellationToken)
     {
         Validate(session);
 
@@ -62,10 +54,7 @@ public sealed class ExamSessionService : IExamSessionService, IScopedDependency
         return await GetByIdAsync(session.Id, cancellationToken);
     }
 
-    public async Task<ExamSession> UpdateAsync(
-        Guid id,
-        ExamSession updatedSession,
-        CancellationToken cancellationToken)
+    public async Task<ExamSession> UpdateAsync(Guid id, ExamSession updatedSession, CancellationToken cancellationToken)
     {
         var session = await GetByIdAsync(id, cancellationToken);
 
@@ -83,9 +72,7 @@ public sealed class ExamSessionService : IExamSessionService, IScopedDependency
         return await GetByIdAsync(id, cancellationToken);
     }
 
-    public async Task DeleteAsync(
-        Guid id,
-        CancellationToken cancellationToken)
+    public async Task DeleteAsync(Guid id, CancellationToken cancellationToken)
     {
         var session = await GetByIdAsync(id, cancellationToken);
 

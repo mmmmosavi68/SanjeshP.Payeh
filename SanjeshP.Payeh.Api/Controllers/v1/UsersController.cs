@@ -25,10 +25,7 @@ namespace SanjeshP.Payeh.Api.Controllers.V1
         private readonly IApiMapper _mapper;
         private readonly IAuditLogService _auditLogService;
 
-        public UsersController(
-            IUserService userService,
-            IApiMapper mapper,
-            IAuditLogService auditLogService)
+        public UsersController(IUserService userService, IApiMapper mapper, IAuditLogService auditLogService)
         {
             _userService = userService;
             _mapper = mapper;
@@ -42,9 +39,7 @@ namespace SanjeshP.Payeh.Api.Controllers.V1
         [ProducesResponseType(
             typeof(ApiResult<PagedResult<UserSelectDto>>),
             StatusCodes.Status200OK)]
-        public async Task<ApiResult<PagedResult<UserSelectDto>>> Get(
-            [FromQuery] UserQueryParameters query,
-            CancellationToken cancellationToken)
+        public async Task<ApiResult<PagedResult<UserSelectDto>>> Get([FromQuery] UserQueryParameters query, CancellationToken cancellationToken)
         {
             var result = await _userService.GetPagedAsync(
                 new UserQuery(
@@ -67,9 +62,7 @@ namespace SanjeshP.Payeh.Api.Controllers.V1
         }
 
         [HttpGet("{id:guid}")]
-        public async Task<ApiResult<UserSelectDto>> GetById(
-     [FromRoute] Guid id,
-     CancellationToken cancellationToken)
+        public async Task<ApiResult<UserSelectDto>> GetById([FromRoute] Guid id, CancellationToken cancellationToken)
         {
             var user = await _userService.GetByIdAsync(id, cancellationToken);
 
@@ -118,9 +111,7 @@ namespace SanjeshP.Payeh.Api.Controllers.V1
         [ProducesResponseType(
             typeof(ApiResult<UserSelectDto>),
             StatusCodes.Status201Created)]
-        public async Task<ActionResult<ApiResult<UserSelectDto>>> Create(
-            [FromBody] CreateUserDto dto,
-            CancellationToken cancellationToken)
+        public async Task<ActionResult<ApiResult<UserSelectDto>>> Create([FromBody] CreateUserDto dto, CancellationToken cancellationToken)
         {
             var entity = _mapper.ToEntity(dto);
 
@@ -188,10 +179,7 @@ namespace SanjeshP.Payeh.Api.Controllers.V1
         [ProducesResponseType(
             typeof(ApiResult<UserSelectDto>),
             StatusCodes.Status200OK)]
-        public async Task<ApiResult<UserSelectDto>> Update(
-            [FromRoute] Guid id,
-            [FromBody] UpdateUserDto dto,
-            CancellationToken cancellationToken)
+        public async Task<ApiResult<UserSelectDto>> Update([FromRoute] Guid id, [FromBody] UpdateUserDto dto, CancellationToken cancellationToken)
         {
             var before = await _userService.GetByIdAsync(
                 id,
@@ -441,9 +429,7 @@ namespace SanjeshP.Payeh.Api.Controllers.V1
         /// </summary>
         [HttpDelete("{id:guid}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public async Task<ApiResult> Delete(
-            [FromRoute] Guid id,
-            CancellationToken cancellationToken)
+        public async Task<ApiResult> Delete([FromRoute] Guid id, CancellationToken cancellationToken)
         {
             if (id == CurrentUserId)
             {
@@ -484,13 +470,7 @@ namespace SanjeshP.Payeh.Api.Controllers.V1
 
         #region Audit Helpers
 
-        private static void AddChange(
-            IDictionary<string, object?> oldValues,
-            IDictionary<string, object?> newValues,
-            string propertyName,
-            object? oldValue,
-            object? newValue,
-            bool hasChanged)
+        private static void AddChange(IDictionary<string, object?> oldValues, IDictionary<string, object?> newValues, string propertyName, object? oldValue, object? newValue, bool hasChanged)
         {
             if (!hasChanged)
                 return;

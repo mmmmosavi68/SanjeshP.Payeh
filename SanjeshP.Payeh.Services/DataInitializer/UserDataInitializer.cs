@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using SanjeshP.Payeh.Data.Contracts;
 using SanjeshP.Payeh.Entities.Common;
 using SanjeshP.Payeh.Entities.Group;
@@ -57,18 +57,7 @@ namespace SanjeshP.Payeh.Services.DataInitializer
         private readonly IEFRepository<Code> eFCodeRepository;
         private readonly IEFRepository<University> eFUniversityRepository;
 
-        public UserDataInitializer(
-              IEFRepository<Role> eFRoleRepository
-            , IEFRepository<UserEntity> eFUserRepository
-            , IEFRepository<UserProfile> eFUserProfileRepository
-            , IEFRepository<MenuEntity> eFMenuRepository
-            , IEFRepository<GroupEntity> eFGroupRepository
-            , IEFRepository<GroupUsers> eFGroupUsersRepository
-            , IEFRepository<GroupAccessMenus> eFGroupAccessMenusRepository
-            , IEFRepository<UserAccessMenus> eFUserAccessMenusRepository
-            , IEFRepository<UserRole> eFUserRoleRepository
-            , IEFRepository<Code> eFCodeRepository
-            , IEFRepository<University> eFUniversityRepository)
+        public UserDataInitializer(IEFRepository<Role> eFRoleRepository , IEFRepository<UserEntity> eFUserRepository , IEFRepository<UserProfile> eFUserProfileRepository , IEFRepository<MenuEntity> eFMenuRepository , IEFRepository<GroupEntity> eFGroupRepository , IEFRepository<GroupUsers> eFGroupUsersRepository , IEFRepository<GroupAccessMenus> eFGroupAccessMenusRepository , IEFRepository<UserAccessMenus> eFUserAccessMenusRepository , IEFRepository<UserRole> eFUserRoleRepository , IEFRepository<Code> eFCodeRepository , IEFRepository<University> eFUniversityRepository)
         {
             this.eFRoleRepository = eFRoleRepository;
             this.eFUserRepository = eFUserRepository;
@@ -474,11 +463,7 @@ namespace SanjeshP.Payeh.Services.DataInitializer
 
 
 
-        private void SeedCodeItem(
-            CodeSeedItem item,
-            int? parentId,
-            Guid adminId,
-            List<Code> existingCodes)           
+        private void SeedCodeItem(CodeSeedItem item, int? parentId, Guid adminId, List<Code> existingCodes)
         {
             // شناسایی رکورد بر اساس ساختار والد و کدهای اصلی و فرعی
             var code = existingCodes.FirstOrDefault(p =>

@@ -46,9 +46,7 @@ public sealed class CodesController : BaseController
     /// </summary>
     [HttpGet("{id:int}")]
     [ProducesResponseType(typeof(ApiResult<CodeDto>), StatusCodes.Status200OK)]
-    public async Task<ApiResult<CodeDto>> GetById(
-        [FromRoute] int id,
-        CancellationToken cancellationToken)
+    public async Task<ApiResult<CodeDto>> GetById([FromRoute] int id, CancellationToken cancellationToken)
     {
         var code = await _codesService.GetByIdAsync(id, cancellationToken);
         return _mapper.ToDto(code);
@@ -59,8 +57,7 @@ public sealed class CodesController : BaseController
     /// </summary>
     [HttpGet("groups")]
     [ProducesResponseType(typeof(ApiResult<List<CodeDto>>), StatusCodes.Status200OK)]
-    public async Task<ApiResult<List<CodeDto>>> GetGroups(
-        CancellationToken cancellationToken)
+    public async Task<ApiResult<List<CodeDto>>> GetGroups(CancellationToken cancellationToken)
     {
         var groups = await _codesService.GetGroupsAsync(cancellationToken);
         return groups.Select(_mapper.ToDto).ToList();
@@ -71,9 +68,7 @@ public sealed class CodesController : BaseController
     /// </summary>
     [HttpGet("groups/{primaryCode:int}/items")]
     [ProducesResponseType(typeof(ApiResult<List<CodeDto>>), StatusCodes.Status200OK)]
-    public async Task<ApiResult<List<CodeDto>>> GetItems(
-        [FromRoute] int primaryCode,
-        CancellationToken cancellationToken)
+    public async Task<ApiResult<List<CodeDto>>> GetItems([FromRoute] int primaryCode, CancellationToken cancellationToken)
     {
         var items = await _codesService.GetItemsAsync(
             primaryCode,
@@ -88,8 +83,7 @@ public sealed class CodesController : BaseController
     [ProducesResponseType(
         typeof(ApiResult<List<CodeDto>>),
         StatusCodes.Status200OK)]
-    public async Task<ApiResult<List<CodeDto>>> GetManagementGroups(
-        CancellationToken cancellationToken)
+    public async Task<ApiResult<List<CodeDto>>> GetManagementGroups(CancellationToken cancellationToken)
     {
         var groups = await _codesService.GetManagementGroupsAsync(
             cancellationToken);
@@ -104,9 +98,7 @@ public sealed class CodesController : BaseController
     [ProducesResponseType(
         typeof(ApiResult<List<CodeDto>>),
         StatusCodes.Status200OK)]
-    public async Task<ApiResult<List<CodeDto>>> GetManagementItems(
-        [FromRoute] int groupId,
-        CancellationToken cancellationToken)
+    public async Task<ApiResult<List<CodeDto>>> GetManagementItems([FromRoute] int groupId, CancellationToken cancellationToken)
     {
         var items = await _codesService.GetManagementItemsAsync(
             groupId,
@@ -123,9 +115,7 @@ public sealed class CodesController : BaseController
     /// </summary>
     [HttpPost]
     [ProducesResponseType(typeof(ApiResult<CodeDto>), StatusCodes.Status200OK)]
-    public async Task<ApiResult<CodeDto>> Create(
-        [FromBody] CreateCodeDto dto,
-        CancellationToken cancellationToken)
+    public async Task<ApiResult<CodeDto>> Create([FromBody] CreateCodeDto dto, CancellationToken cancellationToken)
     {
         var code = _mapper.ToEntity(dto);
         code.ParentId = await ResolveParentIdAsync(dto.ParentId, dto.ParentPrimaryCode, dto.ParentSubCode, cancellationToken);
@@ -147,10 +137,7 @@ public sealed class CodesController : BaseController
     /// </summary>
     [HttpPut("{id:int}")]
     [ProducesResponseType(typeof(ApiResult<CodeDto>), StatusCodes.Status200OK)]
-    public async Task<ApiResult<CodeDto>> Update(
-        [FromRoute] int id,
-        [FromBody] UpdateCodeDto dto,
-        CancellationToken cancellationToken)
+    public async Task<ApiResult<CodeDto>> Update([FromRoute] int id, [FromBody] UpdateCodeDto dto, CancellationToken cancellationToken)
     {
         var updatedCode = _mapper.ToEntity(dto);
         updatedCode.ParentId = await ResolveParentIdAsync(dto.ParentId, dto.ParentPrimaryCode, dto.ParentSubCode, cancellationToken);
@@ -172,9 +159,7 @@ public sealed class CodesController : BaseController
     /// </summary>
     [HttpDelete("{id:int}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    public async Task<IActionResult> Delete(
-        [FromRoute] int id,
-        CancellationToken cancellationToken)
+    public async Task<IActionResult> Delete([FromRoute] int id, CancellationToken cancellationToken)
     {
         await _codesService.SoftDeleteAsync(id, cancellationToken);
         return Ok();

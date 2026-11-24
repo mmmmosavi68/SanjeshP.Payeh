@@ -23,7 +23,7 @@ namespace SanjeshP.Payeh.Common
         public RefreshTokenSettings RefreshTokenSettings { get; set; } = new();
         public ApiDocsSettings ApiDocsSettings { get; set; } = new();
         public AuthSettings AuthSettings { get; set; } = new();
-        public PayamSMS payamSMS { get; set; }
+        public PayamSMS? payamSMS { get; set; }
 
     }
 
@@ -117,7 +117,7 @@ namespace SanjeshP.Payeh.Common
 
     public class PayamSMS
     {
-        public string UserName { get; set; }
-        public string Password { get; set; }
+        public string UserName { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
     }
 }

@@ -1,4 +1,4 @@
-﻿
+
 using System.IdentityModel.Tokens.Jwt;
 using System.Text.Json.Serialization;
 
@@ -22,9 +22,7 @@ namespace SanjeshP.Payeh.Services
         {
         }
 
-        public AccessToken(
-            JwtSecurityToken securityToken,
-            string? refreshToken = null)
+        public AccessToken(JwtSecurityToken securityToken, string? refreshToken = null)
         {
             ArgumentNullException.ThrowIfNull(securityToken);
 

@@ -16,9 +16,7 @@ public sealed class GroupService : IGroupService, IScopedDependency
     private readonly IUnitOfWork _uow;
     private readonly IPermissionService _permissionService;
 
-    public GroupService(
-        IUnitOfWork uow,
-        IPermissionService permissionService)
+    public GroupService(IUnitOfWork uow, IPermissionService permissionService)
     {
         _uow = uow;
         _permissionService = permissionService;
@@ -27,8 +25,7 @@ public sealed class GroupService : IGroupService, IScopedDependency
     /// <summary>
     /// دریافت تمام گروه‌ها به همراه اعضای فعال آن‌ها
     /// </summary>
-    public async Task<List<UserGroup>> GetAllAsync(
-        CancellationToken cancellationToken)
+    public async Task<List<UserGroup>> GetAllAsync(CancellationToken cancellationToken)
     {
         return await _uow.Repository<UserGroup>().Entities
             .AsNoTracking()
@@ -41,9 +38,7 @@ public sealed class GroupService : IGroupService, IScopedDependency
     /// <summary>
     /// دریافت اطلاعات یک گروه
     /// </summary>
-    public async Task<UserGroup> GetByIdAsync(
-        Guid id,
-        CancellationToken cancellationToken)
+    public async Task<UserGroup> GetByIdAsync(Guid id, CancellationToken cancellationToken)
     {
         var group = await _uow.Repository<UserGroup>().Entities
             .AsNoTracking()
@@ -60,9 +55,7 @@ public sealed class GroupService : IGroupService, IScopedDependency
     /// <summary>
     /// دریافت اعضای یک گروه به همراه اطلاعات پروفایل
     /// </summary>
-    public async Task<List<GroupUsers>> GetUsersAsync(
-        Guid groupId,
-        CancellationToken cancellationToken)
+    public async Task<List<GroupUsers>> GetUsersAsync(Guid groupId, CancellationToken cancellationToken)
     {
         var exists = await _uow.Repository<UserGroup>().Entities
             .AnyAsync(
@@ -88,11 +81,7 @@ public sealed class GroupService : IGroupService, IScopedDependency
     /// <summary>
     /// ایجاد گروه جدید
     /// </summary>
-    public async Task<UserGroup> CreateAsync(
-        string groupName,
-        bool isActive,
-        Guid createdBy,
-        CancellationToken cancellationToken)
+    public async Task<UserGroup> CreateAsync(string groupName, bool isActive, Guid createdBy, CancellationToken cancellationToken)
     {
         groupName = groupName.Trim();
 
@@ -132,11 +121,7 @@ public sealed class GroupService : IGroupService, IScopedDependency
     /// <summary>
     /// ویرایش اطلاعات گروه
     /// </summary>
-    public async Task<UserGroup> UpdateAsync(
-        Guid id,
-        string groupName,
-        bool isActive,
-        CancellationToken cancellationToken)
+    public async Task<UserGroup> UpdateAsync(Guid id, string groupName, bool isActive, CancellationToken cancellationToken)
     {
         var group = await _uow.Repository<UserGroup>().Entities
             .FirstOrDefaultAsync(
@@ -184,9 +169,7 @@ public sealed class GroupService : IGroupService, IScopedDependency
     /// <summary>
     /// حذف نرم گروه
     /// </summary>
-    public async Task SoftDeleteAsync(
-        Guid id,
-        CancellationToken cancellationToken)
+    public async Task SoftDeleteAsync(Guid id, CancellationToken cancellationToken)
     {
         var group = await _uow.Repository<UserGroup>().Entities
             .FirstOrDefaultAsync(
@@ -210,11 +193,7 @@ public sealed class GroupService : IGroupService, IScopedDependency
     /// <summary>
     /// افزودن کاربر به گروه
     /// </summary>
-    public async Task AddUserAsync(
-        Guid groupId,
-        Guid userId,
-        Guid createdBy,
-        CancellationToken cancellationToken)
+    public async Task AddUserAsync(Guid groupId, Guid userId, Guid createdBy, CancellationToken cancellationToken)
     {
         if (userId == createdBy)
             throw new ForbiddenException(ApiMessages.Authorization.SelfAccessChange);
@@ -284,10 +263,7 @@ public sealed class GroupService : IGroupService, IScopedDependency
     /// <summary>
     /// حذف کاربر از گروه
     /// </summary>
-    public async Task RemoveUserAsync(
-        Guid groupId,
-        Guid userId,
-        CancellationToken cancellationToken)
+    public async Task RemoveUserAsync(Guid groupId, Guid userId, CancellationToken cancellationToken)
     {
         var membership = await _uow.Repository<GroupUsers>().Entities
             .FirstOrDefaultAsync(
@@ -314,11 +290,7 @@ public sealed class GroupService : IGroupService, IScopedDependency
     /// <summary>
     /// افزودن گروهی کاربران به یک گروه
     /// </summary>
-    public async Task AddUsersAsync(
-        Guid groupId,
-        List<Guid> userIds,
-        Guid createdBy,
-        CancellationToken cancellationToken)
+    public async Task AddUsersAsync(Guid groupId, List<Guid> userIds, Guid createdBy, CancellationToken cancellationToken)
     {
         if (userIds is not null && userIds.Contains(createdBy))
             throw new ForbiddenException(ApiMessages.Authorization.SelfAccessChange);
@@ -433,10 +405,7 @@ public sealed class GroupService : IGroupService, IScopedDependency
     /// <summary>
     /// حذف گروهی کاربران از یک گروه
     /// </summary>
-    public async Task RemoveUsersAsync(
-        Guid groupId,
-        List<Guid> userIds,
-        CancellationToken cancellationToken)
+    public async Task RemoveUsersAsync(Guid groupId, List<Guid> userIds, CancellationToken cancellationToken)
     {
         if (userIds is null || userIds.Count == 0)
             throw new BadRequestException(
@@ -492,8 +461,7 @@ public sealed class GroupService : IGroupService, IScopedDependency
         foreach (var userId in distinctUserIds)
             _permissionService.Invalidate(userId);
     }
-    public async Task<List<Menu>> GetAvailableMenusAsync(
-        CancellationToken cancellationToken)
+    public async Task<List<Menu>> GetAvailableMenusAsync(CancellationToken cancellationToken)
     {
         return await _uow.Repository<Menu>().Entities
             .AsNoTracking()
@@ -503,9 +471,7 @@ public sealed class GroupService : IGroupService, IScopedDependency
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<List<Guid>> GetAssignedMenuIdsAsync(
-        Guid groupId,
-        CancellationToken cancellationToken)
+    public async Task<List<Guid>> GetAssignedMenuIdsAsync(Guid groupId, CancellationToken cancellationToken)
     {
         var groupExists = await _uow.Repository<UserGroup>().Entities
             .AnyAsync(x => x.Id == groupId, cancellationToken);
@@ -524,11 +490,7 @@ public sealed class GroupService : IGroupService, IScopedDependency
             .ToListAsync(cancellationToken);
     }
 
-    public async Task UpdateMenuAccessAsync(
-        Guid groupId,
-        List<Guid> menuIds,
-        Guid updatedBy,
-        CancellationToken cancellationToken)
+    public async Task UpdateMenuAccessAsync(Guid groupId, List<Guid> menuIds, Guid updatedBy, CancellationToken cancellationToken)
     {
         if (menuIds is { Count: > 0 })
         {

@@ -14,8 +14,7 @@ public class MenuRepository : EFRepository<Menu>, IMenuRepository, IScopedDepend
     {
     }
 
-    public async Task<List<Menu>> GetAllAsync(
-        CancellationToken cancellationToken)
+    public async Task<List<Menu>> GetAllAsync(CancellationToken cancellationToken)
     {
         return await TableNoTracking
             .Where(m => !m.IsDeleted)
@@ -24,9 +23,7 @@ public class MenuRepository : EFRepository<Menu>, IMenuRepository, IScopedDepend
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<Menu?> GetByIdAsync(
-        Guid id,
-        CancellationToken cancellationToken)
+    public async Task<Menu?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
     {
         return await Table
             .FirstOrDefaultAsync(
@@ -34,9 +31,7 @@ public class MenuRepository : EFRepository<Menu>, IMenuRepository, IScopedDepend
                 cancellationToken);
     }
 
-    public async Task<bool> ParentExistsAsync(
-        Guid parentId,
-        CancellationToken cancellationToken)
+    public async Task<bool> ParentExistsAsync(Guid parentId, CancellationToken cancellationToken)
     {
         return await TableNoTracking
             .AnyAsync(
@@ -44,9 +39,7 @@ public class MenuRepository : EFRepository<Menu>, IMenuRepository, IScopedDepend
                 cancellationToken);
     }
 
-    public async Task<bool> HasNonDeletedChildrenAsync(
-        Guid menuId,
-        CancellationToken cancellationToken)
+    public async Task<bool> HasNonDeletedChildrenAsync(Guid menuId, CancellationToken cancellationToken)
     {
         return await TableNoTracking
             .AnyAsync(
@@ -54,23 +47,17 @@ public class MenuRepository : EFRepository<Menu>, IMenuRepository, IScopedDepend
                 cancellationToken);
     }
 
-    public Task AddAsync(
-        Menu menu,
-        CancellationToken cancellationToken)
+    public Task AddAsync(Menu menu, CancellationToken cancellationToken)
     {
         return base.AddAsync(menu, cancellationToken);
     }
 
-    public Task UpdateAsync(
-        Menu menu,
-        CancellationToken cancellationToken)
+    public Task UpdateAsync(Menu menu, CancellationToken cancellationToken)
     {
         return base.UpdateAsync(menu, cancellationToken);
     }
 
-    public async Task SoftDeleteAsync(
-        Menu menu,
-        CancellationToken cancellationToken)
+    public async Task SoftDeleteAsync(Menu menu, CancellationToken cancellationToken)
     {
         menu.IsDeleted = true;
         menu.UpdatedDate = DateTime.UtcNow;

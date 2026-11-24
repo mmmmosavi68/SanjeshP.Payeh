@@ -6,7 +6,6 @@ using SanjeshP.Payeh.Data;
 using SanjeshP.Payeh.Entities.Menu;
 using SanjeshP.Payeh.Entities.User;
 using SanjeshP.Payeh.Entities.University;
-using SanjeshP.Payeh.Entities.User;
 
 namespace SanjeshP.Payeh.Services.Implementations;
 
@@ -15,16 +14,13 @@ public sealed class UserManagementService : IUserManagementService, IScopedDepen
     private readonly IUnitOfWork _uow;
     private readonly IPermissionService _permissionService;
 
-    public UserManagementService(
-        IUnitOfWork uow,
-        IPermissionService permissionService)
+    public UserManagementService(IUnitOfWork uow, IPermissionService permissionService)
     {
         _uow = uow;
         _permissionService = permissionService;
     }
 
-    public async Task<List<Menu>> GetAvailableMenusAsync(
-        CancellationToken cancellationToken)
+    public async Task<List<Menu>> GetAvailableMenusAsync(CancellationToken cancellationToken)
     {
         return await _uow.Repository<Menu>().Entities
             .AsNoTracking()
@@ -34,9 +30,7 @@ public sealed class UserManagementService : IUserManagementService, IScopedDepen
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<List<Guid>> GetAssignedMenuIdsAsync(
-        Guid userId,
-        CancellationToken cancellationToken)
+    public async Task<List<Guid>> GetAssignedMenuIdsAsync(Guid userId, CancellationToken cancellationToken)
     {
         var userExists = await _uow.Repository<User>().Entities
             .AnyAsync(
@@ -57,11 +51,7 @@ public sealed class UserManagementService : IUserManagementService, IScopedDepen
             .ToListAsync(cancellationToken);
     }
 
-    public async Task UpdateMenuAccessAsync(
-        Guid userId,
-        List<Guid> menuIds,
-        Guid updatedBy,
-        CancellationToken cancellationToken)
+    public async Task UpdateMenuAccessAsync(Guid userId, List<Guid> menuIds, Guid updatedBy, CancellationToken cancellationToken)
     {
         if (userId == updatedBy)
             throw new ForbiddenException(ApiMessages.Authorization.SelfAccessChange);
@@ -172,10 +162,7 @@ public sealed class UserManagementService : IUserManagementService, IScopedDepen
         _permissionService.Invalidate(userId);
     }
 
-    public async Task BulkDeactivateAsync(
-        List<Guid> userIds,
-        Guid currentUserId,
-        CancellationToken cancellationToken)
+    public async Task BulkDeactivateAsync(List<Guid> userIds, Guid currentUserId, CancellationToken cancellationToken)
     {
         var users = await ValidateBulkUsersAsync(
             userIds,
@@ -200,10 +187,7 @@ public sealed class UserManagementService : IUserManagementService, IScopedDepen
             _permissionService.Invalidate(user.Id);
     }
 
-    public async Task BulkDeleteAsync(
-        List<Guid> userIds,
-        Guid currentUserId,
-        CancellationToken cancellationToken)
+    public async Task BulkDeleteAsync(List<Guid> userIds, Guid currentUserId, CancellationToken cancellationToken)
     {
         var users = await ValidateBulkUsersAsync(
             userIds,
@@ -229,10 +213,7 @@ public sealed class UserManagementService : IUserManagementService, IScopedDepen
             _permissionService.Invalidate(user.Id);
     }
 
-    private async Task<List<User>> ValidateBulkUsersAsync(
-        List<Guid> userIds,
-        Guid currentUserId,
-        CancellationToken cancellationToken)
+    private async Task<List<User>> ValidateBulkUsersAsync(List<Guid> userIds, Guid currentUserId, CancellationToken cancellationToken)
     {
         if (userIds is null || userIds.Count == 0)
             throw new BadRequestException(
@@ -267,9 +248,7 @@ public sealed class UserManagementService : IUserManagementService, IScopedDepen
         return users;
     }
 
-    private async Task RevokeSessionsAsync(
-        List<Guid> userIds,
-        CancellationToken cancellationToken)
+    private async Task RevokeSessionsAsync(List<Guid> userIds, CancellationToken cancellationToken)
     {
         var sessions = await _uow.Repository<UserSession>().Entities
             .Where(x =>
@@ -285,8 +264,7 @@ public sealed class UserManagementService : IUserManagementService, IScopedDepen
 
 
 
-    public async Task<List<UniversityOption>> GetAvailableUniversitiesAsync(
-    CancellationToken cancellationToken)
+    public async Task<List<UniversityOption>> GetAvailableUniversitiesAsync(CancellationToken cancellationToken)
     {
         return await _uow.Repository<University>().Entities
             .AsNoTracking()
@@ -299,9 +277,7 @@ public sealed class UserManagementService : IUserManagementService, IScopedDepen
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<List<int>> GetAssignedUniversityIdsAsync(
-        Guid userId,
-        CancellationToken cancellationToken)
+    public async Task<List<int>> GetAssignedUniversityIdsAsync(Guid userId, CancellationToken cancellationToken)
     {
         var userExists = await _uow.Repository<User>().Entities
             .AnyAsync(
@@ -322,11 +298,7 @@ public sealed class UserManagementService : IUserManagementService, IScopedDepen
             .ToListAsync(cancellationToken);
     }
 
-    public async Task UpdateUniversityAccessAsync(
-        Guid userId,
-        List<int> universityIds,
-        Guid updatedBy,
-        CancellationToken cancellationToken)
+    public async Task UpdateUniversityAccessAsync(Guid userId, List<int> universityIds, Guid updatedBy, CancellationToken cancellationToken)
     {
         if (userId == updatedBy)
             throw new ForbiddenException(ApiMessages.Authorization.SelfAccessChange);

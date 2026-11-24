@@ -14,8 +14,7 @@ public sealed class UniversityExamCapacitiesController : BaseController
 {
     private readonly IUniversityExamCapacityService _service;
 
-    public UniversityExamCapacitiesController(
-        IUniversityExamCapacityService service)
+    public UniversityExamCapacitiesController(IUniversityExamCapacityService service)
     {
         _service = service;
     }
@@ -26,9 +25,7 @@ public sealed class UniversityExamCapacitiesController : BaseController
     /// دریافت آزمون‌های فعال و ظرفیت‌های ثبت‌شده دانشگاه
     /// </summary>
     [HttpGet("universities/{universityId:int}/active-exams")]
-    public async Task<ApiResult<List<UniversityExamCapacityExamDto>>> GetActiveExams(
-        [FromRoute] int universityId,
-        CancellationToken cancellationToken)
+    public async Task<ApiResult<List<UniversityExamCapacityExamDto>>> GetActiveExams([FromRoute] int universityId, CancellationToken cancellationToken)
     {
         var exams = await _service.GetActiveExamsForUniversityAsync(
             CurrentUserId,
@@ -50,9 +47,7 @@ public sealed class UniversityExamCapacitiesController : BaseController
     /// دریافت آزمون‌هایی که برای دانشگاه ظرفیت آن‌ها تعیین شده است
     /// </summary>
     [HttpGet("universities/{universityId:int}/defined-capacities")]
-    public async Task<ApiResult<List<UniversityExamCapacityExamDto>>> GetDefinedCapacities(
-        [FromRoute] int universityId,
-        CancellationToken cancellationToken)
+    public async Task<ApiResult<List<UniversityExamCapacityExamDto>>> GetDefinedCapacities([FromRoute] int universityId, CancellationToken cancellationToken)
     {
         var exams = await _service.GetDefinedExamsForUniversityAsync(
             CurrentUserId,
@@ -74,8 +69,7 @@ public sealed class UniversityExamCapacitiesController : BaseController
     /// دریافت دانشگاه‌های مجاز کاربر جاری
     /// </summary>
     [HttpGet("my-universities")]
-    public async Task<ApiResult<List<UniversityExamCapacityUniversityDto>>> GetMyUniversities(
-        CancellationToken cancellationToken)
+    public async Task<ApiResult<List<UniversityExamCapacityUniversityDto>>> GetMyUniversities(CancellationToken cancellationToken)
     {
         var universities = await _service.GetAccessibleUniversitiesAsync(
             CurrentUserId,
@@ -109,10 +103,7 @@ public sealed class UniversityExamCapacitiesController : BaseController
     /// دریافت ظرفیت دانشگاه‌های مهمان برای یک آزمون
     /// </summary>
     [HttpGet("universities/{universityId:int}/exams/{examId:guid}/guest-capacities")]
-    public async Task<ApiResult<List<UniversityExamGuestCapacityDto>>> GetGuestCapacities(
-        [FromRoute] int universityId,
-        [FromRoute] Guid examId,
-        CancellationToken cancellationToken)
+    public async Task<ApiResult<List<UniversityExamGuestCapacityDto>>> GetGuestCapacities([FromRoute] int universityId, [FromRoute] Guid examId, CancellationToken cancellationToken)
     {
         var capacities = await _service.GetGuestCapacitiesAsync(
             CurrentUserId,
@@ -147,11 +138,7 @@ public sealed class UniversityExamCapacitiesController : BaseController
     /// ثبت یا ویرایش ظرفیت دانشگاه میزبان برای یک آزمون
     /// </summary>
     [HttpPut("universities/{universityId:int}/exams/{examId:guid}/capacity")]
-    public async Task<ApiResult<UniversityExamCapacityDto>> Save(
-        [FromRoute] int universityId,
-        [FromRoute] Guid examId,
-        [FromBody] SaveUniversityExamCapacityDto dto,
-        CancellationToken cancellationToken)
+    public async Task<ApiResult<UniversityExamCapacityDto>> Save([FromRoute] int universityId, [FromRoute] Guid examId, [FromBody] SaveUniversityExamCapacityDto dto, CancellationToken cancellationToken)
     {
         var capacity = await _service.SaveAsync(
             universityId,
@@ -172,12 +159,7 @@ public sealed class UniversityExamCapacitiesController : BaseController
     /// ثبت یا ویرایش ظرفیت یک دانشگاه مهمان
     /// </summary>
     [HttpPut("universities/{universityId:int}/exams/{examId:guid}/guest-capacities/{guestUniversityId:int}")]
-    public async Task<ApiResult<UniversityExamGuestCapacityDto>> SaveGuestCapacity(
-        [FromRoute] int universityId,
-        [FromRoute] Guid examId,
-        [FromRoute] int guestUniversityId,
-        [FromBody] SaveUniversityExamGuestCapacityDto dto,
-        CancellationToken cancellationToken)
+    public async Task<ApiResult<UniversityExamGuestCapacityDto>> SaveGuestCapacity([FromRoute] int universityId, [FromRoute] Guid examId, [FromRoute] int guestUniversityId, [FromBody] SaveUniversityExamGuestCapacityDto dto, CancellationToken cancellationToken)
     {
         var capacity = await _service.SaveGuestCapacityAsync(
             universityId,
@@ -206,10 +188,7 @@ public sealed class UniversityExamCapacitiesController : BaseController
 
     #region Mapping
 
-    private async Task<List<UniversityExamCapacityExamDto>> BuildExamDtosAsync(
-        List<Exam> exams,
-        int universityId,
-        CancellationToken cancellationToken)
+    private async Task<List<UniversityExamCapacityExamDto>> BuildExamDtosAsync(List<Exam> exams, int universityId, CancellationToken cancellationToken)
     {
         var capacityIds = exams
             .Select(exam => exam.UniversityExamCapacities
@@ -264,8 +243,7 @@ public sealed class UniversityExamCapacitiesController : BaseController
         }).ToList();
     }
 
-    private static UniversityExamCapacityDto MapToDto(
-        UniversityExamCapacity capacity)
+    private static UniversityExamCapacityDto MapToDto(UniversityExamCapacity capacity)
     {
         return new UniversityExamCapacityDto
         {
@@ -289,8 +267,7 @@ public sealed class UniversityExamCapacitiesController : BaseController
         };
     }
 
-    private static UniversityExamGuestCapacityDto MapGuestCapacityToDto(
-        UniversityExamGuestCapacity capacity)
+    private static UniversityExamGuestCapacityDto MapGuestCapacityToDto(UniversityExamGuestCapacity capacity)
     {
         return new UniversityExamGuestCapacityDto
         {

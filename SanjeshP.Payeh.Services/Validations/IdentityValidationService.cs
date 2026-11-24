@@ -19,10 +19,7 @@ public sealed class IdentityValidationService
         _uow = uow;
     }
 
-    public async Task<string> ValidateUserNationalCodeAsync(
-        string? nationalCode,
-        int? excludeProfileId,
-        CancellationToken cancellationToken)
+    public async Task<string> ValidateUserNationalCodeAsync(string? nationalCode, int? excludeProfileId, CancellationToken cancellationToken)
     {
         var normalizedCode = NormalizeNationalCode(nationalCode);
 
@@ -40,10 +37,7 @@ public sealed class IdentityValidationService
         return normalizedCode;
     }
 
-    public async Task<string?> ValidateUserMobileNumberAsync(
-        string? mobileNumber,
-        Guid? excludeUserId,
-        CancellationToken cancellationToken)
+    public async Task<string?> ValidateUserMobileNumberAsync(string? mobileNumber, Guid? excludeUserId, CancellationToken cancellationToken)
     {
         var normalizedNumber = NormalizeMobileNumber(mobileNumber);
 
@@ -64,11 +58,7 @@ public sealed class IdentityValidationService
         return normalizedNumber;
     }
 
-    public async Task<string> ValidateExamRegistrationNationalCodeAsync(
-        Guid examId,
-        string? nationalCode,
-        Guid? excludeRegistrationId,
-        CancellationToken cancellationToken)
+    public async Task<string> ValidateExamRegistrationNationalCodeAsync(Guid examId, string? nationalCode, Guid? excludeRegistrationId, CancellationToken cancellationToken)
     {
         if (examId == Guid.Empty)
             throw new BadRequestException(ApiMessages.IdentityValidation.M001);
@@ -91,11 +81,7 @@ public sealed class IdentityValidationService
         return normalizedCode;
     }
 
-    public async Task<string?> ValidateExamRegistrationMobileNumberAsync(
-        Guid examId,
-        string? mobileNumber,
-        Guid? excludeRegistrationId,
-        CancellationToken cancellationToken)
+    public async Task<string?> ValidateExamRegistrationMobileNumberAsync(Guid examId, string? mobileNumber, Guid? excludeRegistrationId, CancellationToken cancellationToken)
     {
         if (examId == Guid.Empty)
             throw new BadRequestException(ApiMessages.IdentityValidation.M001);

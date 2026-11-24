@@ -11,23 +11,18 @@ public class MenusService : IMenusService, IScopedDependency
     private readonly IMenuRepository _menuRepository;
     private readonly IPermissionService _permissionService;
 
-    public MenusService(
-        IMenuRepository menuRepository,
-        IPermissionService permissionService)
+    public MenusService(IMenuRepository menuRepository, IPermissionService permissionService)
     {
         _menuRepository = menuRepository;
         _permissionService = permissionService;
     }
 
-    public Task<List<Menu>> GetAllAsync(
-        CancellationToken cancellationToken)
+    public Task<List<Menu>> GetAllAsync(CancellationToken cancellationToken)
     {
         return _menuRepository.GetAllAsync(cancellationToken);
     }
 
-    public async Task<Menu> GetByIdAsync(
-        Guid id,
-        CancellationToken cancellationToken)
+    public async Task<Menu> GetByIdAsync(Guid id, CancellationToken cancellationToken)
     {
         var menu = await _menuRepository.GetByIdAsync(
             id,
@@ -39,10 +34,7 @@ public class MenusService : IMenusService, IScopedDependency
         return menu;
     }
 
-    public async Task<Menu> CreateAsync(
-        Menu menu,
-        Guid createdBy,
-        CancellationToken cancellationToken)
+    public async Task<Menu> CreateAsync(Menu menu, Guid createdBy, CancellationToken cancellationToken)
     {
         ValidateMenuTitle(menu.MenuTitle);
 
@@ -66,10 +58,7 @@ public class MenusService : IMenusService, IScopedDependency
         return menu;
     }
 
-    public async Task<Menu> UpdateAsync(
-        Guid id,
-        Menu updatedMenu,
-        CancellationToken cancellationToken)
+    public async Task<Menu> UpdateAsync(Guid id, Menu updatedMenu, CancellationToken cancellationToken)
     {
         var menu = await GetByIdAsync(id, cancellationToken);
 
@@ -105,9 +94,7 @@ public class MenusService : IMenusService, IScopedDependency
         return menu;
     }
 
-    public async Task SoftDeleteAsync(
-        Guid id,
-        CancellationToken cancellationToken)
+    public async Task SoftDeleteAsync(Guid id, CancellationToken cancellationToken)
     {
         var menu = await GetByIdAsync(id, cancellationToken);
 
@@ -128,10 +115,7 @@ public class MenusService : IMenusService, IScopedDependency
         _permissionService.InvalidateAll();
     }
 
-    private async Task ValidateParentAsync(
-        Guid? parentId,
-        Guid? currentMenuId,
-        CancellationToken cancellationToken)
+    private async Task ValidateParentAsync(Guid? parentId, Guid? currentMenuId, CancellationToken cancellationToken)
     {
         if (!parentId.HasValue)
             return;

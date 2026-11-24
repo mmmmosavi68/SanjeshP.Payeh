@@ -16,10 +16,7 @@ public sealed class ExamSessionRepository
         _dbContext = dbContext;
     }
 
-    public async Task<List<ExamSession>> GetAllAsync(
-        string? search,
-        bool? isActive,
-        CancellationToken cancellationToken)
+    public async Task<List<ExamSession>> GetAllAsync(string? search, bool? isActive, CancellationToken cancellationToken)
     {
         var query = _dbContext.Set<ExamSession>()
             .AsNoTracking()
@@ -40,9 +37,7 @@ public sealed class ExamSessionRepository
             .ToListAsync(cancellationToken);
     }
 
-    public Task<ExamSession?> GetByIdAsync(
-        Guid id,
-        CancellationToken cancellationToken)
+    public Task<ExamSession?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
     {
         return _dbContext.Set<ExamSession>()
             .FirstOrDefaultAsync(
@@ -50,9 +45,7 @@ public sealed class ExamSessionRepository
                 cancellationToken);
     }
 
-    public async Task AddAsync(
-        ExamSession session,
-        CancellationToken cancellationToken)
+    public async Task AddAsync(ExamSession session, CancellationToken cancellationToken)
     {
         await _dbContext.Set<ExamSession>().AddAsync(
             session,
@@ -61,17 +54,13 @@ public sealed class ExamSessionRepository
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task UpdateAsync(
-        ExamSession session,
-        CancellationToken cancellationToken)
+    public async Task UpdateAsync(ExamSession session, CancellationToken cancellationToken)
     {
         _dbContext.Set<ExamSession>().Update(session);
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    public Task<bool> HasExamsAsync(
-        Guid sessionId,
-        CancellationToken cancellationToken)
+    public Task<bool> HasExamsAsync(Guid sessionId, CancellationToken cancellationToken)
     {
         return _dbContext.Set<Exam>()
             .AnyAsync(

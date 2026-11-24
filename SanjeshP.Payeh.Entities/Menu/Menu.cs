@@ -1,4 +1,4 @@
-﻿using SanjeshP.Payeh.Entities.Common;
+using SanjeshP.Payeh.Entities.Common;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -9,47 +9,47 @@ namespace SanjeshP.Payeh.Entities.Menu
         [Required(ErrorMessage = "عنوان الزامی است")]
         [MaxLength(100, ErrorMessage = "عنوان نباید بیش از 100 کاراکتر باشد")]
         [Display(Name = "عنوان")]
-        public string MenuTitle { get; set; }
+        public string MenuTitle { get; set; } = string.Empty;
 
         [Display(Name = "شناسه والد")]
         public Guid? ParentId { get; set; }
 
         [ForeignKey(nameof(ParentId))]
-        public virtual Menu Parent { get; set; }
+        public virtual Menu? Parent { get; set; }
 
         [Display(Name = "کد صفحه")]
         public int? PageCode { get; set; }
 
         [MaxLength(200, ErrorMessage = "مسیر نباید بیش از 200 کاراکتر باشد")]
         [Display(Name = "مسیر")]
-        public string Path { get; set; }
+        public string Path { get; set; } = string.Empty;
 
         [MaxLength(100, ErrorMessage = "ورژن نباید بیش از 100 کاراکتر باشد")]
         [Display(Name = "ورژن")]
-        public string version { get; set; }
+        public string version { get; set; } = string.Empty;
 
         [MaxLength(100, ErrorMessage = "نام کنترلر نباید بیش از 100 کاراکتر باشد")]
         [Display(Name = "نام کنترلر")]
-        public string ControllerName { get; set; }
+        public string ControllerName { get; set; } = string.Empty;
 
         [MaxLength(100, ErrorMessage = "نام اکشن نباید بیش از 100 کاراکتر باشد")]
         [Display(Name = "نام اکشن")]
-        public string ActionName { get; set; }
+        public string ActionName { get; set; } = string.Empty;
 
         [Display(Name = "نمایش منو")]
         public bool? ShowMenu { get; set; }
 
         [MaxLength(50, ErrorMessage = "کلاس CSS نباید بیش از 50 کاراکتر باشد")]
         [Display(Name = "کلاس CSS")]
-        public string CssClass { get; set; }
+        public string CssClass { get; set; } = string.Empty;
 
         [MaxLength(100, ErrorMessage = "آیکن نباید بیش از 100 کاراکتر باشد")]
         [Display(Name = "آیکن")]
-        public string Icon { get; set; }
+        public string Icon { get; set; } = string.Empty;
 
         [MaxLength(200, ErrorMessage = "لینک نباید بیش از 200 کاراکتر باشد")]
         [Display(Name = "لینک")]
-        public string Link { get; set; }
+        public string Link { get; set; } = string.Empty;
 
         public virtual ICollection<Menu> InverseParent { get; set; } = new List<Menu>();
         public virtual ICollection<UserAccessMenus> MenusAccesses { get; set; } = new List<UserAccessMenus>();

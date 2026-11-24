@@ -16,13 +16,7 @@ public sealed class ExamService : IExamService, IScopedDependency
         _repository = repository;
     }
 
-    public Task<List<Exam>> GetAllAsync(
-        string? search,
-        Guid? examSessionId,
-        int? examTypeId,
-        int? examModeId,
-        bool? isActive,
-        CancellationToken cancellationToken)
+    public Task<List<Exam>> GetAllAsync(string? search, Guid? examSessionId, int? examTypeId, int? examModeId, bool? isActive, CancellationToken cancellationToken)
     {
         return _repository.GetAllAsync(
             search,
@@ -33,9 +27,7 @@ public sealed class ExamService : IExamService, IScopedDependency
             cancellationToken);
     }
 
-    public async Task<Exam> GetByIdAsync(
-        Guid id,
-        CancellationToken cancellationToken)
+    public async Task<Exam> GetByIdAsync(Guid id, CancellationToken cancellationToken)
     {
         var exam = await _repository.GetByIdAsync(id, cancellationToken);
 
@@ -45,10 +37,7 @@ public sealed class ExamService : IExamService, IScopedDependency
         return exam;
     }
 
-    public async Task<Exam> CreateAsync(
-        Exam exam,
-        Guid createdBy,
-        CancellationToken cancellationToken)
+    public async Task<Exam> CreateAsync(Exam exam, Guid createdBy, CancellationToken cancellationToken)
     {
         if (createdBy == Guid.Empty)
             throw new BadRequestException(ApiMessages.Exam.M002);
@@ -70,10 +59,7 @@ public sealed class ExamService : IExamService, IScopedDependency
         return await GetByIdAsync(exam.Id, cancellationToken);
     }
 
-    public async Task<Exam> UpdateAsync(
-        Guid id,
-        Exam updatedExam,
-        CancellationToken cancellationToken)
+    public async Task<Exam> UpdateAsync(Guid id, Exam updatedExam, CancellationToken cancellationToken)
     {
         var exam = await GetByIdAsync(id, cancellationToken);
 
@@ -97,9 +83,7 @@ public sealed class ExamService : IExamService, IScopedDependency
         return await GetByIdAsync(id, cancellationToken);
     }
 
-    public async Task SoftDeleteAsync(
-        Guid id,
-        CancellationToken cancellationToken)
+    public async Task SoftDeleteAsync(Guid id, CancellationToken cancellationToken)
     {
         var exam = await GetByIdAsync(id, cancellationToken);
 
@@ -147,9 +131,7 @@ public sealed class ExamService : IExamService, IScopedDependency
             throw new BadRequestException(ApiMessages.Exam.M012);
     }
 
-    private async Task ValidateReferencesAsync(
-        Exam exam,
-        CancellationToken cancellationToken)
+    private async Task ValidateReferencesAsync(Exam exam, CancellationToken cancellationToken)
     {
         if (!await _repository.SessionExistsAsync(
                 exam.ExamSessionId, cancellationToken))

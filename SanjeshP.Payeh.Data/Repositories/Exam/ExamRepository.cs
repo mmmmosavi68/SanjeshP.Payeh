@@ -15,13 +15,7 @@ public sealed class ExamRepository
     {
     }
 
-    public async Task<List<Exam>> GetAllAsync(
-        string? search,
-        Guid? examSessionId,
-        int? examTypeId,
-        int? examModeId,
-        bool? isActive,
-        CancellationToken cancellationToken)
+    public async Task<List<Exam>> GetAllAsync(string? search, Guid? examSessionId, int? examTypeId, int? examModeId, bool? isActive, CancellationToken cancellationToken)
     {
         var query = TableNoTracking
             .Include(x => x.ExamSession)
@@ -52,9 +46,7 @@ public sealed class ExamRepository
             .ToListAsync(cancellationToken);
     }
 
-    public Task<Exam?> GetByIdAsync(
-        Guid id,
-        CancellationToken cancellationToken)
+    public Task<Exam?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
     {
         return Table
             .Include(x => x.ExamSession)
@@ -63,9 +55,7 @@ public sealed class ExamRepository
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
     }
 
-    public Task<bool> SessionExistsAsync(
-        Guid sessionId,
-        CancellationToken cancellationToken)
+    public Task<bool> SessionExistsAsync(Guid sessionId, CancellationToken cancellationToken)
     {
         return DbContext.Set<ExamSession>()
             .AnyAsync(
@@ -73,10 +63,7 @@ public sealed class ExamRepository
                 cancellationToken);
     }
 
-    public Task<bool> CodeExistsInGroupAsync(
-        int codeId,
-        string groupTitle,
-        CancellationToken cancellationToken)
+    public Task<bool> CodeExistsInGroupAsync(int codeId, string groupTitle, CancellationToken cancellationToken)
     {
         return DbContext.Set<Code>()
             .AnyAsync(
@@ -88,9 +75,7 @@ public sealed class ExamRepository
                 cancellationToken);
     }
 
-    public async Task<bool> HasDependenciesAsync(
-        Guid examId,
-        CancellationToken cancellationToken)
+    public async Task<bool> HasDependenciesAsync(Guid examId, CancellationToken cancellationToken)
     {
         if (await DbContext.Set<ExamRegistration>()
             .AnyAsync(x => x.ExamId == examId, cancellationToken))

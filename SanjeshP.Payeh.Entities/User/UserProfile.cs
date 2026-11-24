@@ -1,4 +1,4 @@
-﻿using SanjeshP.Payeh.Entities.Common;
+using SanjeshP.Payeh.Entities.Common;
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -15,12 +15,12 @@ namespace SanjeshP.Payeh.Entities.User
         [Required(ErrorMessage = "نام الزامی است")]
         [MaxLength(50, ErrorMessage = "نام نباید بیش از 50 کاراکتر باشد")]
         [Display(Name = "نام")]
-        public string FirstName { get; set; }
+        public string FirstName { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "نام خانوادگی الزامی است")]
         [MaxLength(50, ErrorMessage = "نام خانوادگی نباید بیش از 50 کاراکتر باشد")]
         [Display(Name = "نام خانوادگی")]
-        public string LastName { get; set; }
+        public string LastName { get; set; } = string.Empty;
 
         [MaxLength(50, ErrorMessage = "نام پدر نباید بیش از 50 کاراکتر باشد")]
         [Display(Name = "نام پدر")]
@@ -29,7 +29,7 @@ namespace SanjeshP.Payeh.Entities.User
         [Required(ErrorMessage = "کد ملی الزامی است")]
         [MaxLength(10, ErrorMessage = "کد ملی نباید بیش از 10 کاراکتر باشد")]
         [Display(Name = "کد ملی")]
-        public string NationalCode { get; set; }
+        public string NationalCode { get; set; } = string.Empty;
 
         [Display(Name = "جنسیت")]
         public GenderType? Gender { get; set; }
@@ -47,7 +47,7 @@ namespace SanjeshP.Payeh.Entities.User
         public int? Nationality { get; set; }
 
         [Display(Name = "کاربر")]
-        public virtual User User { get; set; }
+        public virtual User? User { get; set; }
     }
 
     public enum GenderType

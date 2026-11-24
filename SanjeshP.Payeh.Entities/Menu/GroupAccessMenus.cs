@@ -1,4 +1,4 @@
-﻿using SanjeshP.Payeh.Entities.Common;
+using SanjeshP.Payeh.Entities.Common;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -17,10 +17,10 @@ namespace SanjeshP.Payeh.Entities.Menu
         public Guid MenuId { get; set; }
 
         [Display(Name = "گروه")]
-        public virtual Group.Group Group { get; set; }
+        public virtual Group.Group? Group { get; set; }
 
         [Display(Name = "منو")]
-        public virtual Menu Menu { get; set; }
+        public virtual Menu? Menu { get; set; }
 
 
     }

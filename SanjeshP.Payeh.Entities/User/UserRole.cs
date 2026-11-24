@@ -1,4 +1,4 @@
-﻿using SanjeshP.Payeh.Entities.Common;
+using SanjeshP.Payeh.Entities.Common;
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -18,9 +18,9 @@ namespace SanjeshP.Payeh.Entities.User
         public int RoleId { get; set; }
 
         [Display(Name = "نقش")]
-        public virtual Role Role { get; set; }
+        public virtual Role? Role { get; set; }
 
         [Display(Name = "کاربر")]
-        public virtual User User { get; set; }
+        public virtual User? User { get; set; }
     }
 }

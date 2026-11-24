@@ -13,16 +13,12 @@ public sealed class UniversityExamCapacityService
 {
     private readonly IUniversityExamCapacityRepository _repository;
 
-    public UniversityExamCapacityService(
-        IUniversityExamCapacityRepository repository)
+    public UniversityExamCapacityService(IUniversityExamCapacityRepository repository)
     {
         _repository = repository;
     }
 
-    public async Task<List<Exam>> GetActiveExamsForUniversityAsync(
-        Guid userId,
-        int universityId,
-        CancellationToken cancellationToken)
+    public async Task<List<Exam>> GetActiveExamsForUniversityAsync(Guid userId, int universityId, CancellationToken cancellationToken)
     {
         await ValidateUniversityAsync(
             userId,
@@ -35,13 +31,7 @@ public sealed class UniversityExamCapacityService
     }
 
 
-    public async Task<UniversityExamCapacity> SaveAsync(
-        int universityId,
-        Guid examId,
-        int allocatedCapacity,
-        int ownCapacity,
-        Guid createdBy,
-        CancellationToken cancellationToken)
+    public async Task<UniversityExamCapacity> SaveAsync(int universityId, Guid examId, int allocatedCapacity, int ownCapacity, Guid createdBy, CancellationToken cancellationToken)
     {
         if (createdBy == Guid.Empty)
             throw new BadRequestException(ApiMessages.UniversityExamCapacity.M001);
@@ -225,10 +215,7 @@ public sealed class UniversityExamCapacityService
     }
 
 
-    private async Task<University> ValidateUniversityAsync(
-        Guid userId,
-        int universityId,
-        CancellationToken cancellationToken)
+    private async Task<University> ValidateUniversityAsync(Guid userId, int universityId, CancellationToken cancellationToken)
     {
         if (userId == Guid.Empty)
             throw new UnauthorizedException();
@@ -251,9 +238,7 @@ public sealed class UniversityExamCapacityService
     }
 
 
-    public async Task<List<University>> GetAccessibleUniversitiesAsync(
-    Guid userId,
-    CancellationToken cancellationToken)
+    public async Task<List<University>> GetAccessibleUniversitiesAsync(Guid userId, CancellationToken cancellationToken)
     {
         if (userId == Guid.Empty)
             throw new UnauthorizedAccessException(
@@ -264,10 +249,7 @@ public sealed class UniversityExamCapacityService
             cancellationToken);
     }
 
-    public async Task<List<Exam>> GetDefinedExamsForUniversityAsync(
-    Guid userId,
-    int universityId,
-    CancellationToken cancellationToken)
+    public async Task<List<Exam>> GetDefinedExamsForUniversityAsync(Guid userId, int universityId, CancellationToken cancellationToken)
     {
         await ValidateUniversityAsync(
             userId,
@@ -280,13 +262,7 @@ public sealed class UniversityExamCapacityService
     }
 
 
-    public async Task<UniversityExamGuestCapacity> SaveGuestCapacityAsync(
-        int universityId,
-        Guid examId,
-        int guestUniversityId,
-        int capacity,
-        Guid createdBy,
-        CancellationToken cancellationToken)
+    public async Task<UniversityExamGuestCapacity> SaveGuestCapacityAsync(int universityId, Guid examId, int guestUniversityId, int capacity, Guid createdBy, CancellationToken cancellationToken)
     {
         if (createdBy == Guid.Empty)
             throw new BadRequestException(ApiMessages.UniversityExamCapacity.M001);
@@ -489,11 +465,7 @@ public sealed class UniversityExamCapacityService
                 ApiMessages.UniversityExamCapacity.M017);
     }
 
-    public async Task<List<UniversityExamGuestCapacity>> GetGuestCapacitiesAsync(
-    Guid userId,
-    int universityId,
-    Guid examId,
-    CancellationToken cancellationToken)
+    public async Task<List<UniversityExamGuestCapacity>> GetGuestCapacitiesAsync(Guid userId, int universityId, Guid examId, CancellationToken cancellationToken)
     {
         await ValidateUniversityAsync(
             userId,
@@ -522,10 +494,7 @@ public sealed class UniversityExamCapacityService
             cancellationToken);
     }
 
-    public Task<Dictionary<Guid, UniversityExamCapacityUsage>> GetCapacityUsageAsync(
-        int universityId,
-        IReadOnlyCollection<Guid> capacityIds,
-        CancellationToken cancellationToken)
+    public Task<Dictionary<Guid, UniversityExamCapacityUsage>> GetCapacityUsageAsync(int universityId, IReadOnlyCollection<Guid> capacityIds, CancellationToken cancellationToken)
     {
         return _repository.GetCapacityUsageAsync(
             universityId,
@@ -533,9 +502,7 @@ public sealed class UniversityExamCapacityService
             cancellationToken);
     }
 
-    public Task<Dictionary<Guid, int>> GetGuestRegistrationCountsAsync(
-        IReadOnlyCollection<Guid> guestCapacityIds,
-        CancellationToken cancellationToken)
+    public Task<Dictionary<Guid, int>> GetGuestRegistrationCountsAsync(IReadOnlyCollection<Guid> guestCapacityIds, CancellationToken cancellationToken)
     {
         return _repository.GetGuestRegistrationCountsAsync(
             guestCapacityIds,

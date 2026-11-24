@@ -37,8 +37,7 @@ public sealed class ExamRegistrationsController : BaseController
     /// </summary>
     [HttpGet("universities")]
     [ProducesResponseType(typeof(ApiResult<List<ExamRegistrationUniversityDto>>), StatusCodes.Status200OK)]
-    public async Task<ApiResult<List<ExamRegistrationUniversityDto>>> GetAccessibleUniversities(
-        CancellationToken cancellationToken)
+    public async Task<ApiResult<List<ExamRegistrationUniversityDto>>> GetAccessibleUniversities(CancellationToken cancellationToken)
     {
         var universities = await _service.GetAccessibleUniversitiesAsync(
             CurrentUserId,
@@ -59,9 +58,7 @@ public sealed class ExamRegistrationsController : BaseController
     /// </summary>
     [HttpGet("exams")]
     [ProducesResponseType(typeof(ApiResult<List<ExamRegistrationExamDto>>), StatusCodes.Status200OK)]
-    public async Task<ApiResult<List<ExamRegistrationExamDto>>> GetAvailableExams(
-        [FromQuery] int universityId,
-        CancellationToken cancellationToken)
+    public async Task<ApiResult<List<ExamRegistrationExamDto>>> GetAvailableExams([FromQuery] int universityId, CancellationToken cancellationToken)
     {
         var exams = await _service.GetAvailableExamsAsync(
             universityId,
@@ -86,10 +83,7 @@ public sealed class ExamRegistrationsController : BaseController
     /// </summary>
     [HttpGet("options")]
     [ProducesResponseType(typeof(ApiResult<ExamRegistrationOptionsDto>), StatusCodes.Status200OK)]
-    public async Task<ApiResult<ExamRegistrationOptionsDto>> GetRegistrationOptions(
-        [FromQuery] Guid examId,
-        [FromQuery] int universityId,
-        CancellationToken cancellationToken)
+    public async Task<ApiResult<ExamRegistrationOptionsDto>> GetRegistrationOptions([FromQuery] Guid examId, [FromQuery] int universityId, CancellationToken cancellationToken)
     {
         var options = await _service.GetRegistrationOptionsAsync(
             examId,
@@ -147,9 +141,7 @@ public sealed class ExamRegistrationsController : BaseController
     /// </summary>
     [HttpPost]
     [ProducesResponseType(typeof(ApiResult<ExamRegistrationDto>), StatusCodes.Status200OK)]
-    public async Task<ApiResult<ExamRegistrationDto>> Create(
-        [FromBody] CreateExamRegistrationDto dto,
-        CancellationToken cancellationToken)
+    public async Task<ApiResult<ExamRegistrationDto>> Create([FromBody] CreateExamRegistrationDto dto, CancellationToken cancellationToken)
     {
         var registration = new ExamRegistration
         {
@@ -197,10 +189,7 @@ public sealed class ExamRegistrationsController : BaseController
     /// </summary>
     [HttpGet]
     [ProducesResponseType(typeof(ApiResult<List<ExamRegistrationDto>>), StatusCodes.Status200OK)]
-    public async Task<ApiResult<List<ExamRegistrationDto>>> GetByExam(
-        [FromQuery] Guid examId,
-        [FromQuery] int universityId,
-        CancellationToken cancellationToken)
+    public async Task<ApiResult<List<ExamRegistrationDto>>> GetByExam([FromQuery] Guid examId, [FromQuery] int universityId, CancellationToken cancellationToken)
     {
         var registrations = await _service.GetByExamAsync(
             examId,
@@ -219,9 +208,7 @@ public sealed class ExamRegistrationsController : BaseController
     /// </summary>
     [HttpGet("{id:guid}")]
     [ProducesResponseType(typeof(ApiResult<ExamRegistrationDto>), StatusCodes.Status200OK)]
-    public async Task<ApiResult<ExamRegistrationDto>> GetById(
-        [FromRoute] Guid id,
-        CancellationToken cancellationToken)
+    public async Task<ApiResult<ExamRegistrationDto>> GetById([FromRoute] Guid id, CancellationToken cancellationToken)
     {
         var registration = await _service.GetByIdAsync(
             id,
@@ -239,10 +226,7 @@ public sealed class ExamRegistrationsController : BaseController
     /// </summary>
     [HttpPut("{id:guid}")]
     [ProducesResponseType(typeof(ApiResult<ExamRegistrationDto>), StatusCodes.Status200OK)]
-    public async Task<ApiResult<ExamRegistrationDto>> Update(
-        [FromRoute] Guid id,
-        [FromBody] UpdateExamRegistrationDto dto,
-        CancellationToken cancellationToken)
+    public async Task<ApiResult<ExamRegistrationDto>> Update([FromRoute] Guid id, [FromBody] UpdateExamRegistrationDto dto, CancellationToken cancellationToken)
     {
         var registration = new ExamRegistration
         {
@@ -290,9 +274,7 @@ public sealed class ExamRegistrationsController : BaseController
     /// </summary>
     [HttpDelete("{id:guid}")]
     [ProducesResponseType(typeof(ApiResult), StatusCodes.Status200OK)]
-    public async Task<ApiResult> Delete(
-        [FromRoute] Guid id,
-        CancellationToken cancellationToken)
+    public async Task<ApiResult> Delete([FromRoute] Guid id, CancellationToken cancellationToken)
     {
         await _service.SoftDeleteAsync(
             id,

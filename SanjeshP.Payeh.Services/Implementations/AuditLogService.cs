@@ -17,27 +17,14 @@ public sealed class AuditLogService : IAuditLogService, IScopedDependency
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly ILogger<AuditLogService> _logger;
 
-    public AuditLogService(
-        IEFRepository<AuditLog> repository,
-        IHttpContextAccessor httpContextAccessor,
-        ILogger<AuditLogService> logger)
+    public AuditLogService(IEFRepository<AuditLog> repository, IHttpContextAccessor httpContextAccessor, ILogger<AuditLogService> logger)
     {
         _repository = repository;
         _httpContextAccessor = httpContextAccessor;
         _logger = logger;
     }
 
-    public Task LogActivityAsync(
-        string action,
-        string? description = null,
-        string? entityName = null,
-        string? entityId = null,
-        string? oldValuesJson = null,
-        string? newValuesJson = null,
-        string eventType = "Activity",
-        CancellationToken cancellationToken = default,
-        Guid? actorUserId = null,
-        string? actorUserName = null)
+    public Task LogActivityAsync(string action, string? description = null, string? entityName = null, string? entityId = null, string? oldValuesJson = null, string? newValuesJson = null, string eventType = "Activity", CancellationToken cancellationToken = default, Guid? actorUserId = null, string? actorUserName = null)
     {
         var httpContext = _httpContextAccessor.HttpContext;
         var entry = CreateBaseEntry(httpContext);
