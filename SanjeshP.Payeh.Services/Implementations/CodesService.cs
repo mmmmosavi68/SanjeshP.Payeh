@@ -26,6 +26,7 @@ public sealed class CodesService : ICodesService, IScopedDependency
         CancellationToken cancellationToken)
     {
         return await _repository.TableNoTracking
+            .Include(x => x.Parent)
             .OrderBy(x => x.ParentId)
             .ThenBy(x => x.PrimaryCode)
             .ThenBy(x => x.SubCode)
@@ -57,6 +58,7 @@ public sealed class CodesService : ICodesService, IScopedDependency
             return [];
 
         return await _repository.TableNoTracking
+            .Include(x => x.Parent)
             .Where(x =>
                 x.ParentId == root.Id &&
                 x.SubCode == 0 &&
@@ -82,6 +84,7 @@ public sealed class CodesService : ICodesService, IScopedDependency
             return [];
 
         return await _repository.TableNoTracking
+            .Include(x => x.Parent)
             .Where(x =>
                 x.ParentId == group.Id &&
                 x.PrimaryCode == primaryCode &&
@@ -434,6 +437,7 @@ public sealed class CodesService : ICodesService, IScopedDependency
             return [];
 
         return await _repository.TableNoTracking
+            .Include(x => x.Parent)
             .Where(x =>
                 x.ParentId == root.Id &&
                 x.SubCode == 0)
@@ -469,6 +473,7 @@ public sealed class CodesService : ICodesService, IScopedDependency
         }
 
         return await _repository.TableNoTracking
+            .Include(x => x.Parent)
             .Where(x =>
                 x.ParentId == groupId &&
                 x.SubCode > 0)

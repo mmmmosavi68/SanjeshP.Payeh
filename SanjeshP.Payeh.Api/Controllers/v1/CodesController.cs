@@ -1,4 +1,5 @@
-﻿
+
+using SanjeshP.Payeh.Api.Mapping;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -17,10 +18,12 @@ namespace SanjeshP.Payeh.Api.Controllers.V1;
 public sealed class CodesController : BaseController
 {
     private readonly ICodesService _codesService;
+    private readonly IApiMapper _mapper;
 
-    public CodesController(ICodesService codesService)
+    public CodesController(ICodesService codesService, IApiMapper mapper)
     {
         _codesService = codesService;
+        _mapper = mapper;
     }
 
     #region Read
@@ -30,11 +33,12 @@ public sealed class CodesController : BaseController
     /// </summary>
     [HttpGet]
     [ProducesResponseType(typeof(ApiResult<List<CodeDto>>), StatusCodes.Status200OK)]
-    public async Task<ApiResult<List<CodeDto>>> GetAll(
-        CancellationToken cancellationToken)
+    public async Task<ApiResult<List<CodeDto>>> GetAll([FromQuery] int? page, [FromQuery] int? pageSize, CancellationToken cancellationToken)
     {
-        var codes = await _codesService.GetAllAsync(cancellationToken);
-        return codes.Select(MapToDto).ToList();
+        var result = await _codesService.GetPageAsync<CodeDto>(page, pageSize, _mapper.ProjectToDto, cancellationToken);
+        Response.ApplyPaging(result);
+
+        return result.Items.ToList();
     }
 
     /// <summary>
@@ -47,7 +51,7 @@ public sealed class CodesController : BaseController
         CancellationToken cancellationToken)
     {
         var code = await _codesService.GetByIdAsync(id, cancellationToken);
-        return MapToDto(code);
+        return _mapper.ToDto(code);
     }
 
     /// <summary>
@@ -59,7 +63,7 @@ public sealed class CodesController : BaseController
         CancellationToken cancellationToken)
     {
         var groups = await _codesService.GetGroupsAsync(cancellationToken);
-        return groups.Select(MapToDto).ToList();
+        return groups.Select(_mapper.ToDto).ToList();
     }
 
     /// <summary>
@@ -75,7 +79,7 @@ public sealed class CodesController : BaseController
             primaryCode,
             cancellationToken);
 
-        return items.Select(MapToDto).ToList();
+        return items.Select(_mapper.ToDto).ToList();
     }
     /// <summary>
     /// دریافت گروه‌های اصلی برای مدیریت
@@ -90,7 +94,7 @@ public sealed class CodesController : BaseController
         var groups = await _codesService.GetManagementGroupsAsync(
             cancellationToken);
 
-        return groups.Select(MapToDto).ToList();
+        return groups.Select(_mapper.ToDto).ToList();
     }
 
     /// <summary>
@@ -108,7 +112,7 @@ public sealed class CodesController : BaseController
             groupId,
             cancellationToken);
 
-        return items.Select(MapToDto).ToList();
+        return items.Select(_mapper.ToDto).ToList();
     }
     #endregion
 
@@ -123,22 +127,15 @@ public sealed class CodesController : BaseController
         [FromBody] CreateCodeDto dto,
         CancellationToken cancellationToken)
     {
-        var code = new Code
-        {
-            Title = dto.Title,
-            ParentId = dto.ParentId,
-            StandardCode = dto.StandardCode,
-            PrimaryCode = dto.PrimaryCode,
-            SubCode = dto.SubCode,
-            AdditionalInformation = dto.AdditionalInformation
-        };
+        var code = _mapper.ToEntity(dto);
+        code.ParentId = await ResolveParentIdAsync(dto.ParentId, dto.ParentPrimaryCode, dto.ParentSubCode, cancellationToken);
 
         var createdCode = await _codesService.CreateAsync(
             code,
             CurrentUserId,
             cancellationToken);
 
-        return MapToDto(createdCode);
+        return _mapper.ToDto(createdCode);
     }
 
     #endregion
@@ -155,23 +152,15 @@ public sealed class CodesController : BaseController
         [FromBody] UpdateCodeDto dto,
         CancellationToken cancellationToken)
     {
-        var updatedCode = new Code
-        {
-            Title = dto.Title,
-            ParentId = dto.ParentId,
-            StandardCode = dto.StandardCode,
-            PrimaryCode = dto.PrimaryCode,
-            SubCode = dto.SubCode,
-            AdditionalInformation = dto.AdditionalInformation,
-            IsActive = dto.IsActive
-        };
+        var updatedCode = _mapper.ToEntity(dto);
+        updatedCode.ParentId = await ResolveParentIdAsync(dto.ParentId, dto.ParentPrimaryCode, dto.ParentSubCode, cancellationToken);
 
         var code = await _codesService.UpdateAsync(
             id,
             updatedCode,
             cancellationToken);
 
-        return MapToDto(code);
+        return _mapper.ToDto(code);
     }
 
     #endregion
@@ -193,21 +182,11 @@ public sealed class CodesController : BaseController
 
     #endregion
 
-    #region Mapping
+    #region Helpers
 
-    private static CodeDto MapToDto(Code code)
+    private Task<int> ResolveParentIdAsync(int? parentId, int? parentPrimaryCode, int? parentSubCode, CancellationToken cancellationToken)
     {
-        return new CodeDto
-        {
-            Id = code.Id,
-            Title = code.Title,
-            ParentId = code.ParentId,
-            StandardCode = code.StandardCode,
-            PrimaryCode = code.PrimaryCode,
-            SubCode = code.SubCode,
-            AdditionalInformation = code.AdditionalInformation,
-            IsActive = code.IsActive
-        };
+        return _codesService.ResolveIdAsync(parentId, parentPrimaryCode, parentSubCode, null, ApiMessages.Lookup.ParentCodeInvalid, cancellationToken);
     }
 
     #endregion

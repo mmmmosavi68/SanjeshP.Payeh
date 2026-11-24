@@ -36,14 +36,12 @@ public class MenusController : BaseController
     [ProducesResponseType(
         typeof(ApiResult<List<MenuDto>>),
         StatusCodes.Status200OK)]
-    public async Task<ApiResult<List<MenuDto>>> Get(
-        CancellationToken cancellationToken)
+    public async Task<ApiResult<List<MenuDto>>> Get([FromQuery] int? page, [FromQuery] int? pageSize, CancellationToken cancellationToken)
     {
-        var menus = await _menusService.GetAllAsync(cancellationToken);
+        var result = await _menusService.GetPageAsync<MenuDto>(page, pageSize, _mapper.ProjectToDto, cancellationToken);
+        Response.ApplyPaging(result);
 
-        var result = menus.Select(_mapper.ToDto).ToList();
-
-        return result;
+        return result.Items.ToList();
     }
 
     /// <summary>

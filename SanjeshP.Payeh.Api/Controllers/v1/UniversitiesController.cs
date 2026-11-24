@@ -1,8 +1,9 @@
-﻿
+
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SanjeshP.Payeh.Api.DTOs.Universities;
+using SanjeshP.Payeh.Api.Mapping;
 using SanjeshP.Payeh.Common;
 using SanjeshP.Payeh.Entities.University;
 using SanjeshP.Payeh.Services.Universities;
@@ -15,10 +16,14 @@ namespace SanjeshP.Payeh.Api.Controllers.V1;
 public sealed class UniversitiesController : BaseController
 {
     private readonly IUniversityService _service;
+    private readonly IApiMapper _mapper;
+    private readonly ICodesService _codes;
 
-    public UniversitiesController(IUniversityService service)
+    public UniversitiesController(IUniversityService service, IApiMapper mapper, ICodesService codes)
     {
         _service = service;
+        _mapper = mapper;
+        _codes = codes;
     }
 
     #region Read
@@ -28,26 +33,12 @@ public sealed class UniversitiesController : BaseController
     /// </summary>
     [HttpGet]
     [ProducesResponseType(typeof(ApiResult<List<UniversityDto>>), StatusCodes.Status200OK)]
-    public async Task<ApiResult<List<UniversityDto>>> GetAll(
-        [FromQuery] string? search,
-        [FromQuery] int? universityTypeId,
-        [FromQuery] int? region,
-        [FromQuery] int? parentUniversityId,
-        [FromQuery] bool? isActive,
-        CancellationToken cancellationToken)
+    public async Task<ApiResult<List<UniversityDto>>> GetAll([FromQuery] string? search, [FromQuery] int? universityTypeId, [FromQuery] int? universityTypePrimaryCode, [FromQuery] int? universityTypeSubCode, [FromQuery] int? region, [FromQuery] int? parentUniversityId, [FromQuery] bool? isActive, [FromQuery] int? page, [FromQuery] int? pageSize, CancellationToken cancellationToken)
     {
-        var universities = await _service.GetAllAsync(
-            search,
-            universityTypeId,
-            region,
-            parentUniversityId,
-            isActive,
-            cancellationToken);
+        var result = await _service.GetPageAsync<UniversityDto>(search, universityTypeId, universityTypePrimaryCode, universityTypeSubCode, region, parentUniversityId, isActive, page, pageSize, _mapper.ProjectToDto, cancellationToken);
+        Response.ApplyPaging(result);
 
-        return new ApiResult<List<UniversityDto>>(
-            true,
-            ApiResultStatusCode.Success,
-            universities.Select(MapToDto).ToList());
+        return new ApiResult<List<UniversityDto>>(true, ApiResultStatusCode.Success, result.Items.ToList());
     }
 
     /// <summary>
@@ -66,7 +57,7 @@ public sealed class UniversitiesController : BaseController
         return new ApiResult<UniversityDto>(
             true,
             ApiResultStatusCode.Success,
-            MapToDto(university));
+            _mapper.ToDto(university));
     }
 
     #endregion
@@ -82,14 +73,8 @@ public sealed class UniversitiesController : BaseController
         [FromBody] CreateUniversityDto dto,
         CancellationToken cancellationToken)
     {
-        var university = new University
-        {
-            Title = dto.Title,
-            UniversityTypeId = dto.UniversityTypeId,
-            Region = dto.Region,
-            CapacityApproved = dto.CapacityApproved,
-            ParentUniversityId = dto.ParentUniversityId
-        };
+        var university = _mapper.ToEntity(dto);
+        university.UniversityTypeId = await _codes.ResolveIdAsync(dto.UniversityTypeId, dto.UniversityTypePrimaryCode, dto.UniversityTypeSubCode, null, ApiMessages.Lookup.UniversityTypeInvalid, cancellationToken);
 
         var created = await _service.CreateAsync(
             university,
@@ -99,7 +84,7 @@ public sealed class UniversitiesController : BaseController
         return new ApiResult<UniversityDto>(
             true,
             ApiResultStatusCode.Success,
-            MapToDto(created),
+            _mapper.ToDto(created),
             "دانشگاه با موفقیت ثبت شد.");
     }
 
@@ -117,15 +102,8 @@ public sealed class UniversitiesController : BaseController
         [FromBody] UpdateUniversityDto dto,
         CancellationToken cancellationToken)
     {
-        var university = new University
-        {
-            Title = dto.Title,
-            UniversityTypeId = dto.UniversityTypeId,
-            Region = dto.Region,
-            CapacityApproved = dto.CapacityApproved,
-            ParentUniversityId = dto.ParentUniversityId,
-            IsActive = dto.IsActive
-        };
+        var university = _mapper.ToEntity(dto);
+        university.UniversityTypeId = await _codes.ResolveIdAsync(dto.UniversityTypeId, dto.UniversityTypePrimaryCode, dto.UniversityTypeSubCode, null, ApiMessages.Lookup.UniversityTypeInvalid, cancellationToken);
 
         var updated = await _service.UpdateAsync(
             id,
@@ -135,7 +113,7 @@ public sealed class UniversitiesController : BaseController
         return new ApiResult<UniversityDto>(
             true,
             ApiResultStatusCode.Success,
-            MapToDto(updated),
+            _mapper.ToDto(updated),
             "اطلاعات دانشگاه با موفقیت ویرایش شد.");
     }
 
@@ -166,23 +144,6 @@ public sealed class UniversitiesController : BaseController
 
     #region Mapping
 
-    private static UniversityDto MapToDto(University university)
-    {
-        return new UniversityDto
-        {
-            Id = university.Id,
-            Title = university.Title,
-            UniversityTypeId = university.UniversityTypeId,
-            UniversityTypeTitle = university.UniversityType?.Title,
-            Region = university.Region,
-            CapacityApproved = university.CapacityApproved,
-            ParentUniversityId = university.ParentUniversityId,
-            ParentUniversityTitle = university.ParentUniversity?.Title,
-            IsActive = university.IsActive,
-            CreatedDate = university.CreatedDate,
-            UpdatedDate = university.UpdatedDate
-        };
-    }
 
     #endregion
 }

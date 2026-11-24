@@ -1,7 +1,8 @@
-﻿using Asp.Versioning;
+using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SanjeshP.Payeh.Api.DTOs.Exams;
+using SanjeshP.Payeh.Api.Mapping;
 using SanjeshP.Payeh.Common;
 using SanjeshP.Payeh.Entities.Exam;
 using SanjeshP.Payeh.Services.Exams;
@@ -14,34 +15,24 @@ namespace SanjeshP.Payeh.Api.Controllers.V1;
 public sealed class ExamsController : BaseController
 {
     private readonly IExamService _service;
+    private readonly IApiMapper _mapper;
+    private readonly ICodesService _codes;
 
-    public ExamsController(IExamService service)
+    public ExamsController(IExamService service, IApiMapper mapper, ICodesService codes)
     {
         _service = service;
+        _mapper = mapper;
+        _codes = codes;
     }
 
     [HttpGet]
     [ProducesResponseType(typeof(ApiResult<List<ExamDto>>), StatusCodes.Status200OK)]
-    public async Task<ApiResult<List<ExamDto>>> GetAll(
-        [FromQuery] string? search,
-        [FromQuery] Guid? examSessionId,
-        [FromQuery] int? examTypeId,
-        [FromQuery] int? examModeId,
-        [FromQuery] bool? isActive,
-        CancellationToken cancellationToken)
+    public async Task<ApiResult<List<ExamDto>>> GetAll([FromQuery] string? search, [FromQuery] Guid? examSessionId, [FromQuery] int? examTypeId, [FromQuery] int? examTypePrimaryCode, [FromQuery] int? examTypeSubCode, [FromQuery] int? examModeId, [FromQuery] int? examModePrimaryCode, [FromQuery] int? examModeSubCode, [FromQuery] bool? isActive, [FromQuery] int? page, [FromQuery] int? pageSize, CancellationToken cancellationToken)
     {
-        var exams = await _service.GetAllAsync(
-            search,
-            examSessionId,
-            examTypeId,
-            examModeId,
-            isActive,
-            cancellationToken);
+        var result = await _service.GetPageAsync<ExamDto>(search, examSessionId, examTypeId, examTypePrimaryCode, examTypeSubCode, examModeId, examModePrimaryCode, examModeSubCode, isActive, page, pageSize, _mapper.ProjectToDto, cancellationToken);
+        Response.ApplyPaging(result);
 
-        return new ApiResult<List<ExamDto>>(
-            true,
-            ApiResultStatusCode.Success,
-            exams.Select(MapToDto).ToList());
+        return new ApiResult<List<ExamDto>>(true, ApiResultStatusCode.Success, result.Items.ToList());
     }
 
     [HttpGet("{id:guid}")]
@@ -55,7 +46,7 @@ public sealed class ExamsController : BaseController
         return new ApiResult<ExamDto>(
             true,
             ApiResultStatusCode.Success,
-            MapToDto(exam));
+            _mapper.ToDto(exam));
     }
 
     [HttpPost]
@@ -64,18 +55,8 @@ public sealed class ExamsController : BaseController
         [FromBody] CreateExamDto dto,
         CancellationToken cancellationToken)
     {
-        var exam = new Exam
-        {
-            Title = dto.Title,
-            ExamSessionId = dto.ExamSessionId,
-            ExamTypeId = dto.ExamTypeId,
-            ExamModeId = dto.ExamModeId,
-            RegistrationStartDate = dto.RegistrationStartDate,
-            RegistrationEndDate = dto.RegistrationEndDate,
-            EditStartDate = dto.EditStartDate,
-            EditEndDate = dto.EditEndDate,
-            Description = dto.Description
-        };
+        var exam = _mapper.ToEntity(dto);
+        await ResolveCodesAsync(exam, dto.ExamTypeId, dto.ExamTypePrimaryCode, dto.ExamTypeSubCode, dto.ExamModeId, dto.ExamModePrimaryCode, dto.ExamModeSubCode, cancellationToken);
 
         var created = await _service.CreateAsync(
             exam,
@@ -85,7 +66,7 @@ public sealed class ExamsController : BaseController
         return new ApiResult<ExamDto>(
             true,
             ApiResultStatusCode.Success,
-            MapToDto(created),
+            _mapper.ToDto(created),
             "آزمون با موفقیت ثبت شد.");
     }
 
@@ -96,19 +77,8 @@ public sealed class ExamsController : BaseController
         [FromBody] UpdateExamDto dto,
         CancellationToken cancellationToken)
     {
-        var exam = new Exam
-        {
-            Title = dto.Title,
-            ExamSessionId = dto.ExamSessionId,
-            ExamTypeId = dto.ExamTypeId,
-            ExamModeId = dto.ExamModeId,
-            RegistrationStartDate = dto.RegistrationStartDate,
-            RegistrationEndDate = dto.RegistrationEndDate,
-            EditStartDate = dto.EditStartDate,
-            EditEndDate = dto.EditEndDate,
-            Description = dto.Description,
-            IsActive = dto.IsActive
-        };
+        var exam = _mapper.ToEntity(dto);
+        await ResolveCodesAsync(exam, dto.ExamTypeId, dto.ExamTypePrimaryCode, dto.ExamTypeSubCode, dto.ExamModeId, dto.ExamModePrimaryCode, dto.ExamModeSubCode, cancellationToken);
 
         var updated = await _service.UpdateAsync(
             id,
@@ -118,7 +88,7 @@ public sealed class ExamsController : BaseController
         return new ApiResult<ExamDto>(
             true,
             ApiResultStatusCode.Success,
-            MapToDto(updated),
+            _mapper.ToDto(updated),
             "اطلاعات آزمون با موفقیت ویرایش شد.");
     }
 
@@ -136,32 +106,9 @@ public sealed class ExamsController : BaseController
             "آزمون با موفقیت حذف شد.");
     }
 
-    private static ExamDto MapToDto(Exam exam)
+    private async Task ResolveCodesAsync(Exam exam, int examTypeId, int? examTypePrimaryCode, int? examTypeSubCode, int examModeId, int? examModePrimaryCode, int? examModeSubCode, CancellationToken cancellationToken)
     {
-        return new ExamDto
-        {
-            Id = exam.Id,
-            Title = exam.Title,
-
-            ExamSessionId = exam.ExamSessionId,
-            ExamSessionTitle = exam.ExamSession?.Title,
-            ExamDate = exam.ExamSession?.ExamDate ?? default,
-
-            ExamTypeId = exam.ExamTypeId,
-            ExamTypeTitle = exam.ExamType?.Title,
-
-            ExamModeId = exam.ExamModeId,
-            ExamModeTitle = exam.ExamMode?.Title,
-
-            RegistrationStartDate = exam.RegistrationStartDate,
-            RegistrationEndDate = exam.RegistrationEndDate,
-            EditStartDate = exam.EditStartDate,
-            EditEndDate = exam.EditEndDate,
-
-            Description = exam.Description,
-            IsActive = exam.IsActive,
-            CreatedDate = exam.CreatedDate,
-            UpdatedDate = exam.UpdatedDate
-        };
+        exam.ExamTypeId = await _codes.ResolveIdAsync(examTypeId, examTypePrimaryCode, examTypeSubCode, CodeGroupTitles.ExamType, ApiMessages.Lookup.ExamTypeInvalid, cancellationToken);
+        exam.ExamModeId = await _codes.ResolveIdAsync(examModeId, examModePrimaryCode, examModeSubCode, CodeGroupTitles.ExamMode, ApiMessages.Lookup.ExamModeInvalid, cancellationToken);
     }
 }

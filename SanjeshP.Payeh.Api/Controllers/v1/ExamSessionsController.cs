@@ -1,8 +1,9 @@
-﻿
+
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SanjeshP.Payeh.Api.DTOs.ExamSessions;
+using SanjeshP.Payeh.Api.Mapping;
 using SanjeshP.Payeh.Common;
 using SanjeshP.Payeh.Entities.Exam;
 using SanjeshP.Payeh.Services.Exams;
@@ -15,27 +16,21 @@ namespace SanjeshP.Payeh.Api.Controllers.V1;
 public sealed class ExamSessionsController : BaseController
 {
     private readonly IExamSessionService _service;
+    private readonly IApiMapper _mapper;
 
-    public ExamSessionsController(IExamSessionService service)
+    public ExamSessionsController(IExamSessionService service, IApiMapper mapper)
     {
         _service = service;
+        _mapper = mapper;
     }
 
     [HttpGet]
-    public async Task<ApiResult<List<ExamSessionDto>>> GetAll(
-        [FromQuery] string? search,
-        [FromQuery] bool? isActive,
-        CancellationToken cancellationToken)
+    public async Task<ApiResult<List<ExamSessionDto>>> GetAll([FromQuery] string? search, [FromQuery] bool? isActive, [FromQuery] int? page, [FromQuery] int? pageSize, CancellationToken cancellationToken)
     {
-        var sessions = await _service.GetAllAsync(
-            search,
-            isActive,
-            cancellationToken);
+        var result = await _service.GetPageAsync<ExamSessionDto>(search, isActive, page, pageSize, _mapper.ProjectToDto, cancellationToken);
+        Response.ApplyPaging(result);
 
-        return new ApiResult<List<ExamSessionDto>>(
-            true,
-            ApiResultStatusCode.Success,
-            sessions.Select(MapToDto).ToList());
+        return new ApiResult<List<ExamSessionDto>>(true, ApiResultStatusCode.Success, result.Items.ToList());
     }
 
     [HttpGet("{id:guid}")]
@@ -48,7 +43,7 @@ public sealed class ExamSessionsController : BaseController
         return new ApiResult<ExamSessionDto>(
             true,
             ApiResultStatusCode.Success,
-            MapToDto(session));
+            _mapper.ToDto(session));
     }
 
     [HttpPost]
@@ -56,13 +51,7 @@ public sealed class ExamSessionsController : BaseController
         [FromBody] CreateExamSessionDto dto,
         CancellationToken cancellationToken)
     {
-        var session = new ExamSession
-        {
-            Title = dto.Title,
-            ExamDate = dto.ExamDate,
-            StartTime = dto.StartTime,
-            EndTime = dto.EndTime
-        };
+        var session = _mapper.ToEntity(dto);
 
         var created = await _service.CreateAsync(
             session,
@@ -72,7 +61,7 @@ public sealed class ExamSessionsController : BaseController
         return new ApiResult<ExamSessionDto>(
             true,
             ApiResultStatusCode.Success,
-            MapToDto(created),
+            _mapper.ToDto(created),
             "نوبت آزمون با موفقیت ثبت شد.");
     }
 
@@ -82,14 +71,7 @@ public sealed class ExamSessionsController : BaseController
         [FromBody] UpdateExamSessionDto dto,
         CancellationToken cancellationToken)
     {
-        var session = new ExamSession
-        {
-            Title = dto.Title,
-            ExamDate = dto.ExamDate,
-            StartTime = dto.StartTime,
-            EndTime = dto.EndTime,
-            IsActive = dto.IsActive
-        };
+        var session = _mapper.ToEntity(dto);
 
         var updated = await _service.UpdateAsync(
             id,
@@ -99,7 +81,7 @@ public sealed class ExamSessionsController : BaseController
         return new ApiResult<ExamSessionDto>(
             true,
             ApiResultStatusCode.Success,
-            MapToDto(updated),
+            _mapper.ToDto(updated),
             "نوبت آزمون با موفقیت ویرایش شد.");
     }
 
@@ -116,18 +98,4 @@ public sealed class ExamSessionsController : BaseController
             "نوبت آزمون با موفقیت حذف شد.");
     }
 
-    private static ExamSessionDto MapToDto(ExamSession session)
-    {
-        return new ExamSessionDto
-        {
-            Id = session.Id,
-            Title = session.Title,
-            ExamDate = session.ExamDate,
-            StartTime = session.StartTime,
-            EndTime = session.EndTime,
-            IsActive = session.IsActive,
-            CreatedDate = session.CreatedDate,
-            UpdatedDate = session.UpdatedDate
-        };
-    }
 }
