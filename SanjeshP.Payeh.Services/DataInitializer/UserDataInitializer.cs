@@ -91,8 +91,8 @@ namespace SanjeshP.Payeh.Services.DataInitializer
             SeedGroupAccessMenus(path, admin.Id);
             SeedUserAccessMenus(path, admin.Id);
             SeedRolesAndAdminRole(path, admin.Id);
-            SeedCodes(path, admin.Id);
-            //SeedUniversities(path, admin.Id);
+            //SeedCodes(path, admin.Id);
+            SeedUniversities(path, admin.Id);
         }
 
         // ───────────────────────────── User ─────────────────────────────
